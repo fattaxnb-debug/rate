@@ -78,11 +78,11 @@ export default function DashboardPage() {
 
       const [clientsRes, equipmentsRes, schedulesRes, reportsRes] = await Promise.all([
 
-        axios.get(`${API_BASE_URL}/stats/clients`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: { count: 0 } } })),
+        axios.get(`${API_BASE_URL}/clients`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: [] } })),
 
-        axios.get(`${API_BASE_URL}/stats/equipments`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: { count: 0 } } })),
+        axios.get(`${API_BASE_URL}/equipments`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: [] } })),
 
-        axios.get(`${API_BASE_URL}/stats/schedules`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: { count: 0, byStatus: [] } } })),
+        axios.get(`${API_BASE_URL}/schedules`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: [] } })),
 
         axios.get(`${API_BASE_URL}/reports`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: [] } }))
 
@@ -90,11 +90,11 @@ export default function DashboardPage() {
 
 
 
-      const clientsCount = clientsRes.data.data?.count || 0;
+      const clients = clientsRes.data.data || [];
 
-      const equipmentsCount = equipmentsRes.data.data?.count || 0;
+      const equipments = equipmentsRes.data.data || [];
 
-      const schedulesCount = schedulesRes.data.data?.count || 0;
+      const schedules = schedulesRes.data.data || [];
 
       const reports = reportsRes.data.data || [];
 
@@ -110,11 +110,11 @@ export default function DashboardPage() {
 
       setStats({
 
-        clients: clientsCount,
+        clients: clients.length,
 
-        equipments: equipmentsCount,
+        equipments: equipments.length,
 
-        schedules: schedulesCount,
+        schedules: schedules.length,
 
         reports: filteredReports.length,
 

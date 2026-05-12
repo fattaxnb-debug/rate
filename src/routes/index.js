@@ -7,6 +7,7 @@ import schedulesRouter from './schedules.js';
 import reportsRouter from './reports.js';
 import settingsRouter from './settings.js';
 import reportPhotosRouter from './report-photos.js';
+import statsRouter from './stats.js';
 import db from '../config/database.js';
 
 const router = Router();
@@ -50,6 +51,8 @@ export default () => {
     router.use('/settings', settingsRouter);
     console.log('Registering /report-photos route...');
     router.use('/report-photos', reportPhotosRouter);
+    console.log('Registering /stats route...');
+    router.use('/stats', statsRouter);
     console.log('All routes registered');
 
     return router;
