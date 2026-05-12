@@ -149,18 +149,18 @@ const canCreate = isGerente || isTecnico;
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border overflow-x-auto">
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-red-500/20 shadow-lg overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Modelo</TableHead>
-                  <TableHead>Número de Série</TableHead>
-                  <TableHead>Potência (VA)</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Data de Instalação</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                <TableRow className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700">
+                  <TableHead className="text-white font-bold">Tipo</TableHead>
+                  <TableHead className="text-white font-bold">Marca</TableHead>
+                  <TableHead className="text-white font-bold">Modelo</TableHead>
+                  <TableHead className="text-white font-bold">Número de Série</TableHead>
+                  <TableHead className="text-white font-bold">Potência (VA)</TableHead>
+                  <TableHead className="text-white font-bold">Cliente</TableHead>
+                  <TableHead className="text-white font-bold">Data de Instalação</TableHead>
+                  <TableHead className="text-white font-bold text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -171,15 +171,15 @@ const canCreate = isGerente || isTecnico;
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredEquipments.map((equipment) => (
-                    <TableRow key={equipment.id}>
-                      <TableCell className="font-medium">{equipment.type ? equipment.type.toUpperCase() : '-'}</TableCell>
-                      <TableCell>{equipment.brand}</TableCell>
-                      <TableCell>{equipment.model}</TableCell>
-                      <TableCell>{equipment.serial_number}</TableCell>
-                      <TableCell>{equipment.power_va ? `${equipment.power_va} VA` : '-'}</TableCell>
-                      <TableCell>{equipment.client_name ? equipment.client_name.replace(/\d+/g, '').trim().split(' ').slice(0, 3).join(' ') : '-'}</TableCell>
-                      <TableCell>
+                  filteredEquipments.map((equipment, index) => (
+                    <TableRow key={equipment.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50 hover:bg-red-50/50 transition-colors'}>
+                      <TableCell className="font-semibold text-gray-900">{equipment.type ? equipment.type.toUpperCase() : '-'}</TableCell>
+                      <TableCell className="text-gray-700">{equipment.brand}</TableCell>
+                      <TableCell className="text-gray-700">{equipment.model}</TableCell>
+                      <TableCell className="text-gray-700">{equipment.serial_number}</TableCell>
+                      <TableCell className="text-gray-700 font-medium">{equipment.power_va ? `${equipment.power_va} VA` : '-'}</TableCell>
+                      <TableCell className="text-gray-700">{equipment.client_name ? equipment.client_name.replace(/\d+/g, '').trim().split(' ').slice(0, 3).join(' ') : '-'}</TableCell>
+                      <TableCell className="text-gray-700">
                         {equipment.installation_date ? format(new Date(equipment.installation_date), 'dd/MM/yyyy') : '-'}
                       </TableCell>
                       <TableCell className="text-right">
