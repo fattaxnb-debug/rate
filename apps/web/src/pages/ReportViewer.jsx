@@ -65,14 +65,20 @@ export default function ReportViewer() {
         });
         const record = response.data.data;
 
-        const photosResponse = await axios.get(`${API_BASE_URL}/reports/${id}/photos`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }).catch(() => ({ data: { data: [] } }));
-        const manualPhotos = photosResponse.data.data || [];
+        // Usar fotos que já vêm do backend
+        const manualPhotos = record.photos || [];
 
+        console.log('[REPORT VIEWER DEBUG] Processing photos:', manualPhotos.length);
         const processedPhotos = await Promise.all(manualPhotos.map(async p => {
-          const url = p.photo_url || '';
-          const orientation = await getImageOrientation(url);
+          let url = p.photo_url || '';
+          
+          // 🔥 CORREÇÃO: Adicionar URL base do backend se não for base64 ou URL completa
+          if (url && !url.startsWith('http') && !url.startsWith('data:')) {
+            url = `http://localhost:3001${url.startsWith('/') ? '' : '/'}${url}`;
+          }
+          
+          console.log('[PHOTO DEBUG] Photo ID:', p.id, 'Final URL:', url.substring(0, 100) + '...');
+          const orientation = await getImageOrientation(url).catch(() => 'landscape');
           return {
             id: p.id,
             url,
@@ -83,6 +89,24 @@ export default function ReportViewer() {
         }));
 
         record.fetched_photos = processedPhotos;
+
+        // Buscar dados do equipamento
+        if (record.equipment_id) {
+          try {
+            const equipmentResponse = await axios.get(`${API_BASE_URL}/equipments/${record.equipment_id}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            record.expand = {
+              equipment_id: equipmentResponse.data.data
+            };
+          } catch (e) {
+            console.error('Error fetching equipment:', e);
+            record.expand = { equipment_id: {} };
+          }
+        } else {
+          record.expand = { equipment_id: {} };
+        }
+
         setReport(record);
 
         if (record.technician_id) {
@@ -166,6 +190,19 @@ export default function ReportViewer() {
     }
   };
 
+  const handleFinalize = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      await axios.put(`${API_BASE_URL}/reports/${id}/finalize`, {}, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      toast.success('Relatório finalizado com sucesso!');
+      fetchReport();
+    } catch (error) {
+      toast.error('Erro ao finalizar relatório');
+    }
+  };
+
   const valOrDash = val => {
     if (val === null || val === undefined || val === '') return '-';
     if (typeof val === 'number' && val === 0) return '-';
@@ -194,12 +231,19 @@ export default function ReportViewer() {
   };
 
   const renderElecBlock = (section, label) => {
-    // Usar tipo de tensão do equipamento do relatório
-    const eqData = report;
-    const isMono = eqData.equipment_voltage_type === 'MONOFÁSICA';
-    const isTri = eqData.equipment_voltage_type === 'TRIFÁSICA';
-    const isTriMono = eqData.equipment_voltage_type === 'TRIMONO';
+    // Usar tipo de tensão do equipamento
+    const eqData = report.expand?.equipment_id || {};
+    const voltageType = eqData.voltage_type || report.equipment_voltage_type || '';
+    const isMono = voltageType === 'MONOFÁSICA';
+    const isTri = voltageType === 'TRIFÁSICA';
+    const isTriMono = voltageType === 'TRIMONO';
     const labelColor = colorMode === 'color' ? '#E31E24' : '#000000';
+
+    // Acessar dados do JSON electrical_measurements
+    const elecData = report.electrical_measurements || {};
+    const sectionData = elecData[section] || { tensions: {}, currents: {} };
+    const tensions = sectionData.tensions || {};
+    const currents = sectionData.currents || {};
 
     // Mostrar campos baseados no tipo de tensão
     const showMonoFields = (isMono || (section === 'saida' && isTriMono));
@@ -211,11 +255,11 @@ export default function ReportViewer() {
         
         {showMonoFields && (
           <div className="space-y-2 text-sm">
-            {renderField('Tensão F/N (V)', section === 'entrada' ? report.input_voltage_l_n : report.output_voltage_l_n)}
-            {renderField('Tensão N/T (V)', section === 'entrada' ? report.input_voltage_n_t : report.output_voltage_n_t)}
-            {renderField('Corrente Fase (A)', section === 'entrada' ? report.input_current_l : report.output_current_l)}
-            {renderField('Corrente Neutro (A)', section === 'entrada' ? report.input_current_n : report.output_current_n)}
-            {renderField('Corrente Terra (A)', section === 'entrada' ? report.input_current_t : report.output_current_t)}
+            {renderField('Tensão F/N (V)', tensions.single)}
+            {renderField('Tensão N/T (V)', tensions.nt)}
+            {renderField('Corrente Fase (A)', currents.single)}
+            {renderField('Corrente Neutro (A)', currents.neutral)}
+            {section === 'entrada' && renderField('Corrente Terra (A)', currents.ground)}
           </div>
         )}
 
@@ -224,23 +268,23 @@ export default function ReportViewer() {
             <div className="field-group">
               <span className="font-bold block mb-2" style={{ color: labelColor }}>Tensões (V):</span>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {renderField('R-S', section === 'entrada' ? report.input_voltage_l1_l2 : report.output_voltage_l1_l2)}
-                {renderField('S-T', section === 'entrada' ? report.input_voltage_l2_l3 : report.output_voltage_l2_l3)}
-                {renderField('R-T', section === 'entrada' ? report.input_voltage_l3_l1 : report.output_voltage_l3_l1)}
-                {renderField('R-N', section === 'entrada' ? report.input_voltage_l1_n : report.output_voltage_l1_n)}
-                {renderField('S-N', section === 'entrada' ? report.input_voltage_l2_n : report.output_voltage_l2_n)}
-                {renderField('T-N', section === 'entrada' ? report.input_voltage_l3_n : report.output_voltage_l3_n)}
-                {renderField('N-T', section === 'entrada' ? report.input_voltage_n_t : report.output_voltage_n_t)}
+                {renderField('R-S', tensions.rs)}
+                {renderField('S-T', tensions.st)}
+                {renderField('R-T', tensions.rt)}
+                {renderField('R-N', tensions.rn)}
+                {renderField('S-N', tensions.sn)}
+                {renderField('T-N', tensions.tn)}
+                {renderField('N-T', tensions.nt)}
               </div>
             </div>
             <div className="field-group">
               <span className="font-bold block mb-2" style={{ color: labelColor }}>Correntes (A):</span>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {renderField('R', section === 'entrada' ? report.input_current_l1 : report.output_current_l1)}
-                {renderField('S', section === 'entrada' ? report.input_current_l2 : report.output_current_l2)}
-                {renderField('T', section === 'entrada' ? report.input_current_l3 : report.output_current_l3)}
-                {renderField('N', section === 'entrada' ? report.input_current_n : report.output_current_n)}
-                {renderField('Terra', section === 'entrada' ? report.input_current_t : report.output_current_t)}
+                {renderField('R', currents.r)}
+                {renderField('S', currents.s)}
+                {renderField('T', currents.t)}
+                {renderField('N', currents.neutral)}
+                {section === 'entrada' && renderField('Terra', currents.ground)}
               </div>
             </div>
           </div>
@@ -287,11 +331,14 @@ export default function ReportViewer() {
     email: report.client_email,
     technical_contact: report.client_technical_contact
   };
-  const technician = report.expand?.technician_id || {};
+  const technician = { name: report.technician_name, email: report.technician_email };
   const eqData = report.expand?.equipment_id || {};
   const bat = report.battery_bank || {};
   const photos = report.fetched_photos || [];
   const isSymmetric = eqData.symmetric === 'Sim';
+  const isNobreak = eqData.type === 'Nobreak';
+  const isBatteryMonitor = eqData.type === 'Monitor de Bateria';
+  const hasBattery = eqData.type === 'Nobreak' || eqData.type === 'Monitor de Bateria';
   const trocouBaterias = bat.trocou_baterias;
   const sectionTitleColor = colorMode === 'color' ? '#000000' : '#000000';
   const sectionBgColor = colorMode === 'color' ? '#FFD700' : '#f5f5f5';
@@ -341,6 +388,11 @@ export default function ReportViewer() {
                   Editar
                 </Button>
               )}
+              {report.status !== 'finalizado' && (isGerente || isTech) && (
+                <Button variant="default" onClick={handleFinalize} className="bg-green-500 hover:bg-green-600">
+                  Finalizar
+                </Button>
+              )}
               <Button variant="outline" onClick={handlePrint}>
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimir
@@ -356,19 +408,18 @@ export default function ReportViewer() {
           <div className="absolute left-[-9999px] top-[-9999px] print:hidden">
             {/* PAGE 1: Cover */}
             <div ref={coverRef} className="w-[210mm] h-[297mm] bg-white flex flex-col items-center justify-center p-12 text-center">
-              <div className="h-[120px] mb-16"></div>
-              <div className="w-24 h-1 mb-12 mx-auto" style={{
-                backgroundColor: colorMode === 'color' ? '#E31E24' : '#000000'
-              }}></div>
+              <div className="h-[60px] mb-4"></div>
+              {companySettings?.company_logo && <img src={companySettings.company_logo} crossOrigin="anonymous" alt="Logo" className="h-96 object-contain mb-8" />}
               <h2 className="text-3xl font-semibold mb-8 uppercase" style={{
                 color: '#000000'
-              }}>{report.service_type || 'Manutenção de Equipamentos'}</h2>
+              }}>RELATÓRIO TÉCNICO</h2>
               <div className="text-xl space-y-2" style={{
                 color: '#000000'
               }}>
                 <p>Cliente: <span className="font-bold">{valOrDash(client.name)}</span></p>
                 <p>Data: <span className="font-bold">{report.attendance_date_time ? format(new Date(report.attendance_date_time), 'dd/MM/yyyy') : report.created ? format(new Date(report.created), 'dd/MM/yyyy') : '-'}</span></p>
                 <p>O.S.: <span className="font-bold">{valOrDash(report.service_order_number)}</span></p>
+                <p>Técnico Responsável: <span className="font-bold">{valOrDash(technician.name)}</span></p>
               </div>
             </div>
 
@@ -385,12 +436,12 @@ export default function ReportViewer() {
                 <div className="text-right text-sm space-y-1">
                   <p className="uppercase text-xs font-semibold tracking-wider text-gray-500">Documento Oficial</p>
                   <p>O.S. Nº: <span className="font-bold">{valOrDash(report.service_order_number)}</span></p>
-                  <p>Data: <span className="font-bold">{report.created ? format(new Date(report.created), 'dd/MM/yyyy') : '-'}</span></p>
+                  <p>Data: <span className="font-bold">{report.created_date ? format(new Date(report.created_date), 'dd/MM/yyyy') : report.attendance_date_time ? format(new Date(report.attendance_date_time), 'dd/MM/yyyy') : '-'}</span></p>
                 </div>
               </div>
               <div className="space-y-8">
                 <section className="border border-border rounded-lg overflow-hidden">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Dados do Cliente</h2>
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Dados do Cliente</h2>
                   <div className="grid grid-cols-2 gap-4 p-5 text-sm bg-white">
                     {renderField('Razão Social', client.name)}
                     {renderField('Nome Fantasia', client.fantasy_name)}
@@ -406,43 +457,44 @@ export default function ReportViewer() {
                     {renderField('Telefone', client.phone)}
                     {renderField('Celular', client.mobile)}
                     {renderField('Contato Técnico', client.technical_contact)}
-                    {renderField('RG', client.rg)}
+                    {client.cnpj_cpf && client.cnpj_cpf.length <= 14 && renderField('RG', client.rg)}
                     {renderField('E-mail', client.email)}
                   </div>
                 </section>
                 <section className="border border-border rounded-lg overflow-hidden">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Equipamento</h2>
-                  <div className="grid grid-cols-3 gap-4 p-5 text-sm bg-white">
-                    {renderField('Tipo', eqData.equipment_type)}
-                    {renderField('Marca', eqData.equipment_brand)}
-                    {renderField('Modelo', eqData.equipment_model)}
-                    {renderField('Nº Série', eqData.equipment_serial)}
-                    {renderField('Tipo de Tensão', eqData.equipment_voltage_type)}
-                    {renderField('Potência (VA)', eqData.equipment_power_va)}
-                    {renderField('Tensão Entrada (V)', eqData.equipment_voltage_in)}
-                    {renderField('Tensão Saída (V)', eqData.equipment_voltage_out)}
-                    {renderField('Tensão Bateria (VDC)', eqData.equipment_voltage_battery)}
-                    {renderField('Tipo de Bateria', eqData.equipment_battery_type)}
-                    {renderField('Quantidade de Baterias', eqData.equipment_battery_quantity)}
-                    {renderField('Bateria Volts (VDC)', eqData.equipment_battery_volts)}
-                    {renderField('Corrente Bateria (AH/W)', eqData.equipment_battery_current)}
-                    {renderField('Conexão de Baterias', eqData.equipment_battery_connection)}
-                    {renderField('Terminal de Baterias', eqData.equipment_battery_terminal)}
-                    {renderField('Marca da Bateria', eqData.equipment_battery_brand)}
-                    {renderField('Modelo da Bateria', eqData.equipment_battery_model)}
-                    {renderField('Corrente Entrada (A)', eqData.current_in)}
-                    {renderField('Corrente Saída (A)', eqData.current_out)}
-                    {renderField('Certificação', eqData.certification)}
-                    {renderField('Capacidade (AH/W)', eqData.capacity_ah)}
-                    {renderField('Simétrico', eqData.equipment_symmetric)}
-                    {renderField('Isolado', eqData.equipment_isolated)}
-                    {renderField('Qtd. Sinalizadores', eqData.signalizers_quantity)}
-                    {renderField('IHM', eqData.ihm)}
-                    {renderField('Localizadores', eqData.localizadores)}
-                    {renderField('Cabo Com.', eqData.communication_cable_type)}
-                    {renderField('Fixação', eqData.fixation)}
-                    {renderField('Quantidade', eqData.quantity)}
-                    {eqData.installation_date && renderField('Data Inst.', format(new Date(eqData.installation_date), 'dd/MM/yyyy'))}
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Equipamento</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-5 text-sm bg-white">
+                    {renderField('Tipo', eqData.type)}
+                    {renderField('Marca', eqData.brand)}
+                    {renderField('Modelo', eqData.model)}
+                    {renderField('Número de Série', eqData.serial_number)}
+                    {eqData.installation_date && renderField('Data de Instalação', format(new Date(eqData.installation_date), 'dd/MM/yyyy'))}
+                    {renderField('Tipo de Tensão', eqData.voltage_type)}
+                    {renderField('Potência (VA)', eqData.power_va)}
+                    {renderField('Tensão Entrada (V)', eqData.voltage_in)}
+                    {renderField('Tensão Saída (V)', eqData.voltage_out)}
+                    {eqData.type === 'Nobreak' && renderField('Tensão Bateria (VDC)', eqData.voltage_battery)}
+                    {eqData.type === 'Nobreak' && renderField('Corrente Bateria', eqData.current_battery)}
+                    {eqData.type === 'Nobreak' && renderField('Tipo de Bateria', eqData.battery_type)}
+                    {eqData.type === 'Nobreak' && renderField('Quantidade de Baterias', eqData.battery_quantity)}
+                    {eqData.type === 'Nobreak' && renderField('Bateria Volts (VDC)', eqData.battery_volts)}
+                    {eqData.type === 'Nobreak' && renderField('Corrente Bateria (AH/W)', eqData.battery_current)}
+                    {eqData.type === 'Nobreak' && renderField('Conexão de Baterias', eqData.battery_connection)}
+                    {eqData.type === 'Nobreak' && renderField('Terminal de Baterias', eqData.battery_terminal)}
+                    {eqData.type === 'Nobreak' && renderField('Marca da Bateria', eqData.battery_brand)}
+                    {eqData.type === 'Nobreak' && renderField('Modelo da Bateria', eqData.battery_model)}
+                    {eqData.type === 'Nobreak' && renderField('Corrente Entrada (A)', eqData.current_in)}
+                    {eqData.type === 'Nobreak' && renderField('Corrente Saída (A)', eqData.current_out)}
+                    {eqData.type === 'Nobreak' && renderField('Certificação', eqData.certification)}
+                    {eqData.type === 'Nobreak' && renderField('Capacidade (AH/W)', eqData.capacity_ah)}
+                    {eqData.type === 'Nobreak' && renderField('Simétrico', eqData.symmetric)}
+                    {eqData.type === 'Nobreak' && renderField('Isolado', eqData.isolated)}
+                    {eqData.type === 'Nobreak' && renderField('Qtd. Sinalizadores', eqData.signalizers_quantity)}
+                    {eqData.type === 'Nobreak' && renderField('IHM', eqData.ihm)}
+                    {eqData.type === 'Nobreak' && renderField('Localizadores', eqData.localizadores)}
+                    {eqData.type === 'Nobreak' && renderField('Tipo de Cabo de Comunicação', eqData.communication_cable_type)}
+                    {eqData.type === 'Nobreak' && renderField('Fixação', eqData.fixation)}
+                    {eqData.type === 'Nobreak' && renderField('Quantidade', eqData.quantity)}
                   </div>
                 </section>
               </div>
@@ -452,21 +504,23 @@ export default function ReportViewer() {
             <div ref={infraElecBatRef} className="w-[210mm] min-h-[297mm] bg-white p-12 text-black">
               <div className="space-y-8">
                 <section className="border border-border rounded-lg overflow-hidden">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Infra-Instalação</h2>
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Infra-Instalação</h2>
                   <div className="grid grid-cols-3 gap-4 p-5 text-sm bg-white">
                     {renderField('Tipo de Serviço', report.service_type)}
                     {renderField('Ambiente Refrigerado', report.cooled_environment)}
                     {renderField('Local', report.installation_location)}
-                    {renderField('Alimentação', report.power_supply_type)}
-                    {renderField('Disjuntor', report.breaker)}
+                    {!isBatteryMonitor && renderField('Alimentação', report.power_supply_type)}
+                    {!isBatteryMonitor && renderField('DISJUNTOR', report.breaker)}
                   </div>
+                  {!isBatteryMonitor && (
                   <div className="grid grid-cols-3 gap-4 p-5 pt-0 text-sm bg-white border-t border-gray-100">
-                    {renderField('Cabo Entrada FASE (mm²)', report.cable_entry_phase)}
-                    {renderField('Cabo Entrada NEUTRO (mm²)', report.cable_entry_neutral)}
-                    {renderField('Cabo Entrada TERRA (mm²)', report.cable_entry_ground)}
-                    {renderField('Cabo Saída FASE (mm²)', report.cable_exit_phase)}
-                    {renderField('Cabo Saída NEUTRO (mm²)', report.cable_exit_neutral)}
+                    {renderField('CABO ENTRADA FASE (MM²)', report.cable_entry_phase)}
+                    {renderField('CABO ENTRADA NEUTRO (MM²)', report.cable_entry_neutral)}
+                    {renderField('CABO ENTRADA TERRA (MM²)', report.cable_entry_ground)}
+                    {renderField('CABO SAÍDA FASE (MM²)', report.cable_exit_phase)}
+                    {renderField('CABO SAÍDA NEUTRO (MM²)', report.cable_exit_neutral)}
                   </div>
+                  )}
                   {hasValue(report.external_battery_positive_cable) && (
                     <div className="grid grid-cols-3 gap-4 p-5 pt-0 text-sm bg-white border-t border-gray-100">
                       <h3 className="font-bold uppercase col-span-3" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Banco Externo</h3>
@@ -479,114 +533,154 @@ export default function ReportViewer() {
                   )}
                   {report.installation_location === 'Inadequado' && renderField('Motivo Local Inadequado', report.installation_location_explanation)}
                 </section>
+                {!isBatteryMonitor && (
                 <section className="border border-border rounded-lg overflow-hidden">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Medições Elétricas</h2>
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Medições Elétricas</h2>
                   <div className="p-5 space-y-6 bg-white">
                     <div className="grid grid-cols-2 gap-6 text-sm">
                       {renderElecBlock('entrada', 'Entrada')}
                       {renderElecBlock('saida', 'Saída')}
                     </div>
-                    <div className="grid grid-cols-3 gap-4 text-sm border-t pt-4">
-                      {renderField('Tensão Bateria Sem Carga (V)', report.battery_voltage_without_charge)}
-                      {renderField('Tensão Bateria Com Carga (V)', report.battery_voltage_with_charge)}
-                      {renderField('Corrente de Carga (A)', report.charging_current)}
-                    </div>
-                    <div className="grid grid-cols-5 gap-4 text-sm border-t pt-4">
-                      {renderField('Entrada', report.input_operation)}
-                      {renderField('Saída', report.output_operation)}
-                      {renderField('Estabilizado', report.stabilized)}
-                      {renderField('Inversor', report.inverter)}
-                      {renderField('Bypass', report.bypass)}
-                    </div>
-                    {bat && hasValue(bat.type) && (
+                    {hasBattery && bat && hasValue(bat.type) && (
                       <div className="mt-6 border-t pt-6">
                         <h3 className="font-bold uppercase mb-4 text-sm tracking-wide" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Banco de Baterias</h3>
                         <div className="grid grid-cols-3 gap-4 text-sm p-4 rounded-lg border border-gray-200 bg-white">
-                          {renderField('Banco de Baterias', bat.type)}
-                          {renderField('Quantidade Baterias', bat.quantity)}
-                          {renderField('Bateria Volts (VDC)', bat.battery_volts)}
-                          {renderField('Corrente Bateria (Ah/W)', bat.battery_current)}
-                          {renderField('Tensão do Banco +/- (VDC)', bat.voltage)}
-                          {renderField('Marca', bat.brand)}
-                          {renderField('Modelo', bat.model)}
-                          {renderField('Trocou Baterias', bat.trocou_baterias)}
+                          {!isBatteryMonitor && renderField('Banco de Baterias', bat.type)}
+                          {renderField('QUANTIDADE BATERIAS', bat.quantity)}
+                          {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
+                          {renderField('CORRENTE BATERIA (AH/W)', bat.battery_current)}
+                          {renderField('TENSÃO DO BANCO +/- (VDC)', bat.voltage)}
+                          {!isBatteryMonitor && bat.voltage_positive_neutral && renderField('Tensão Positivo/Neutro (VDC)', bat.voltage_positive_neutral)}
+                          {!isBatteryMonitor && bat.voltage_neutral_negative && renderField('Tensão Neutro/Negativo (VDC)', bat.voltage_neutral_negative)}
+                          {renderField('TENSÃO DO CARREGADOR (VDC)', bat.charger_voltage)}
+                          {renderField('MARCA', bat.brand)}
+                          {renderField('MODELO', bat.model)}
+                          {renderField('TROCOU BATERIAS', bat.trocou_baterias)}
+                          {!isBatteryMonitor && bat.trocou_baterias === 'Sim' && bat.last_change && renderField('Última Troca', bat.last_change)}
+                          {!isBatteryMonitor && bat.trocou_baterias === 'Não' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
                         </div>
                       </div>
                     )}
                   </div>
                 </section>
+                )}
               </div>
             </div>
 
             {/* PAGE 4: Description */}
             <div ref={descRef} className="w-[210mm] min-h-[297mm] bg-white p-12 text-black">
               <section className="border border-border rounded-lg overflow-hidden">
-                <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Descrição Técnica</h2>
+                <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Descrição Técnica</h2>
                 <div className="p-5 space-y-6 text-sm bg-white">
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Problemas Reportados</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.reported_problems || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Defeitos Identificados</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.identified_defects || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Procedimentos Realizados</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.procedures_performed || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Peças Substituídas</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.replaced_parts || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Solicitação de Peças</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.parts_request || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Observações</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.observations || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Inspeção Externa</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.external_inspection || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Inspeção Interna</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.internal_inspection || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Realizado no Atendimento</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.attendance_description || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Diagnóstico</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.diagnosis || ''}</div>
-                  </div>
-                  <div>
-                    <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Conclusão</span>
-                    <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.conclusion || ''}</div>
-                  </div>
+                  {report.reported_problems && report.reported_problems.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Problemas Reportados</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.reported_problems || ''}</div>
+                    </div>
+                  )}
+                  {report.identified_defects && report.identified_defects.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Defeitos Identificados</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.identified_defects || ''}</div>
+                    </div>
+                  )}
+                  {report.procedures_performed && report.procedures_performed.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Procedimentos Realizados</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.procedures_performed || ''}</div>
+                    </div>
+                  )}
+                  {report.replaced_parts && report.replaced_parts.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Peças Substituídas</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.replaced_parts || ''}</div>
+                    </div>
+                  )}
+                  {report.parts_request && report.parts_request.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Solicitação de Peças</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.parts_request || ''}</div>
+                    </div>
+                  )}
+                  {report.observations && report.observations.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Observações</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.observations || ''}</div>
+                    </div>
+                  )}
+                  {report.reported_problems && report.reported_problems.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>PROBLEMAS REPORTADOS</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.reported_problems || ''}</div>
+                    </div>
+                  )}
+                  {report.external_inspection && report.external_inspection.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>INSPEÇÃO EXTERNA</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.external_inspection || ''}</div>
+                    </div>
+                  )}
+                  {report.internal_inspection && report.internal_inspection.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>INSPEÇÃO INTERNA</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.internal_inspection || ''}</div>
+                    </div>
+                  )}
+                  {report.attendance_description && report.attendance_description.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>REALIZADO NO ATENDIMENTO</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.attendance_description || ''}</div>
+                    </div>
+                  )}
+                  {report.diagnosis && report.diagnosis.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>DIAGNÓSTICO / NECESSÁRIO</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.diagnosis || ''}</div>
+                    </div>
+                  )}
+                  {report.conclusion && report.conclusion.trim() !== '' && (
+                    <div>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>CONCLUSÃO / RESULTADO</span>
+                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.conclusion || ''}</div>
+                    </div>
+                  )}
                 </div>
               </section>
             </div>
 
             {/* PAGE 5+: Photos and Signatures Combined (for <= 15 photos) */}
-            <div ref={photosAndSignaturesRef} className="w-[210mm] min-h-[297mm] bg-white p-8 text-black flex flex-col gap-6">
+            <div ref={photosAndSignaturesRef} className="w-[210mm] bg-white p-8 text-black flex flex-col gap-6">
               <div ref={photosRef} className="w-full">
                 <section className="border border-border rounded-lg overflow-hidden">
                   <h2 className="border-b p-2 text-sm font-bold uppercase tracking-wide bg-[#FFD700] border-black text-black">Fotos</h2>
                   <div className="p-2 bg-white">
                     {photos.length > 0 ? (
-                      <div className="grid grid-cols-4 gap-1.5">
+                      <div className="grid grid-cols-2 gap-4">
                         {photos.map((p, i) => (
-                          <div key={p.id || i} className="border border-gray-300 p-1.5 rounded-md bg-white flex flex-col shadow-sm items-center">
-                            <img 
-                              src={p.url} 
-                              crossOrigin="anonymous" 
-                              alt={p.comment || `Foto ${i + 1}`} 
-                              className={p.orientation === 'portrait' ? "w-auto h-20 max-w-[100px] object-contain rounded-sm" : "w-full h-20 object-cover rounded-sm"} 
-                            />
+                          <div key={p.id || i} className="border border-gray-300 p-3 rounded-md bg-white flex flex-col shadow-sm items-center">
+                            {/* 🔥 DEBUG TEMPORÁRIO - Mostrar URL */}
+                            <p className="text-[8px] text-red-600 break-all mb-1 w-full">URL: {p.url.substring(0, 100)}...</p>
+                            {p.url ? (
+                              <img 
+                                src={p.url} 
+                                crossOrigin="anonymous" 
+                                alt={p.comment || `Foto ${i + 1}`} 
+                                className="w-full h-auto max-h-80 object-contain rounded-sm"
+                                style={{ 
+                                  imageRendering: '-webkit-optimize-contrast',
+                                  imageRendering: 'crisp-edges',
+                                  imageRendering: 'pixelated'
+                                }}
+                                onError={(e) => {
+                                  console.error('[PHOTO ERROR] Failed to load photo:', p.id, 'URL:', p.url);
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="h-20 w-full max-w-[100px] flex items-center justify-center bg-gray-100 rounded-sm">
+                                <span className="text-xs text-gray-400">Sem imagem</span>
+                              </div>
+                            )}
                             {p.comment && p.comment.trim() !== '' ? (
                               <div className="mt-1 flex-1 flex flex-col justify-start w-full h-auto min-h-min">
                                 <p className="text-[8px] text-gray-800 font-medium leading-tight text-center">{p.comment}</p>
@@ -611,26 +705,23 @@ export default function ReportViewer() {
                     <div className="grid grid-cols-2 gap-12 max-w-3xl mx-auto">
                       <div className="text-center flex flex-col items-center justify-end h-full">
                         {report.technician_signature ? (
-                          <img src={report.technician_signature} crossOrigin="anonymous" alt="Assinatura Técnico" className="h-20 object-contain mb-2" />
+                          <img src={report.technician_signature} crossOrigin="anonymous" alt="Assinatura Técnico" className="h-24 max-w-full object-contain mb-2" style={{ imageRendering: 'crisp-edges' }} />
                         ) : (
-                          <div className="h-20 w-full max-w-[200px] mb-2 bg-white rounded border border-dashed flex items-center justify-center">
+                          <div className="h-24 w-full max-w-[200px] mb-2 bg-white rounded border border-dashed flex items-center justify-center">
                             <span className="text-[10px] text-gray-400 uppercase tracking-widest">-</span>
                           </div>
                         )}
-                        <div className="border-t border-gray-400 pt-2 w-full max-w-[240px]">
-                          <p className="font-bold text-xs uppercase text-gray-900">{valOrDash(technician.name)}</p>
-                          <p className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold mt-1">Técnico Responsável</p>
-                        </div>
+                        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Técnico Responsável</p>
                       </div>
                       
                       <div className="text-center flex flex-col items-center justify-end h-full">
                         {report.client_signature ? (
-                          <div className="mb-2 h-20 flex items-center justify-center">
-                            <img src={report.client_signature} crossOrigin="anonymous" alt="Assinatura do Cliente" className="max-h-full max-w-full object-contain" />
+                          <div className="mb-2 h-24 flex items-center justify-center">
+                            <img src={report.client_signature} crossOrigin="anonymous" alt="Assinatura do Cliente" className="max-h-full max-w-full object-contain" style={{ imageRendering: 'crisp-edges' }} />
                           </div>
                         ) : (
-                          <div className="h-20 w-full max-w-[200px] mb-2 bg-white rounded border border-dashed flex items-center justify-center">
-                            <span className="text-[10px] text-gray-400 uppercase tracking-widest">Assinatura não capturada</span>
+                          <div className="h-24 w-full max-w-[200px] mb-2 bg-white rounded border border-dashed flex items-center justify-center">
+                            <span className="text-[10px] text-gray-400 uppercase tracking-widest">-</span>
                           </div>
                         )}
                         <div className="border-t border-gray-400 pt-2 w-full max-w-[240px]">
@@ -664,21 +755,17 @@ export default function ReportViewer() {
                     }}>{report.service_type || 'Manutenção de Equipamentos'}</p>
                   </div>
                 </div>
-                <div className="text-right text-sm space-y-1" style={{
-                  color: '#000000'
-                }}>
-                  <p className="uppercase text-xs font-semibold tracking-wider" style={{
-                    color: '#666666'
-                  }}>Documento Oficial</p>
+                <div className="text-right text-sm space-y-1" style={{ textAlign: 'right' }}>
+                  <p className="uppercase text-xs font-semibold tracking-wider" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Documento Oficial</p>
                   <p>O.S. Nº: <span className="font-bold">{valOrDash(report.service_order_number)}</span></p>
-                  <p>Data: <span className="font-bold">{report.created ? format(new Date(report.created), 'dd/MM/yyyy') : '-'}</span></p>
+                  <p>Data: <span className="font-bold">{report.created_date ? format(new Date(report.created_date), 'dd/MM/yyyy') : report.attendance_date_time ? format(new Date(report.attendance_date_time), 'dd/MM/yyyy') : '-'}</span></p>
                   <p>Técnico Responsável: <span className="font-bold">{valOrDash(technician.name)}</span></p>
                 </div>
               </div>
 
               <div className="space-y-8">
                 <section className="border border-border rounded-lg overflow-hidden report-section">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{
                     backgroundColor: sectionBgColor,
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
@@ -698,13 +785,13 @@ export default function ReportViewer() {
                     {renderField('Telefone', client.phone)}
                     {renderField('Celular', client.mobile)}
                     {renderField('Contato Técnico', client.technical_contact)}
-                    {renderField('RG', client.rg)}
+                    {client.cnpj_cpf && client.cnpj_cpf.length <= 14 && renderField('RG', client.rg)}
                     {renderField('E-mail', client.email)}
                   </div>
                 </section>
 
                 <section className="border border-border rounded-lg overflow-hidden report-section">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{
                     backgroundColor: sectionBgColor,
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
@@ -718,35 +805,34 @@ export default function ReportViewer() {
                     {renderField('Potência', eqData.power_va, ' VA')}
                     {renderField('Tensão In', eqData.voltage_in, 'V')}
                     {renderField('Tensão Out', eqData.voltage_out, 'V')}
-                    {renderField('Tensão Bat', eqData.voltage_battery, 'V')}
-                    {renderField('Corrente Bat', eqData.current_battery, 'A')}
-                    {renderField('Tipo Bat', eqData.battery_type)}
-                    {renderField('Qtd Bat', eqData.battery_quantity)}
-                    {renderField('Corrente In', eqData.current_in, 'A')}
-                    {renderField('Corrente Out', eqData.current_out, 'A')}
-                    {renderField('Capacidade (AH)', eqData.capacity_ah)}
-                    {renderField('Certificação', eqData.certification)}
-                    {renderField('Simétrico', eqData.symmetric)}
-                    {renderField('Isolado', eqData.isolated)}
-                    {renderField('Qtd Sinalizadores', eqData.signalizers_quantity)}
-                    {renderField('IHM', eqData.ihm)}
-                    {renderField('Localizadores', eqData.localizadores)}
-                    {renderField('Cabo Com.', eqData.communication_cable_type)}
-                    {renderField('Fixação', eqData.fixation)}
-                    {renderField('Quantidade', eqData.quantity)}
+                    {eqData.type === 'Nobreak' && renderField('Tensão Bat', eqData.voltage_battery, 'V')}
+                    {eqData.type === 'Nobreak' && renderField('Corrente Bat', eqData.current_battery, 'A')}
+                    {eqData.type === 'Nobreak' && renderField('Tipo Bat', eqData.battery_type)}
+                    {eqData.type === 'Nobreak' && renderField('Qtd Bat', eqData.battery_quantity)}
+                    {eqData.type === 'Nobreak' && renderField('Bateria Volts (VDC)', eqData.battery_volts)}
+                    {eqData.type === 'Nobreak' && renderField('Corrente Bateria (AH/W)', eqData.battery_current)}
+                    {eqData.type === 'Nobreak' && renderField('Conexão Bat', eqData.battery_connection)}
+                    {eqData.type === 'Nobreak' && renderField('Terminal Bat', eqData.battery_terminal)}
+                    {eqData.type === 'Nobreak' && renderField('Marca Bat', eqData.battery_brand)}
+                    {eqData.type === 'Nobreak' && renderField('Modelo Bat', eqData.battery_model)}
+                    {eqData.type === 'Nobreak' && renderField('Corrente In', eqData.current_in, 'A')}
+                    {eqData.type === 'Nobreak' && renderField('Corrente Out', eqData.current_out, 'A')}
+                    {eqData.type === 'Nobreak' && renderField('Capacidade (AH)', eqData.capacity_ah)}
+                    {eqData.type === 'Nobreak' && renderField('Certificação', eqData.certification)}
+                    {eqData.type === 'Nobreak' && renderField('Simétrico', eqData.symmetric)}
+                    {eqData.type === 'Nobreak' && renderField('Isolado', eqData.isolated)}
+                    {eqData.type === 'Nobreak' && renderField('Qtd Sinalizadores', eqData.signalizers_quantity)}
+                    {eqData.type === 'Nobreak' && renderField('IHM', eqData.ihm)}
+                    {eqData.type === 'Nobreak' && renderField('Localizadores', eqData.localizadores)}
+                    {eqData.type === 'Nobreak' && renderField('Cabo Com.', eqData.communication_cable_type)}
+                    {eqData.type === 'Nobreak' && renderField('Fixação', eqData.fixation)}
+                    {eqData.type === 'Nobreak' && renderField('Quantidade', eqData.quantity)}
                     {eqData.installation_date && renderField('Data Inst.', format(new Date(eqData.installation_date), 'dd/MM/yyyy'))}
-                    {renderField('Bateria Volts (VDC)', eqData.battery_volts)}
-                    {renderField('Corrente Bateria (AH/W)', eqData.battery_current)}
-                    {renderField('Conexão de Baterias', eqData.battery_connection)}
-                    {renderField('Terminal de Baterias', eqData.battery_terminal)}
-                    {renderField('Marca da Bateria', eqData.battery_brand)}
-                    {renderField('Modelo da Bateria', eqData.battery_model)}
-                    {renderField('Ambiente Refrigerado', eqData.cooled_environment)}
                   </div>
                 </section>
 
                 <section className="border border-border rounded-lg overflow-hidden report-section">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{
                     backgroundColor: sectionBgColor,
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
@@ -755,16 +841,18 @@ export default function ReportViewer() {
                     {renderField('Tipo de Serviço', report.service_type)}
                     {renderField('Ambiente Refrigerado', report.cooled_environment)}
                     {renderField('Local', report.installation_location)}
-                    {renderField('Alimentação', report.power_supply_type)}
-                    {renderField('Disjuntor', report.breaker)}
+                    {!isBatteryMonitor && renderField('Alimentação', report.power_supply_type)}
+                    {!isBatteryMonitor && renderField('DISJUNTOR', report.breaker)}
                   </div>
+                  {!isBatteryMonitor && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 pt-0 text-sm bg-white border-t border-gray-100">
-                    {renderField('Cabo Entrada FASE (mm²)', report.cable_entry_phase)}
-                    {renderField('Cabo Entrada NEUTRO (mm²)', report.cable_entry_neutral)}
-                    {renderField('Cabo Entrada TERRA (mm²)', report.cable_entry_ground)}
-                    {renderField('Cabo Saída FASE (mm²)', report.cable_exit_phase)}
-                    {renderField('Cabo Saída NEUTRO (mm²)', report.cable_exit_neutral)}
+                    {renderField('CABO ENTRADA FASE (MM²)', report.cable_entry_phase)}
+                    {renderField('CABO ENTRADA NEUTRO (MM²)', report.cable_entry_neutral)}
+                    {renderField('CABO ENTRADA TERRA (MM²)', report.cable_entry_ground)}
+                    {renderField('CABO SAÍDA FASE (MM²)', report.cable_exit_phase)}
+                    {renderField('CABO SAÍDA NEUTRO (MM²)', report.cable_exit_neutral)}
                   </div>
+                  )}
                   {hasValue(report.external_battery_positive_cable) && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 pt-0 text-sm bg-white border-t border-gray-100">
                       <h3 className="font-bold uppercase col-span-3" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Banco Externo</h3>
@@ -778,8 +866,9 @@ export default function ReportViewer() {
                   {report.installation_location === 'Inadequado' && renderField('Motivo Local Inadequado', report.installation_location_explanation)}
                 </section>
 
+                {!isBatteryMonitor && (
                 <section className="border border-border rounded-lg overflow-hidden report-section">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{
                     backgroundColor: sectionBgColor,
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
@@ -789,95 +878,69 @@ export default function ReportViewer() {
                       {renderElecBlock('entrada', 'Entrada')}
                       {renderElecBlock('saida', 'Saída')}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm border-t pt-4">
-                      {renderField('Tensão Bateria Sem Carga (V)', report.battery_voltage_without_charge)}
-                      {renderField('Tensão Bateria Com Carga (V)', report.battery_voltage_with_charge)}
-                      {renderField('Corrente de Carga (A)', report.charging_current)}
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm border-t pt-4">
-                      {renderField('Entrada', report.input_operation)}
-                      {renderField('Saída', report.output_operation)}
-                      {renderField('Estabilizado', report.stabilized)}
-                      {renderField('Inversor', report.inverter)}
-                      {renderField('Bypass', report.bypass)}
-                    </div>
 
-                    {bat && hasValue(bat.type) && (
+                    {hasBattery && bat && hasValue(bat.type) && (
                       <div className="mt-6 border-t pt-6 report-section battery-item">
                         <h3 className="font-bold uppercase mb-4 text-sm tracking-wide" style={{
                           color: colorMode === 'color' ? '#E31E24' : '#000000'
                         }}>Banco de Baterias</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm p-4 rounded-lg border border-gray-200 bg-white">
-                          {renderField('Banco de Baterias', bat.type)}
-                          {renderField('Quantidade Baterias', bat.quantity)}
-                          {renderField('Bateria Volts (VDC)', bat.battery_volts)}
-                          {renderField('Corrente Bateria (Ah/W)', bat.battery_current)}
-                          {renderField('Tensão do Banco +/- (VDC)', bat.voltage)}
-                          {renderField('Marca', bat.brand)}
-                          {renderField('Modelo', bat.model)}
-                          {renderField('Trocou Baterias', bat.trocou_baterias)}
+                          {!isBatteryMonitor && renderField('Banco de Baterias', bat.type)}
+                          {renderField('QUANTIDADE BATERIAS', bat.quantity)}
+                          {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
+                          {renderField('CORRENTE BATERIA (AH/W)', bat.battery_current)}
+                          {renderField('TENSÃO DO BANCO +/- (VDC)', bat.voltage)}
+                          {!isBatteryMonitor && bat.voltage_positive_neutral && renderField('Tensão Positivo/Neutro (VDC)', bat.voltage_positive_neutral)}
+                          {!isBatteryMonitor && bat.voltage_neutral_negative && renderField('Tensão Neutro/Negativo (VDC)', bat.voltage_neutral_negative)}
+                          {renderField('TENSÃO DO CARREGADOR (VDC)', bat.charger_voltage)}
+                          {renderField('MARCA', bat.brand)}
+                          {renderField('MODELO', bat.model)}
+                          {renderField('TROCOU BATERIAS', bat.trocou_baterias)}
+                          {!isBatteryMonitor && bat.trocou_baterias === 'Sim' && bat.last_change && renderField('Última Troca', bat.last_change)}
+                          {!isBatteryMonitor && bat.trocou_baterias === 'Não' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
                         </div>
                       </div>
                     )}
                   </div>
                 </section>
+                )}
 
                 <section className="border border-border rounded-lg overflow-hidden report-section">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{
                     backgroundColor: sectionBgColor,
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
                   }}>Descrição Técnica</h2>
                   <div className="p-5 space-y-6 text-sm bg-white">
                     <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Problemas Reportados</span>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>PROBLEMAS REPORTADOS</span>
                       <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.reported_problems || ''}</div>
                     </div>
                     <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Defeitos Identificados</span>
-                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.identified_defects || ''}</div>
-                    </div>
-                    <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Procedimentos Realizados</span>
-                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.procedures_performed || ''}</div>
-                    </div>
-                    <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Peças Substituídas</span>
-                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.replaced_parts || ''}</div>
-                    </div>
-                    <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Solicitação de Peças</span>
-                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.parts_request || ''}</div>
-                    </div>
-                    <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Observações</span>
-                      <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.observations || ''}</div>
-                    </div>
-                    <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Inspeção Externa</span>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>INSPEÇÃO EXTERNA</span>
                       <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.external_inspection || ''}</div>
                     </div>
                     <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Inspeção Interna</span>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>INSPEÇÃO INTERNA</span>
                       <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.internal_inspection || ''}</div>
                     </div>
                     <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Realizado no Atendimento</span>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>REALIZADO NO ATENDIMENTO</span>
                       <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.attendance_description || ''}</div>
                     </div>
                     <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Diagnóstico</span>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>DIAGNÓSTICO / NECESSÁRIO</span>
                       <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.diagnosis || ''}</div>
                     </div>
                     <div className="field-group">
-                      <span className="block text-xs uppercase font-bold mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Conclusão</span>
+                      <span className="block text-xs uppercase font-black mb-1" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>CONCLUSÃO / RESULTADO</span>
                       <div className="p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap break-words font-medium text-black">{report.conclusion || ''}</div>
                     </div>
                   </div>
                 </section>
 
                 <section className="border border-border rounded-lg overflow-hidden report-section">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{
                     backgroundColor: sectionBgColor,
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
@@ -893,19 +956,26 @@ export default function ReportViewer() {
                             )}
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                               {chunk.map((p, i) => (
-                                <div key={p.id || i} className="border border-gray-200 p-2 rounded-lg bg-white flex flex-col shadow-sm photo-item items-center">
-                                  <img 
-                                    src={p.url} 
-                                    alt={p.comment || `Foto ${chunkIdx * 15 + i + 1}`} 
-                                    className={p.orientation === 'portrait' ? "w-auto h-48 max-w-[150px] object-contain rounded cursor-pointer hover:opacity-90 transition-opacity" : "w-full h-32 object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"} 
-                                    onClick={() => setZoomPhoto(p.url)} 
-                                  />
-                                  {p.photo_type && (
-                                    <span className="text-[10px] font-bold uppercase px-2 py-1 rounded mt-2 self-start" style={{
-                                      backgroundColor: colorMode === 'color' ? '#FFE5E5' : '#f5f5f5',
-                                      color: colorMode === 'color' ? '#E31E24' : '#000000'
-                                    }}>{p.photo_type}</span>
-                                  )}
+                                <div key={p.id || i} className="border border-gray-200 p-3 rounded-lg bg-white flex flex-col shadow-sm photo-item items-center">
+                                  <div className="relative aspect-[4/3] bg-gray-50 rounded overflow-hidden w-full">
+                                    <img 
+                                      src={p.url} 
+                                      alt={p.comment || `Foto ${chunkIdx * 15 + i + 1}`} 
+                                      className="w-full h-full object-contain"
+                                      style={{ 
+                                        imageRendering: '-webkit-optimize-contrast',
+                                        imageRendering: 'crisp-edges',
+                                        imageRendering: 'pixelated',
+                                        maxHeight: '100%',
+                                        maxWidth: '100%'
+                                      }}
+                                      onClick={() => setZoomPhoto(p.url)}
+                                      onError={(e) => {
+                                        console.error('[PHOTO ERROR] Failed to load photo:', p.id, 'URL:', p.url);
+                                        e.target.src = 'https://via.placeholder.com/400x300/ccc/666?text=Erro+na+Imagem';
+                                      }}
+                                    />
+                                  </div>
                                   {p.comment && p.comment.trim() !== '' ? (
                                     <div className="photo-comment mt-2 h-auto min-h-min break-words w-full">
                                       <p className="text-xs text-gray-700 font-medium leading-tight text-center">{p.comment}</p>
@@ -927,7 +997,7 @@ export default function ReportViewer() {
                 </section>
 
                 <section className="border border-border rounded-lg overflow-hidden report-section signatures-section">
-                  <h2 className="border-b p-3 text-sm font-bold uppercase tracking-wide" style={{
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{
                     backgroundColor: sectionBgColor,
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
@@ -936,9 +1006,9 @@ export default function ReportViewer() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-3xl mx-auto">
                       <div className="text-center flex flex-col items-center justify-end h-full">
                         {report.technician_signature ? (
-                          <img src={report.technician_signature} alt="Assinatura Técnico" className="h-28 object-contain mb-4" />
+                          <img src={report.technician_signature} alt="Assinatura Técnico" className="h-32 max-w-full object-contain mb-4" style={{ imageRendering: 'crisp-edges' }} />
                         ) : (
-                          <div className="h-28 w-full max-w-[250px] mb-4 bg-white rounded border border-dashed flex items-center justify-center">
+                          <div className="h-32 w-full max-w-[250px] mb-4 bg-white rounded border border-dashed flex items-center justify-center">
                             <span className="text-xs text-gray-400 uppercase tracking-widest">-</span>
                           </div>
                         )}
@@ -950,11 +1020,11 @@ export default function ReportViewer() {
                       
                       <div className="text-center flex flex-col items-center justify-end h-full">
                         {report.client_signature ? (
-                          <div className="mb-4 h-28 flex items-center justify-center">
-                            <img src={report.client_signature} alt="Assinatura do Cliente" className="max-h-full max-w-full object-contain" />
+                          <div className="mb-4 h-32 flex items-center justify-center">
+                            <img src={report.client_signature} alt="Assinatura do Cliente" className="max-h-full max-w-full object-contain" style={{ imageRendering: 'crisp-edges' }} />
                           </div>
                         ) : (
-                          <div className="h-28 w-full max-w-[250px] mb-4 bg-white rounded border border-dashed flex items-center justify-center">
+                          <div className="h-32 w-full max-w-[250px] mb-4 bg-white rounded border border-dashed flex items-center justify-center">
                             <span className="text-xs text-gray-400 uppercase tracking-widest">Assinatura não capturada</span>
                           </div>
                         )}
@@ -984,8 +1054,8 @@ export default function ReportViewer() {
       </div>
 
       <Dialog open={!!zoomPhoto} onOpenChange={() => setZoomPhoto(null)}>
-        <DialogContent className="max-w-4xl p-1 bg-transparent border-none shadow-none">
-          {zoomPhoto && <img src={zoomPhoto} alt="Foto Ampliada" className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl bg-white/5 backdrop-blur-sm p-1" />}
+        <DialogContent className="max-w-6xl p-1 bg-transparent border-none shadow-none">
+          {zoomPhoto && <img src={zoomPhoto} alt="Foto Ampliada" className="w-full h-auto max-h-[90vh] object-contain rounded-lg shadow-2xl bg-white" style={{ imageRendering: 'crisp-edges' }} />}
         </DialogContent>
       </Dialog>
 

@@ -24,9 +24,9 @@ import EquipmentSelectionModal from '@/components/EquipmentSelectionModal.jsx';
 import ClientSignatureDisplay from '@/components/ClientSignatureDisplay.jsx';
 import { API_BASE_URL } from '@/config/api.js';
 
-const INSTALLATION_LOCATION_OPTIONS = ['Adequado', 'Inadequado'];
-const POWER_SUPPLY_TYPES = ['Circuito', 'Tomada', 'Tomada Industrial'];
-const BATTERY_TYPES = ['Interno', 'Externo'];
+const INSTALLATION_LOCATION_OPTIONS = ['ADEQUADO', 'INADEQUADO'];
+const POWER_SUPPLY_TYPES = ['CIRCUITO', 'TOMADA', 'TOMADA INDUSTRIAL'];
+const BATTERY_TYPES = ['INTERNO', 'EXTERNO'];
 const COOLED_ENV_OPTIONS = ['SIM', 'NÃO'];
 const BATTERY_CONNECTION_OPTIONS = ['CABOS', 'BARRA', 'CABOS E BARRAS'];
 const EXTERNAL_CONNECTION_OPTIONS = ['DISJUNTOR', 'BORNE', 'DIRETO'];
@@ -72,6 +72,12 @@ export default function ReportEditor() {
     diagnosis: '',
     conclusion: '',
     cooled_environment: '',
+    reported_problems: '',
+    identified_defects: '',
+    procedures_performed: '',
+    replaced_parts: '',
+    parts_request: '',
+    observations: '',
     external_battery_positive_cable: '',
     external_battery_negative_cable: '',
     external_battery_neutral_cable: '',
@@ -101,6 +107,7 @@ export default function ReportEditor() {
   const [selectedEquipmentData, setSelectedEquipmentData] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [zoomPhoto, setZoomPhoto] = useState(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const clientSigPad = useRef(null);
   const techSigPad = useRef(null);
 
@@ -121,6 +128,23 @@ export default function ReportEditor() {
       ]);
       
       const report = reportRes.data.data;
+      
+      // Buscar assinatura do técnico das configurações
+      let techSignatureFromSettings = '';
+      try {
+        const settingsRes = await axios.get(`${API_BASE_URL}/settings/user/${currentUser.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const settings = settingsRes.data.data || {};
+        
+        if (currentUser.email.includes('tiago') && settings.signature_tiago_viana) {
+          techSignatureFromSettings = settings.signature_tiago_viana;
+        } else if (currentUser.email.includes('tito') && settings.signature_tito_livio) {
+          techSignatureFromSettings = settings.signature_tito_livio;
+        }
+        
+        console.log('[REPORT EDITOR DEBUG] Technician signature from settings:', techSignatureFromSettings ? 'Found' : 'Not found');
+      } catch (e) {
+        console.log('[REPORT EDITOR DEBUG] Error fetching settings:', e.message);
+      }
       
       // Access Control
       if (isTech && report.technician_id !== currentUser.id) {
@@ -155,6 +179,12 @@ export default function ReportEditor() {
         diagnosis: report.diagnosis || '',
         conclusion: report.conclusion || '',
         cooled_environment: report.cooled_environment || '',
+        reported_problems: report.reported_problems || '',
+        identified_defects: report.identified_defects || '',
+        procedures_performed: report.procedures_performed || '',
+        replaced_parts: report.replaced_parts || '',
+        parts_request: report.parts_request || '',
+        observations: report.observations || '',
         external_battery_positive_cable: report.external_battery_positive_cable || '',
         external_battery_negative_cable: report.external_battery_negative_cable || '',
         external_battery_neutral_cable: report.external_battery_neutral_cable || '',
@@ -176,7 +206,7 @@ export default function ReportEditor() {
           voltage_positive_neutral: '',
           voltage_neutral_negative: ''
         },
-        technician_signature: report.technician_signature || '',
+        technician_signature: report.technician_signature || techSignatureFromSettings || '',
         client_signature: report.client_signature || '',
         technician_edit_count: report.technician_edit_count || 0
       });
@@ -185,28 +215,40 @@ export default function ReportEditor() {
         setSelectedEquipmentData(report.expand.equipment_id);
       }
       
+      // Buscar dados do equipamento separadamente
+      if (report.equipment_id && !report.expand?.equipment_id) {
+        try {
+          console.log('[REPORT EDITOR DEBUG] Fetching equipment:', report.equipment_id);
+          const equipmentResponse = await axios.get(`${API_BASE_URL}/equipments/${report.equipment_id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          console.log('[REPORT EDITOR DEBUG] Equipment response:', equipmentResponse.data.data);
+          setSelectedEquipmentData(equipmentResponse.data.data);
+        } catch (e) {
+          console.error('[REPORT EDITOR DEBUG] Error fetching equipment:', e);
+          setSelectedEquipmentData(null);
+        }
+      }
+      
       if (report.client_id) {
         await fetchClientEquipments(report.client_id);
       }
       
-      const photoRes = await axios.get(`${API_BASE_URL}/report-photos?report_id=${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const photoRecords = photoRes.data.data || [];
-      
-      const processedPhotos = await Promise.all(photoRecords.map(async p => {
-        const url = p.photo_url;
-        const orientation = await getImageOrientation(url);
-        return {
-          id: p.id,
-          url,
-          comment: p.comment || '',
-          sequence: p.sequence || 0,
-          orientation
-        };
+      // Usar fotos do campo photos do relatório
+      const manualPhotos = report.photos || [];
+      console.log('[REPORT EDITOR DEBUG] Report object:', report);
+      console.log('[REPORT EDITOR DEBUG] Photos from backend:', manualPhotos.length, manualPhotos.map(p => ({ id: p.id, urlLength: p.photo_url?.length, hasUrl: !!p.photo_url })));
+      const processedPhotos = manualPhotos.map(p => ({
+        id: p.id,
+        url: p.photo_url || '',
+        comment: p.comment || '',
+        sequence: p.sequence || 0,
+        orientation: null
       }));
 
+      console.log('[REPORT EDITOR DEBUG] Processed photos:', processedPhotos.length);
       setPhotos(processedPhotos);
+      console.log('[REPORT EDITOR DEBUG] Photos state set to:', processedPhotos.length);
 
       if (report.technician_id && !report.technician_signature) {
         await handleTechnicianSignature(report.technician_id);
@@ -296,8 +338,11 @@ export default function ReportEditor() {
     return true;
   };
 
-  const hasBattery = selectedEquipmentData?.type === 'Nobreak';
-  const tabsOrder = ['equipment', 'installation', 'electrical', ...(hasBattery ? ['battery'] : []), 'attendance', 'photos', 'signatures'];
+  const hasBattery = selectedEquipmentData?.type === 'Nobreak' || selectedEquipmentData?.type === 'Monitor de Bateria';
+  const isBatteryMonitor = selectedEquipmentData?.type === 'Monitor de Bateria';
+  const tabsOrder = isBatteryMonitor 
+    ? ['equipment', 'installation', 'battery', 'attendance', 'photos', 'signatures']
+    : ['equipment', 'installation', 'electrical', ...(hasBattery ? ['battery'] : []), 'attendance', 'photos', 'signatures'];
 
   // ==================== RASCUNHO (PRE-SALVE) ====================
   const saveDraft = () => {
@@ -381,16 +426,17 @@ export default function ReportEditor() {
   };
 
   const handleFinalSave = async () => {
-    if (isReadOnly) return;
     if (!validateForm()) return;
     setSaving(true);
     
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('[REPORT EDITOR FRONTEND DEBUG] Fetching existing report:', id);
       const existingReportRes = await axios.get(`${API_BASE_URL}/reports/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const existingReport = existingReportRes.data.data;
+      console.log('[REPORT EDITOR FRONTEND DEBUG] Existing report:', existingReport);
       const finalStatus = 'submitted';
       
       let editCount = existingReport.technician_edit_count || 0;
@@ -417,10 +463,13 @@ export default function ReportEditor() {
         client_signature: clientSignatureToSave
       };
 
+      console.log('[REPORT EDITOR FRONTEND DEBUG] Payload size:', JSON.stringify(payload).length);
+      console.log('[REPORT EDITOR FRONTEND DEBUG] Sending PUT request to:', `${API_BASE_URL}/reports/${id}`);
       await axios.put(`${API_BASE_URL}/reports/${id}`, payload, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
+      // Salvar fotos na tabela report_photos
       for (const photo of photos) {
         if (photo.file && photo.id.startsWith('temp_')) {
           const formDataObj = new FormData();
@@ -428,6 +477,7 @@ export default function ReportEditor() {
           formDataObj.append('photo_url', photo.file);
           formDataObj.append('comment', photo.comment || '');
           if (photo.sequence) formDataObj.append('sequence', photo.sequence);
+          if (photo.photo_type) formDataObj.append('photo_type', photo.photo_type);
           await axios.post(`${API_BASE_URL}/report-photos`, formDataObj, {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
           });
@@ -476,13 +526,20 @@ export default function ReportEditor() {
     const files = Array.from(e.target.files);
     for (const file of files) {
       try {
-        const { file: compressedFile, dataUrl } = await compressImage(file, 800);
+        // Sem compressão para manter qualidade máxima original da foto
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        
         setPhotos(prev => [
           ...prev, 
           { 
             id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, 
             url: dataUrl, 
-            file: compressedFile, 
+            file: file, 
             comment: '',
             sequence: prev.length + 1
           }
@@ -582,20 +639,20 @@ export default function ReportEditor() {
       <div className="bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-[600px]">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col">
           <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto flex-nowrap shrink-0">
-            <TabsTrigger value="equipment" className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Settings2 className="w-4 h-4 mr-2"/> Equipamento</TabsTrigger>
-            <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Activity className="w-4 h-4 mr-2"/> Instalação</TabsTrigger>
-            <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Zap className="w-4 h-4 mr-2"/> Elétrica</TabsTrigger>
-            {hasBattery && <TabsTrigger value="battery" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Battery className="w-4 h-4 mr-2"/> Baterias</TabsTrigger>}
-            <TabsTrigger value="attendance" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><FileText className="w-4 h-4 mr-2"/> Descrição</TabsTrigger>
-            <TabsTrigger value="photos" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><ImageIcon className="w-4 h-4 mr-2"/> Fotos</TabsTrigger>
-            <TabsTrigger value="signatures" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><PenTool className="w-4 h-4 mr-2"/> Assinaturas</TabsTrigger>
+            <TabsTrigger value="equipment" className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Settings2 className="w-4 h-4 mr-2"/> EQUIPAMENTO</TabsTrigger>
+            <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Activity className="w-4 h-4 mr-2"/> INSTALAÇÃO</TabsTrigger>
+            {!isBatteryMonitor && <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Zap className="w-4 h-4 mr-2"/> ELÉTRICA</TabsTrigger>}
+            {hasBattery && <TabsTrigger value="battery" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Battery className="w-4 h-4 mr-2"/> BATERIAS</TabsTrigger>}
+            <TabsTrigger value="attendance" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><FileText className="w-4 h-4 mr-2"/> DESCRIÇÃO</TabsTrigger>
+            <TabsTrigger value="photos" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><ImageIcon className="w-4 h-4 mr-2"/> FOTOS</TabsTrigger>
+            <TabsTrigger value="signatures" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><PenTool className="w-4 h-4 mr-2"/> ASSINATURAS</TabsTrigger>
           </TabsList>
 
           <div className="p-6 md:p-8 flex-1">
             <TabsContent value="equipment" className="mt-0 space-y-6 h-full">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
                 <div className="space-y-2">
-                  <Label>Cliente <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">Cliente <span className="text-destructive">*</span></Label>
                   <Popover open={clientOpen} onOpenChange={(o) => { setClientOpen(o); if (!o) setClientSearchTerm(''); }}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" aria-expanded={clientOpen} className={cn("w-full justify-between font-normal text-left", !formData.client_id && validationErrors.length > 0 && "border-destructive")}>
@@ -627,7 +684,7 @@ export default function ReportEditor() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Técnico Responsável <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">Técnico Responsável <span className="text-destructive">*</span></Label>
                   <Select value={formData.technician_id} onValueChange={handleTechChange}>
                     <SelectTrigger className={cn(!formData.technician_id && validationErrors.length > 0 && "border-destructive")}>
                       <SelectValue placeholder="Selecione o técnico..." />
@@ -703,7 +760,7 @@ export default function ReportEditor() {
             <TabsContent value="installation" className="mt-0 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
                 <div className="space-y-2 md:col-span-2">
-                  <Label>Tipo de Serviço <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">Tipo de Serviço <span className="text-destructive">*</span></Label>
                   <Input 
                     value={formData.service_type} 
                     onChange={e => updateField('service_type', e.target.value.toUpperCase())} 
@@ -712,7 +769,7 @@ export default function ReportEditor() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Local da Instalação <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">Local da Instalação <span className="text-destructive">*</span></Label>
                   <Select value={formData.installation_location} onValueChange={(v) => updateField('installation_location', v)}>
                     <SelectTrigger className={cn(!formData.installation_location && validationErrors.length > 0 && "border-destructive")}>
                       <SelectValue placeholder="Selecione..." />
@@ -727,7 +784,7 @@ export default function ReportEditor() {
 
                 {formData.installation_location === 'Inadequado' && (
                   <div className="space-y-2 md:col-span-2">
-                    <Label>Motivo do Local Inadequado <span className="text-destructive">*</span></Label>
+                    <Label className="font-bold uppercase">Motivo do Local Inadequado <span className="text-destructive">*</span></Label>
                     <Textarea 
                       value={formData.installation_location_explanation} 
                       onChange={(e) => updateField('installation_location_explanation', e.target.value)}
@@ -737,8 +794,9 @@ export default function ReportEditor() {
                   </div>
                 )}
 
+                {!isBatteryMonitor && (
                 <div className="space-y-2">
-                  <Label>Tipo de Alimentação <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">TIPO DE ALIMENTAÇÃO <span className="text-destructive">*</span></Label>
                   <Select value={formData.power_supply_type} onValueChange={(v) => updateField('power_supply_type', v)}>
                     <SelectTrigger className={cn(!formData.power_supply_type && validationErrors.length > 0 && "border-destructive")}>
                       <SelectValue placeholder="Selecione..." />
@@ -750,39 +808,44 @@ export default function ReportEditor() {
                     </SelectContent>
                   </Select>
                 </div>
+                )}
 
+                {!isBatteryMonitor && (
+                <>
                 <div className="space-y-2">
-                  <Label>Disjuntor</Label>
+                  <Label className="font-bold uppercase">DISJUNTOR</Label>
                   <Input value={formData.breaker} onChange={(e) => updateField('breaker', e.target.value)} placeholder="Ex: 20A" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Cabos de Entrada - Fase (mm²)</Label>
+                  <Label className="font-bold uppercase">CABO ENTRADA FASE (MM²)</Label>
                   <Input type="number" value={formData.cable_entry_phase} onChange={(e) => updateField('cable_entry_phase', e.target.value)} placeholder="Ex: 2.5" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Cabos de Entrada - Neutro (mm²)</Label>
+                  <Label className="font-bold uppercase">CABO ENTRADA NEUTRO (MM²)</Label>
                   <Input type="number" value={formData.cable_entry_neutral} onChange={(e) => updateField('cable_entry_neutral', e.target.value)} placeholder="Ex: 2.5" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Cabos de Entrada - Terra (mm²)</Label>
+                  <Label className="font-bold uppercase">CABO ENTRADA TERRA (MM²)</Label>
                   <Input type="number" value={formData.cable_entry_ground} onChange={(e) => updateField('cable_entry_ground', e.target.value)} placeholder="Ex: 2.5" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Cabos de Saída - Fase (mm²)</Label>
+                  <Label className="font-bold uppercase">CABO SAÍDA FASE (MM²)</Label>
                   <Input type="number" value={formData.cable_exit_phase} onChange={(e) => updateField('cable_exit_phase', e.target.value)} placeholder="Ex: 2.5" />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Cabos de Saída - Neutro (mm²)</Label>
+                  <Label className="font-bold uppercase">CABO SAÍDA NEUTRO (MM²)</Label>
                   <Input type="number" value={formData.cable_exit_neutral} onChange={(e) => updateField('cable_exit_neutral', e.target.value)} placeholder="Ex: 2.5" />
                 </div>
+                </>
+                )}
 
                 <div className="space-y-2">
-                  <Label>Ambiente Refrigerado</Label>
+                  <Label className="font-bold uppercase">Ambiente Refrigerado</Label>
                   <Select value={formData.cooled_environment} onValueChange={(v) => updateField('cooled_environment', v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione..." />
@@ -808,53 +871,53 @@ export default function ReportEditor() {
                       <>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
-                            <Label>Tensão R-S (V)</Label>
+                            <Label className="font-bold uppercase">Tensão R-S (V)</Label>
                             <Input type="number" value={getElecValue('entrada', 'tensions', 'rs')} onChange={(e) => updateElectrical('entrada', 'tensions', 'rs', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão S-T (V)</Label>
+                            <Label className="font-bold uppercase">Tensão S-T (V)</Label>
                             <Input type="number" value={getElecValue('entrada', 'tensions', 'st')} onChange={(e) => updateElectrical('entrada', 'tensions', 'st', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão R-T (V)</Label>
+                            <Label className="font-bold uppercase">Tensão R-T (V)</Label>
                             <Input type="number" value={getElecValue('entrada', 'tensions', 'rt')} onChange={(e) => updateElectrical('entrada', 'tensions', 'rt', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão R-N (V)</Label>
+                            <Label className="font-bold uppercase">Tensão R-N (V)</Label>
                             <Input type="number" value={getElecValue('entrada', 'tensions', 'rn')} onChange={(e) => updateElectrical('entrada', 'tensions', 'rn', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão S-N (V)</Label>
+                            <Label className="font-bold uppercase">Tensão S-N (V)</Label>
                             <Input type="number" value={getElecValue('entrada', 'tensions', 'sn')} onChange={(e) => updateElectrical('entrada', 'tensions', 'sn', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão T-N (V)</Label>
+                            <Label className="font-bold uppercase">Tensão T-N (V)</Label>
                             <Input type="number" value={getElecValue('entrada', 'tensions', 'tn')} onChange={(e) => updateElectrical('entrada', 'tensions', 'tn', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão N-T (V)</Label>
+                            <Label className="font-bold uppercase">Tensão N-T (V)</Label>
                             <Input type="number" value={getElecValue('entrada', 'tensions', 'nt')} onChange={(e) => updateElectrical('entrada', 'tensions', 'nt', e.target.value)} />
                           </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
-                            <Label>Corrente R (A)</Label>
+                            <Label className="font-bold uppercase">Corrente R (A)</Label>
                             <Input type="number" value={getElecValue('entrada', 'currents', 'r')} onChange={(e) => updateElectrical('entrada', 'currents', 'r', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente S (A)</Label>
+                            <Label className="font-bold uppercase">Corrente S (A)</Label>
                             <Input type="number" value={getElecValue('entrada', 'currents', 's')} onChange={(e) => updateElectrical('entrada', 'currents', 's', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente T (A)</Label>
+                            <Label className="font-bold uppercase">Corrente T (A)</Label>
                             <Input type="number" value={getElecValue('entrada', 'currents', 't')} onChange={(e) => updateElectrical('entrada', 'currents', 't', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente Neutro (A)</Label>
+                            <Label className="font-bold uppercase">Corrente Neutro (A)</Label>
                             <Input type="number" value={getElecValue('entrada', 'currents', 'neutral')} onChange={(e) => updateElectrical('entrada', 'currents', 'neutral', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente Terra (A)</Label>
+                            <Label className="font-bold uppercase">Corrente Terra (A)</Label>
                             <Input type="number" value={getElecValue('entrada', 'currents', 'ground')} onChange={(e) => updateElectrical('entrada', 'currents', 'ground', e.target.value)} />
                           </div>
                         </div>
@@ -863,23 +926,23 @@ export default function ReportEditor() {
                       <>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Tensão F/N (V)</Label>
+                            <Label className="font-bold uppercase">Tensão F/N (V)</Label>
                             <Input type="number" value={getElecValue('entrada', 'tensions', 'single')} onChange={(e) => updateElectrical('entrada', 'tensions', 'single', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão N/T (V)</Label>
+                            <Label className="font-bold uppercase">Tensão N/T (V)</Label>
                             <Input type="number" value={getElecValue('entrada', 'tensions', 'nt')} onChange={(e) => updateElectrical('entrada', 'tensions', 'nt', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente Fase (A)</Label>
+                            <Label className="font-bold uppercase">Corrente Fase (A)</Label>
                             <Input type="number" value={getElecValue('entrada', 'currents', 'single')} onChange={(e) => updateElectrical('entrada', 'currents', 'single', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente Neutro (A)</Label>
+                            <Label className="font-bold uppercase">Corrente Neutro (A)</Label>
                             <Input type="number" value={getElecValue('entrada', 'currents', 'neutral')} onChange={(e) => updateElectrical('entrada', 'currents', 'neutral', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente Terra (A)</Label>
+                            <Label className="font-bold uppercase">Corrente Terra (A)</Label>
                             <Input type="number" value={getElecValue('entrada', 'currents', 'ground')} onChange={(e) => updateElectrical('entrada', 'currents', 'ground', e.target.value)} />
                           </div>
                         </div>
@@ -897,49 +960,49 @@ export default function ReportEditor() {
                       <>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
-                            <Label>Tensão R-S (V)</Label>
+                            <Label className="font-bold uppercase">Tensão R-S (V)</Label>
                             <Input type="number" value={getElecValue('saida', 'tensions', 'rs')} onChange={(e) => updateElectrical('saida', 'tensions', 'rs', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão S-T (V)</Label>
+                            <Label className="font-bold uppercase">Tensão S-T (V)</Label>
                             <Input type="number" value={getElecValue('saida', 'tensions', 'st')} onChange={(e) => updateElectrical('saida', 'tensions', 'st', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão R-T (V)</Label>
+                            <Label className="font-bold uppercase">Tensão R-T (V)</Label>
                             <Input type="number" value={getElecValue('saida', 'tensions', 'rt')} onChange={(e) => updateElectrical('saida', 'tensions', 'rt', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão R-N (V)</Label>
+                            <Label className="font-bold uppercase">Tensão R-N (V)</Label>
                             <Input type="number" value={getElecValue('saida', 'tensions', 'rn')} onChange={(e) => updateElectrical('saida', 'tensions', 'rn', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão S-N (V)</Label>
+                            <Label className="font-bold uppercase">Tensão S-N (V)</Label>
                             <Input type="number" value={getElecValue('saida', 'tensions', 'sn')} onChange={(e) => updateElectrical('saida', 'tensions', 'sn', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão T-N (V)</Label>
+                            <Label className="font-bold uppercase">Tensão T-N (V)</Label>
                             <Input type="number" value={getElecValue('saida', 'tensions', 'tn')} onChange={(e) => updateElectrical('saida', 'tensions', 'tn', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão N-T (V)</Label>
+                            <Label className="font-bold uppercase">Tensão N-T (V)</Label>
                             <Input type="number" value={getElecValue('saida', 'tensions', 'nt')} onChange={(e) => updateElectrical('saida', 'tensions', 'nt', e.target.value)} />
                           </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="space-y-2">
-                            <Label>Corrente R (A)</Label>
+                            <Label className="font-bold uppercase">Corrente R (A)</Label>
                             <Input type="number" value={getElecValue('saida', 'currents', 'r')} onChange={(e) => updateElectrical('saida', 'currents', 'r', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente S (A)</Label>
+                            <Label className="font-bold uppercase">Corrente S (A)</Label>
                             <Input type="number" value={getElecValue('saida', 'currents', 's')} onChange={(e) => updateElectrical('saida', 'currents', 's', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente T (A)</Label>
+                            <Label className="font-bold uppercase">Corrente T (A)</Label>
                             <Input type="number" value={getElecValue('saida', 'currents', 't')} onChange={(e) => updateElectrical('saida', 'currents', 't', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente Neutro (A)</Label>
+                            <Label className="font-bold uppercase">Corrente Neutro (A)</Label>
                             <Input type="number" value={getElecValue('saida', 'currents', 'neutral')} onChange={(e) => updateElectrical('saida', 'currents', 'neutral', e.target.value)} />
                           </div>
                         </div>
@@ -948,19 +1011,19 @@ export default function ReportEditor() {
                       <>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Tensão F/N (V)</Label>
+                            <Label className="font-bold uppercase">Tensão F/N (V)</Label>
                             <Input type="number" value={getElecValue('saida', 'tensions', 'single')} onChange={(e) => updateElectrical('saida', 'tensions', 'single', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Tensão N/T (V)</Label>
+                            <Label className="font-bold uppercase">Tensão N/T (V)</Label>
                             <Input type="number" value={getElecValue('saida', 'tensions', 'nt')} onChange={(e) => updateElectrical('saida', 'tensions', 'nt', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente Fase (A)</Label>
+                            <Label className="font-bold uppercase">Corrente Fase (A)</Label>
                             <Input type="number" value={getElecValue('saida', 'currents', 'single')} onChange={(e) => updateElectrical('saida', 'currents', 'single', e.target.value)} />
                           </div>
                           <div className="space-y-2">
-                            <Label>Corrente Neutro (A)</Label>
+                            <Label className="font-bold uppercase">Corrente Neutro (A)</Label>
                             <Input type="number" value={getElecValue('saida', 'currents', 'neutral')} onChange={(e) => updateElectrical('saida', 'currents', 'neutral', e.target.value)} />
                           </div>
                         </div>
@@ -974,8 +1037,9 @@ export default function ReportEditor() {
             {hasBattery && (
               <TabsContent value="battery" className="mt-0 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+                  {!isBatteryMonitor && (
                   <div className="space-y-2">
-                    <Label>Banco de Baterias</Label>
+                    <Label className="font-bold uppercase">Banco de Baterias</Label>
                     <Select value={formData.battery_bank.type} onValueChange={(v) => updateBattery('type', v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione..." />
@@ -987,58 +1051,59 @@ export default function ReportEditor() {
                       </SelectContent>
                     </Select>
                   </div>
+                  )}
 
                   <div className="space-y-2">
-                    <Label>Quantidade de Baterias</Label>
+                    <Label className="font-bold uppercase">QUANTIDADE DE BATERIAS</Label>
                     <Input type="number" value={formData.battery_bank.quantity} onChange={(e) => updateBattery('quantity', e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Bateria Volts (VDC)</Label>
+                    <Label className="font-bold uppercase">BATERIA VOLTS (VDC)</Label>
                     <Input type="number" value={formData.battery_bank.battery_volts} onChange={(e) => updateBattery('battery_volts', e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Corrente Bateria (Ah/W)</Label>
+                    <Label className="font-bold uppercase">CORRENTE BATERIA (AH/W)</Label>
                     <Input value={formData.battery_bank.battery_current} onChange={(e) => updateBattery('battery_current', e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Tensão do Banco +/- (VDC)</Label>
+                    <Label className="font-bold uppercase">TENSÃO DO BANCO +/- (VDC)</Label>
                     <Input type="number" value={formData.battery_bank.voltage} onChange={(e) => updateBattery('voltage', e.target.value)} />
                   </div>
 
-                  {isSymmetric && (
+                  {!isBatteryMonitor && isSymmetric && (
                     <>
                       <div className="space-y-2">
-                        <Label>Tensão do Banco +/N (VDC)</Label>
+                        <Label className="font-bold uppercase">Tensão do Banco +/N (VDC)</Label>
                         <Input type="number" value={formData.battery_bank.voltage_positive_neutral} onChange={(e) => updateBattery('voltage_positive_neutral', e.target.value)} />
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Tensão do Banco N/- (VDC)</Label>
+                        <Label className="font-bold uppercase">Tensão do Banco N/- (VDC)</Label>
                         <Input type="number" value={formData.battery_bank.voltage_neutral_negative} onChange={(e) => updateBattery('voltage_neutral_negative', e.target.value)} />
                       </div>
                     </>
                   )}
 
                   <div className="space-y-2">
-                    <Label>Tensão Carregador (VDC)</Label>
+                    <Label className="font-bold uppercase">TENSÃO CARREGADOR (VDC)</Label>
                     <Input type="number" value={formData.battery_bank.charger_voltage} onChange={(e) => updateBattery('charger_voltage', e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Marca</Label>
+                    <Label className="font-bold uppercase">MARCA</Label>
                     <Input value={formData.battery_bank.brand} onChange={(e) => updateBattery('brand', e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Modelo</Label>
+                    <Label className="font-bold uppercase">MODELO</Label>
                     <Input value={formData.battery_bank.model} onChange={(e) => updateBattery('model', e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Trocou Baterias?</Label>
+                    <Label className="font-bold uppercase">TROCOU BATERIAS?</Label>
                     <Select value={formData.battery_bank.trocou_baterias} onValueChange={(v) => updateBattery('trocou_baterias', v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione..." />
@@ -1050,39 +1115,39 @@ export default function ReportEditor() {
                     </Select>
                   </div>
 
-                  {formData.battery_bank.trocou_baterias === 'SIM' && (
+                  {!isBatteryMonitor && formData.battery_bank.trocou_baterias === 'SIM' && (
                     <div className="space-y-2">
-                      <Label>Data da Última Troca</Label>
+                      <Label className="font-bold uppercase">Data da Última Troca</Label>
                       <Input type="date" value={formData.battery_bank.last_change} onChange={(e) => updateBattery('last_change', e.target.value)} />
                     </div>
                   )}
 
-                  {formData.battery_bank.trocou_baterias === 'NÃO' && (
+                  {!isBatteryMonitor && formData.battery_bank.trocou_baterias === 'NÃO' && (
                     <div className="space-y-2 md:col-span-2">
-                      <Label>Motivo de Não Trocar</Label>
+                      <Label className="font-bold uppercase">Motivo de Não Trocar</Label>
                       <Textarea value={formData.battery_bank.motivo_nao_troca} onChange={(e) => updateBattery('motivo_nao_troca', e.target.value)} />
                     </div>
                   )}
 
-                  {formData.battery_bank.type === 'Externo' && (
+                  {!isBatteryMonitor && formData.battery_bank.type === 'Externo' && (
                     <>
                       <div className="space-y-2">
-                        <Label>Cabo Positivo Bat. Ext. (mm²)</Label>
+                        <Label className="font-bold uppercase">Cabo Positivo Bat. Ext. (mm²)</Label>
                         <Input type="number" value={formData.external_battery_positive_cable} onChange={(e) => updateField('external_battery_positive_cable', e.target.value)} />
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Cabo Negativo Bat. Ext. (mm²)</Label>
+                        <Label className="font-bold uppercase">Cabo Negativo Bat. Ext. (mm²)</Label>
                         <Input type="number" value={formData.external_battery_negative_cable} onChange={(e) => updateField('external_battery_negative_cable', e.target.value)} />
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Cabo Neutro Bat. Ext. (mm²)</Label>
+                        <Label className="font-bold uppercase">Cabo Neutro Bat. Ext. (mm²)</Label>
                         <Input type="number" value={formData.external_battery_neutral_cable} onChange={(e) => updateField('external_battery_neutral_cable', e.target.value)} />
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Conexão Bateria</Label>
+                        <Label className="font-bold uppercase">Conexão Bateria</Label>
                         <Select value={formData.external_battery_connection} onValueChange={(v) => updateField('external_battery_connection', v)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione..." />
@@ -1096,7 +1161,7 @@ export default function ReportEditor() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Conexão Nobreak</Label>
+                        <Label className="font-bold uppercase">Conexão Nobreak</Label>
                         <Select value={formData.external_battery_nobreak_connection} onValueChange={(v) => updateField('external_battery_nobreak_connection', v)}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione..." />
@@ -1117,32 +1182,61 @@ export default function ReportEditor() {
             <TabsContent value="attendance" className="mt-0 space-y-6">
               <div className="space-y-6 max-w-4xl">
                 <div className="space-y-2">
-                  <Label>Realizado no Atendimento</Label>
+                  <Label className="font-bold uppercase">PROBLEMAS REPORTADOS</Label>
+                  <Textarea 
+                    value={formData.reported_problems || ''} 
+                    onChange={(e) => updateField('reported_problems', e.target.value.toUpperCase())}
+                    placeholder="Descreva os problemas reportados..."
+                    rows={4}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">INSPEÇÃO EXTERNA</Label>
+                    <Textarea 
+                      value={formData.external_inspection} 
+                      onChange={(e) => updateField('external_inspection', e.target.value.toUpperCase())}
+                      placeholder="Descreva a inspeção externa..."
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">INSPEÇÃO INTERNA</Label>
+                    <Textarea 
+                      value={formData.internal_inspection} 
+                      onChange={(e) => updateField('internal_inspection', e.target.value.toUpperCase())}
+                      placeholder="Descreva a inspeção interna..."
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-bold uppercase">REALIZADO NO ATENDIMENTO</Label>
                   <Textarea 
                     value={formData.attendance_description} 
-                    onChange={(e) => updateField('attendance_description', e.target.value)}
+                    onChange={(e) => updateField('attendance_description', e.target.value.toUpperCase())}
                     placeholder="Descreva as atividades realizadas..."
-                    rows={6}
+                    rows={4}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Diagnóstico</Label>
+                  <Label className="font-bold uppercase">DIAGNÓSTICO / NECESSÁRIO</Label>
                   <Textarea 
                     value={formData.diagnosis} 
-                    onChange={(e) => updateField('diagnosis', e.target.value)}
+                    onChange={(e) => updateField('diagnosis', e.target.value.toUpperCase())}
                     placeholder="Descreva o diagnóstico técnico..."
-                    rows={6}
+                    rows={4}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Conclusão</Label>
+                  <Label className="font-bold uppercase">CONCLUSÃO / RESULTADO</Label>
                   <Textarea 
                     value={formData.conclusion} 
-                    onChange={(e) => updateField('conclusion', e.target.value)}
+                    onChange={(e) => updateField('conclusion', e.target.value.toUpperCase())}
                     placeholder="Conclusão do atendimento..."
-                    rows={6}
+                    rows={4}
                   />
                 </div>
               </div>
@@ -1281,7 +1375,7 @@ export default function ReportEditor() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Nome do Responsável</Label>
+                      <Label className="font-bold uppercase">Nome do Responsável</Label>
                       <Input 
                         value={formData.responsible_person} 
                         onChange={(e) => updateField('responsible_person', e.target.value)}
@@ -1290,7 +1384,7 @@ export default function ReportEditor() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Assinatura do Cliente</Label>
+                      <Label className="font-bold uppercase">Assinatura do Cliente</Label>
                       {formData.client_signature ? (
                         <div className="space-y-2">
                           <ClientSignatureDisplay signature={formData.client_signature} />

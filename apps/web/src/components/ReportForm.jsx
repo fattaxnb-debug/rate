@@ -116,10 +116,16 @@ export default function ReportForm() {
   const initForm = async () => {
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('[REPORT FORM DEBUG] API_BASE_URL:', API_BASE_URL);
+      console.log('[REPORT FORM DEBUG] Token:', token ? 'Present' : 'Missing');
+      console.log('[REPORT FORM DEBUG] Fetching clients from:', `${API_BASE_URL}/clients`);
+      console.log('[REPORT FORM DEBUG] Fetching technicians from:', `${API_BASE_URL}/users?role=Técnico`);
       const [clientsRes, techRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/clients`, { headers: { 'Authorization': `Bearer ${token}` } }),
         axios.get(`${API_BASE_URL}/users?role=Técnico`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
+      console.log('[REPORT FORM DEBUG] Clients response:', clientsRes.data);
+      console.log('[REPORT FORM DEBUG] Technicians response:', techRes.data);
       
       setClients(clientsRes.data.data || []);
       setTechnicians(techRes.data.data || []);
@@ -221,10 +227,6 @@ export default function ReportForm() {
     if (!formData.technician_id) errors.push('Selecione um Técnico Responsável.');
     if (!formData.equipment_id) errors.push('Selecione um equipamento.');
     
-    if (formData.equipment_id) {
-      if (!formData.service_type) errors.push('Informe o Tipo de Serviço.');
-    }
-    
     setValidationErrors(errors);
     if (errors.length > 0) {
       toast.error('Preencha os campos obrigatórios antes de salvar.');
@@ -233,11 +235,14 @@ export default function ReportForm() {
     return true;
   };
 
-  const hasBattery = selectedEquipmentData?.type === 'Nobreak';
+  const hasBattery = selectedEquipmentData?.type === 'Nobreak' || selectedEquipmentData?.type === 'Monitor de Bateria';
   const hasExternalBattery = selectedEquipmentData?.type === 'Nobreak' && selectedEquipmentData?.battery_type === 'Externo';
   const isSymmetric = selectedEquipmentData?.symmetric === 'Sim';
+  const isBatteryMonitor = selectedEquipmentData?.type === 'Monitor de Bateria';
   const trocouBaterias = formData.battery_bank.trocou_baterias;
-  const tabsOrder = ['equipment', 'installation', 'electrical', ...(hasBattery ? ['battery'] : []), 'attendance', 'photos', 'signatures'];
+  const tabsOrder = isBatteryMonitor 
+    ? ['equipment', 'installation', 'battery', 'attendance', 'photos', 'signatures']
+    : ['equipment', 'installation', 'electrical', ...(hasBattery ? ['battery'] : []), 'attendance', 'photos', 'signatures'];
 
   const handleNextTab = () => {
     const idx = tabsOrder.indexOf(activeTab);
@@ -326,6 +331,8 @@ export default function ReportForm() {
     if (!validateForm()) return;
     setSaving(true);
     
+    const isTecnico = currentUser?.role === 'Técnico';
+    
     const payload = { 
       ...formData,
       attendance_date_time: new Date().toISOString(),
@@ -335,7 +342,8 @@ export default function ReportForm() {
       external_battery_neutral_cable: formData.external_battery_neutral_cable || null,
       external_battery_connection: formData.external_battery_connection || null,
       external_battery_nobreak_connection: formData.external_battery_nobreak_connection || null,
-      technician_edit_count: 0
+      technician_edit_count: 0,
+      status: isTecnico ? 'finalizado' : 'draft'
     };
     
     try {
@@ -491,7 +499,7 @@ export default function ReportForm() {
           )}
         </div>
         <div className="space-y-2">
-          <Label>Data do Relatório</Label>
+          <Label className="font-bold uppercase">Data do Relatório</Label>
           <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full justify-start text-left font-normal" disabled={isReadOnly}>
@@ -529,20 +537,20 @@ export default function ReportForm() {
       <fieldset disabled={isReadOnly} className="bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-[600px] group">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
           <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto flex-nowrap shrink-0">
-            <TabsTrigger value="equipment" className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Settings2 className="w-4 h-4 mr-2"/> Equipamento</TabsTrigger>
-            <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Activity className="w-4 h-4 mr-2"/> Instalação</TabsTrigger>
-            <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Zap className="w-4 h-4 mr-2"/> Elétrica</TabsTrigger>
-            {hasBattery && <TabsTrigger value="battery" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Battery className="w-4 h-4 mr-2"/> Baterias</TabsTrigger>}
-            <TabsTrigger value="attendance" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><FileText className="w-4 h-4 mr-2"/> Descrição</TabsTrigger>
-            <TabsTrigger value="photos" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><ImageIcon className="w-4 h-4 mr-2"/> Fotos</TabsTrigger>
-            <TabsTrigger value="signatures" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><PenTool className="w-4 h-4 mr-2"/> Assinaturas</TabsTrigger>
+            <TabsTrigger value="equipment" className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Settings2 className="w-4 h-4 mr-2"/> EQUIPAMENTO</TabsTrigger>
+            <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Activity className="w-4 h-4 mr-2"/> INSTALAÇÃO</TabsTrigger>
+            {!isBatteryMonitor && <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Zap className="w-4 h-4 mr-2"/> ELÉTRICA</TabsTrigger>}
+            {hasBattery && <TabsTrigger value="battery" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Battery className="w-4 h-4 mr-2"/> BATERIAS</TabsTrigger>}
+            <TabsTrigger value="attendance" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><FileText className="w-4 h-4 mr-2"/> DESCRIÇÃO</TabsTrigger>
+            <TabsTrigger value="photos" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><ImageIcon className="w-4 h-4 mr-2"/> FOTOS</TabsTrigger>
+            <TabsTrigger value="signatures" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><PenTool className="w-4 h-4 mr-2"/> ASSINATURAS</TabsTrigger>
           </TabsList>
 
           <div className="p-6 md:p-8 flex-1">
             <TabsContent value="equipment" className="mt-0 space-y-6 h-full">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
                 <div className="space-y-2">
-                  <Label>Cliente <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">Cliente <span className="text-destructive">*</span></Label>
                   <Popover open={clientOpen} onOpenChange={(o) => { if(!isReadOnly) { setClientOpen(o); if (!o) setClientSearchTerm(''); } }}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" aria-expanded={clientOpen} className={cn("w-full justify-between font-normal text-left", !formData.client_id && validationErrors.length > 0 && "border-destructive")}>
@@ -574,7 +582,7 @@ export default function ReportForm() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Técnico Responsável <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">Técnico Responsável <span className="text-destructive">*</span></Label>
                   <Select value={formData.technician_id} onValueChange={handleTechChange} disabled={isReadOnly}>
                     <SelectTrigger className={cn(!formData.technician_id && validationErrors.length > 0 && "border-destructive")}>
                       <SelectValue placeholder="Selecione o técnico..." />
@@ -616,28 +624,28 @@ export default function ReportForm() {
                           {renderEquipmentField('Potência (VA)', selectedEquipmentData.power_va)}
                           {renderEquipmentField('Tensão Entrada (V)', selectedEquipmentData.voltage_in)}
                           {renderEquipmentField('Tensão Saída (V)', selectedEquipmentData.voltage_out)}
-                          {renderEquipmentField('Tensão Bateria (VDC)', selectedEquipmentData.voltage_battery)}
-                          {renderEquipmentField('Corrente Bateria', selectedEquipmentData.current_battery)}
-                          {renderEquipmentField('Tipo de Bateria', selectedEquipmentData.battery_type)}
-                          {renderEquipmentField('Quantidade de Baterias', selectedEquipmentData.battery_quantity)}
-                          {renderEquipmentField('Bateria Volts (VDC)', selectedEquipmentData.battery_volts)}
-                          {renderEquipmentField('Corrente Bateria (AH/W)', selectedEquipmentData.battery_current)}
-                          {renderEquipmentField('Conexão de Baterias', selectedEquipmentData.battery_connection)}
-                          {renderEquipmentField('Terminal de Baterias', selectedEquipmentData.battery_terminal)}
-                          {renderEquipmentField('Marca da Bateria', selectedEquipmentData.battery_brand)}
-                          {renderEquipmentField('Modelo da Bateria', selectedEquipmentData.battery_model)}
-                          {renderEquipmentField('Corrente Entrada (A)', selectedEquipmentData.current_in)}
-                          {renderEquipmentField('Corrente Saída (A)', selectedEquipmentData.current_out)}
-                          {renderEquipmentField('Certificação', selectedEquipmentData.certification)}
-                          {renderEquipmentField('Capacidade (AH/W)', selectedEquipmentData.capacity_ah)}
-                          {renderEquipmentField('Simétrico', selectedEquipmentData.symmetric)}
-                          {renderEquipmentField('Isolado', selectedEquipmentData.isolated)}
-                          {renderEquipmentField('Qtd. Sinalizadores', selectedEquipmentData.signalizers_quantity)}
-                          {renderEquipmentField('IHM', selectedEquipmentData.ihm)}
-                          {renderEquipmentField('Localizadores', selectedEquipmentData.localizadores)}
-                          {renderEquipmentField('Tipo de Cabo de Comunicação', selectedEquipmentData.communication_cable_type)}
-                          {renderEquipmentField('Fixação', selectedEquipmentData.fixation)}
-                          {renderEquipmentField('Quantidade', selectedEquipmentData.quantity)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Tensão Bateria (VDC)', selectedEquipmentData.voltage_battery)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Bateria', selectedEquipmentData.current_battery)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Tipo de Bateria', selectedEquipmentData.battery_type)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Quantidade de Baterias', selectedEquipmentData.battery_quantity)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Bateria Volts (VDC)', selectedEquipmentData.battery_volts)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Bateria (AH/W)', selectedEquipmentData.battery_current)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Conexão de Baterias', selectedEquipmentData.battery_connection)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Terminal de Baterias', selectedEquipmentData.battery_terminal)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Marca da Bateria', selectedEquipmentData.battery_brand)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Modelo da Bateria', selectedEquipmentData.battery_model)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Entrada (A)', selectedEquipmentData.current_in)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Saída (A)', selectedEquipmentData.current_out)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Certificação', selectedEquipmentData.certification)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Capacidade (AH/W)', selectedEquipmentData.capacity_ah)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Simétrico', selectedEquipmentData.symmetric)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Isolado', selectedEquipmentData.isolated)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Qtd. Sinalizadores', selectedEquipmentData.signalizers_quantity)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('IHM', selectedEquipmentData.ihm)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Localizadores', selectedEquipmentData.localizadores)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Tipo de Cabo de Comunicação', selectedEquipmentData.communication_cable_type)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Fixação', selectedEquipmentData.fixation)}
+                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Quantidade', selectedEquipmentData.quantity)}
                           {renderEquipmentField('Ambiente Refrigerado', selectedEquipmentData.cooled_environment)}
                         </div>
 
@@ -663,41 +671,42 @@ export default function ReportForm() {
             <TabsContent value="installation" className="mt-0 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2 md:col-span-2 lg:col-span-3">
-                  <Label>Tipo de Serviço <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">Tipo de Serviço</Label>
                   <Input 
                     value={formData.service_type} 
                     onChange={e => updateField('service_type', e.target.value.toUpperCase())} 
                     placeholder="Ex: Manutenção Preventiva, Instalação..."
-                    className={cn(!formData.service_type && validationErrors.length > 0 && "border-destructive")}
                     disabled={isReadOnly} 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Ambiente Refrigerado</Label>
+                  <Label className="font-bold uppercase">Ambiente Refrigerado</Label>
                   <Select value={formData.cooled_environment} onValueChange={(v) => updateField('cooled_environment', v)} disabled={isReadOnly}>
                     <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>{COOLED_ENV_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Local da Instalação <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">LOCAL DA INSTALAÇÃO <span className="text-destructive">*</span></Label>
                   <Select value={formData.installation_location} onValueChange={(v) => updateField('installation_location', v)} disabled={isReadOnly}>
                     <SelectTrigger className={cn(!formData.installation_location && validationErrors.length > 0 && "border-destructive")}><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>{INSTALLATION_LOCATION_OPTIONS.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                {!isBatteryMonitor && (
                 <div className="space-y-2">
-                  <Label>Tipo de Alimentação <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">TIPO DE ALIMENTAÇÃO <span className="text-destructive">*</span></Label>
                   <Select value={formData.power_supply_type} onValueChange={(v) => updateField('power_supply_type', v)} disabled={isReadOnly}>
                     <SelectTrigger className={cn(!formData.power_supply_type && validationErrors.length > 0 && "border-destructive")}><SelectValue placeholder="Selecione..." /></SelectTrigger>
                     <SelectContent>{POWER_SUPPLY_TYPES.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                )}
               </div>
 
               {formData.installation_location === 'Inadequado' && (
                 <div className="space-y-2">
-                  <Label>Motivo do Local Inadequado <span className="text-destructive">*</span></Label>
+                  <Label className="font-bold uppercase">Motivo do Local Inadequado <span className="text-destructive">*</span></Label>
                   <Textarea 
                     value={formData.installation_location_explanation} 
                     onChange={e => updateField('installation_location_explanation', e.target.value.toUpperCase())} 
@@ -708,14 +717,16 @@ export default function ReportForm() {
                 </div>
               )}
 
+              {!isBatteryMonitor && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 border-t border-border">
-                <div className="space-y-2"><Label>Disjuntor</Label><Input value={formData.breaker} onChange={e => updateField('breaker', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
-                <div className="space-y-2"><Label>Cabo Entrada FASE (mm²)</Label><Input type="number" value={formData.cable_entry_phase} onChange={e => updateField('cable_entry_phase', e.target.value)} disabled={isReadOnly} /></div>
-                <div className="space-y-2"><Label>Cabo Entrada NEUTRO (mm²)</Label><Input type="number" value={formData.cable_entry_neutral} onChange={e => updateField('cable_entry_neutral', e.target.value)} disabled={isReadOnly} /></div>
-                <div className="space-y-2"><Label>Cabo Entrada TERRA (mm²)</Label><Input type="number" value={formData.cable_entry_ground} onChange={e => updateField('cable_entry_ground', e.target.value)} disabled={isReadOnly} /></div>
-                <div className="space-y-2"><Label>Cabo Saída FASE (mm²)</Label><Input type="number" value={formData.cable_exit_phase} onChange={e => updateField('cable_exit_phase', e.target.value)} disabled={isReadOnly} /></div>
-                <div className="space-y-2"><Label>Cabo Saída NEUTRO (mm²)</Label><Input type="number" value={formData.cable_exit_neutral} onChange={e => updateField('cable_exit_neutral', e.target.value)} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">DISJUNTOR</Label><Input value={formData.breaker} onChange={e => updateField('breaker', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">CABO ENTRADA FASE (MM²)</Label><Input type="number" value={formData.cable_entry_phase} onChange={e => updateField('cable_entry_phase', e.target.value)} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">CABO ENTRADA NEUTRO (MM²)</Label><Input type="number" value={formData.cable_entry_neutral} onChange={e => updateField('cable_entry_neutral', e.target.value)} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">CABO ENTRADA TERRA (MM²)</Label><Input type="number" value={formData.cable_entry_ground} onChange={e => updateField('cable_entry_ground', e.target.value)} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">CABO SAÍDA FASE (MM²)</Label><Input type="number" value={formData.cable_exit_phase} onChange={e => updateField('cable_exit_phase', e.target.value)} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">CABO SAÍDA NEUTRO (MM²)</Label><Input type="number" value={formData.cable_exit_neutral} onChange={e => updateField('cable_exit_neutral', e.target.value)} disabled={isReadOnly} /></div>
               </div>
+              )}
 
               {hasExternalBattery && (
                 <div className="space-y-6 pt-6 border-t border-border">
@@ -726,7 +737,7 @@ export default function ReportForm() {
                   <div className="bg-muted/30 p-6 rounded-xl border space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <Label>Cabo Positivo (mm²)</Label>
+                        <Label className="font-bold uppercase">Cabo Positivo (mm²)</Label>
                         <Input 
                           type="number" 
                           value={formData.external_battery_positive_cable} 
@@ -735,7 +746,7 @@ export default function ReportForm() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Cabo Negativo (mm²)</Label>
+                        <Label className="font-bold uppercase">Cabo Negativo (mm²)</Label>
                         <Input 
                           type="number" 
                           value={formData.external_battery_negative_cable} 
@@ -745,7 +756,7 @@ export default function ReportForm() {
                       </div>
                       {isSymmetric && (
                         <div className="space-y-2">
-                          <Label>Cabo Neutro (mm²)</Label>
+                          <Label className="font-bold uppercase">Cabo Neutro (mm²)</Label>
                           <Input 
                             type="number" 
                             value={formData.external_battery_neutral_cable} 
@@ -755,7 +766,7 @@ export default function ReportForm() {
                         </div>
                       )}
                       <div className="space-y-2">
-                        <Label>Conexão Bateria</Label>
+                        <Label className="font-bold uppercase">Conexão Bateria</Label>
                         <Select 
                           value={formData.external_battery_connection} 
                           onValueChange={(v) => updateField('external_battery_connection', v)}
@@ -770,7 +781,7 @@ export default function ReportForm() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Conexão Nobreak</Label>
+                        <Label className="font-bold uppercase">Conexão Nobreak</Label>
                         <Select 
                           value={formData.external_battery_nobreak_connection} 
                           onValueChange={(v) => updateField('external_battery_nobreak_connection', v)}
@@ -802,30 +813,30 @@ export default function ReportForm() {
                 <div className="bg-muted/30 p-6 rounded-xl border space-y-6">
                   {vType === 'MONOFÁSICA' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div className="space-y-2"><Label>Tensão F/N (V)</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'single')} onChange={e => updateElectrical('entrada', 'tensions', 'single', e.target.value)} disabled={isReadOnly} /></div>
-                      <div className="space-y-2"><Label>Tensão N/T (V)</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'nt')} onChange={e => updateElectrical('entrada', 'tensions', 'nt', e.target.value)} disabled={isReadOnly} /></div>
-                      <div className="space-y-2"><Label>Corrente Fase (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'single')} onChange={e => updateElectrical('entrada', 'currents', 'single', e.target.value)} disabled={isReadOnly} /></div>
-                      <div className="space-y-2"><Label>Corrente Neutro (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'neutral')} onChange={e => updateElectrical('entrada', 'currents', 'neutral', e.target.value)} disabled={isReadOnly} /></div>
-                      <div className="space-y-2"><Label>Corrente Terra (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'ground')} onChange={e => updateElectrical('entrada', 'currents', 'ground', e.target.value)} disabled={isReadOnly} /></div>
+                      <div className="space-y-2"><Label className="font-bold uppercase">Tensão F/N (V)</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'single')} onChange={e => updateElectrical('entrada', 'tensions', 'single', e.target.value)} disabled={isReadOnly} /></div>
+                      <div className="space-y-2"><Label className="font-bold uppercase">Tensão N/T (V)</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'nt')} onChange={e => updateElectrical('entrada', 'tensions', 'nt', e.target.value)} disabled={isReadOnly} /></div>
+                      <div className="space-y-2"><Label className="font-bold uppercase">Corrente Fase (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'single')} onChange={e => updateElectrical('entrada', 'currents', 'single', e.target.value)} disabled={isReadOnly} /></div>
+                      <div className="space-y-2"><Label className="font-bold uppercase">Corrente Neutro (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'neutral')} onChange={e => updateElectrical('entrada', 'currents', 'neutral', e.target.value)} disabled={isReadOnly} /></div>
+                      <div className="space-y-2"><Label className="font-bold uppercase">Corrente Terra (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'ground')} onChange={e => updateElectrical('entrada', 'currents', 'ground', e.target.value)} disabled={isReadOnly} /></div>
                     </div>
                   )}
                   {(vType === 'TRIFÁSICA' || vType === 'TRIMONO') && (
                     <>
                       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-                        <div className="space-y-2"><Label>Tensão R/S</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'rs')} onChange={e => updateElectrical('entrada', 'tensions', 'rs', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão S/T</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'st')} onChange={e => updateElectrical('entrada', 'tensions', 'st', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão R/T</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'rt')} onChange={e => updateElectrical('entrada', 'tensions', 'rt', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão R/N</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'rn')} onChange={e => updateElectrical('entrada', 'tensions', 'rn', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão S/N</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'sn')} onChange={e => updateElectrical('entrada', 'tensions', 'sn', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão T/N</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'tn')} onChange={e => updateElectrical('entrada', 'tensions', 'tn', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão Neutro/Terra</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'nt')} onChange={e => updateElectrical('entrada', 'tensions', 'nt', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão R/S</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'rs')} onChange={e => updateElectrical('entrada', 'tensions', 'rs', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão S/T</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'st')} onChange={e => updateElectrical('entrada', 'tensions', 'st', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão R/T</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'rt')} onChange={e => updateElectrical('entrada', 'tensions', 'rt', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão R/N</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'rn')} onChange={e => updateElectrical('entrada', 'tensions', 'rn', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão S/N</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'sn')} onChange={e => updateElectrical('entrada', 'tensions', 'sn', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão T/N</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'tn')} onChange={e => updateElectrical('entrada', 'tensions', 'tn', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão Neutro/Terra</Label><Input type="number" value={getElecValue('entrada', 'tensions', 'nt')} onChange={e => updateElectrical('entrada', 'tensions', 'nt', e.target.value)} disabled={isReadOnly} /></div>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 pt-4 border-t border-border/50">
-                        <div className="space-y-2"><Label>Corrente R (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'r')} onChange={e => updateElectrical('entrada', 'currents', 'r', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Corrente S (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 's')} onChange={e => updateElectrical('entrada', 'currents', 's', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Corrente T (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 't')} onChange={e => updateElectrical('entrada', 'currents', 't', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Corrente Neutro (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'neutral')} onChange={e => updateElectrical('entrada', 'currents', 'neutral', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Corrente Terra (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'ground')} onChange={e => updateElectrical('entrada', 'currents', 'ground', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Corrente R (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'r')} onChange={e => updateElectrical('entrada', 'currents', 'r', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Corrente S (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 's')} onChange={e => updateElectrical('entrada', 'currents', 's', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Corrente T (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 't')} onChange={e => updateElectrical('entrada', 'currents', 't', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Corrente Neutro (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'neutral')} onChange={e => updateElectrical('entrada', 'currents', 'neutral', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Corrente Terra (A)</Label><Input type="number" value={getElecValue('entrada', 'currents', 'ground')} onChange={e => updateElectrical('entrada', 'currents', 'ground', e.target.value)} disabled={isReadOnly} /></div>
                       </div>
                     </>
                   )}
@@ -837,28 +848,28 @@ export default function ReportForm() {
                 <div className="bg-muted/30 p-6 rounded-xl border space-y-6">
                   {(vType === 'MONOFÁSICA' || vType === 'TRIMONO') && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div className="space-y-2"><Label>Tensão F/N (V)</Label><Input type="number" value={getElecValue('saida', 'tensions', 'single')} onChange={e => updateElectrical('saida', 'tensions', 'single', e.target.value)} disabled={isReadOnly} /></div>
-                      <div className="space-y-2"><Label>Tensão N/T (V)</Label><Input type="number" value={getElecValue('saida', 'tensions', 'nt')} onChange={e => updateElectrical('saida', 'tensions', 'nt', e.target.value)} disabled={isReadOnly} /></div>
-                      <div className="space-y-2"><Label>Corrente Fase (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 'single')} onChange={e => updateElectrical('saida', 'currents', 'single', e.target.value)} disabled={isReadOnly} /></div>
-                      <div className="space-y-2"><Label>Corrente Neutro (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 'neutral')} onChange={e => updateElectrical('saida', 'currents', 'neutral', e.target.value)} disabled={isReadOnly} /></div>
+                      <div className="space-y-2"><Label className="font-bold uppercase">Tensão F/N (V)</Label><Input type="number" value={getElecValue('saida', 'tensions', 'single')} onChange={e => updateElectrical('saida', 'tensions', 'single', e.target.value)} disabled={isReadOnly} /></div>
+                      <div className="space-y-2"><Label className="font-bold uppercase">Tensão N/T (V)</Label><Input type="number" value={getElecValue('saida', 'tensions', 'nt')} onChange={e => updateElectrical('saida', 'tensions', 'nt', e.target.value)} disabled={isReadOnly} /></div>
+                      <div className="space-y-2"><Label className="font-bold uppercase">Corrente Fase (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 'single')} onChange={e => updateElectrical('saida', 'currents', 'single', e.target.value)} disabled={isReadOnly} /></div>
+                      <div className="space-y-2"><Label className="font-bold uppercase">Corrente Neutro (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 'neutral')} onChange={e => updateElectrical('saida', 'currents', 'neutral', e.target.value)} disabled={isReadOnly} /></div>
                     </div>
                   )}
                   {vType === 'TRIFÁSICA' && (
                     <>
                       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-                        <div className="space-y-2"><Label>Tensão R/S</Label><Input type="number" value={getElecValue('saida', 'tensions', 'rs')} onChange={e => updateElectrical('saida', 'tensions', 'rs', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão S/T</Label><Input type="number" value={getElecValue('saida', 'tensions', 'st')} onChange={e => updateElectrical('saida', 'tensions', 'st', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão R/T</Label><Input type="number" value={getElecValue('saida', 'tensions', 'rt')} onChange={e => updateElectrical('saida', 'tensions', 'rt', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão R/N</Label><Input type="number" value={getElecValue('saida', 'tensions', 'rn')} onChange={e => updateElectrical('saida', 'tensions', 'rn', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão S/N</Label><Input type="number" value={getElecValue('saida', 'tensions', 'sn')} onChange={e => updateElectrical('saida', 'tensions', 'sn', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão T/N</Label><Input type="number" value={getElecValue('saida', 'tensions', 'tn')} onChange={e => updateElectrical('saida', 'tensions', 'tn', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Tensão N/T</Label><Input type="number" value={getElecValue('saida', 'tensions', 'nt')} onChange={e => updateElectrical('saida', 'tensions', 'nt', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão R/S</Label><Input type="number" value={getElecValue('saida', 'tensions', 'rs')} onChange={e => updateElectrical('saida', 'tensions', 'rs', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão S/T</Label><Input type="number" value={getElecValue('saida', 'tensions', 'st')} onChange={e => updateElectrical('saida', 'tensions', 'st', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão R/T</Label><Input type="number" value={getElecValue('saida', 'tensions', 'rt')} onChange={e => updateElectrical('saida', 'tensions', 'rt', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão R/N</Label><Input type="number" value={getElecValue('saida', 'tensions', 'rn')} onChange={e => updateElectrical('saida', 'tensions', 'rn', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão S/N</Label><Input type="number" value={getElecValue('saida', 'tensions', 'sn')} onChange={e => updateElectrical('saida', 'tensions', 'sn', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão T/N</Label><Input type="number" value={getElecValue('saida', 'tensions', 'tn')} onChange={e => updateElectrical('saida', 'tensions', 'tn', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Tensão N/T</Label><Input type="number" value={getElecValue('saida', 'tensions', 'nt')} onChange={e => updateElectrical('saida', 'tensions', 'nt', e.target.value)} disabled={isReadOnly} /></div>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 pt-4 border-t border-border/50">
-                        <div className="space-y-2"><Label>Corrente R (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 'r')} onChange={e => updateElectrical('saida', 'currents', 'r', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Corrente S (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 's')} onChange={e => updateElectrical('saida', 'currents', 's', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Corrente T (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 't')} onChange={e => updateElectrical('saida', 'currents', 't', e.target.value)} disabled={isReadOnly} /></div>
-                        <div className="space-y-2"><Label>Corrente Neutro (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 'neutral')} onChange={e => updateElectrical('saida', 'currents', 'neutral', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Corrente R (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 'r')} onChange={e => updateElectrical('saida', 'currents', 'r', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Corrente S (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 's')} onChange={e => updateElectrical('saida', 'currents', 's', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Corrente T (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 't')} onChange={e => updateElectrical('saida', 'currents', 't', e.target.value)} disabled={isReadOnly} /></div>
+                        <div className="space-y-2"><Label className="font-bold uppercase">Corrente Neutro (A)</Label><Input type="number" value={getElecValue('saida', 'currents', 'neutral')} onChange={e => updateElectrical('saida', 'currents', 'neutral', e.target.value)} disabled={isReadOnly} /></div>
                       </div>
                     </>
                   )}
@@ -869,74 +880,76 @@ export default function ReportForm() {
             {hasBattery && (
               <TabsContent value="battery" className="mt-0 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {!isBatteryMonitor && (
                   <div className="space-y-2">
-                    <Label>Banco de Baterias</Label>
+                    <Label className="font-bold uppercase">Banco de Baterias</Label>
                     <Select value={formData.battery_bank.type} onValueChange={v => updateBattery('type', v)} disabled={isReadOnly}>
                       <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>{BATTERY_TYPES.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  )}
                   
                   <div className="space-y-2">
-                    <Label>Quantidade Baterias</Label>
+                    <Label className="font-bold uppercase">QUANTIDADE BATERIAS</Label>
                     <Input type="number" value={formData.battery_bank.quantity} onChange={e => updateBattery('quantity', e.target.value)} disabled={isReadOnly} />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Bateria Volts (VDC)</Label>
+                    <Label className="font-bold uppercase">BATERIA VOLTS (VDC)</Label>
                     <Input type="number" value={formData.battery_bank.battery_volts} onChange={e => updateBattery('battery_volts', e.target.value)} disabled={isReadOnly} />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Corrente Bateria (Ah/W)</Label>
+                    <Label className="font-bold uppercase">CORRENTE BATERIA (AH/W)</Label>
                     <Input value={formData.battery_bank.battery_current} onChange={e => updateBattery('battery_current', e.target.value.toUpperCase())} disabled={isReadOnly} />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Tensão do Banco +/- (VDC)</Label>
+                    <Label className="font-bold uppercase">TENSÃO DO BANCO +/- (VDC)</Label>
                     <Input type="number" value={formData.battery_bank.voltage} onChange={e => updateBattery('voltage', e.target.value)} disabled={isReadOnly} />
                   </div>
                   
-                  {isSymmetric && (
+                  {!isBatteryMonitor && isSymmetric && (
                     <>
                       <div className="space-y-2">
-                        <Label>Tensão do Banco +/N (VDC)</Label>
+                        <Label className="font-bold uppercase">Tensão do Banco +/N (VDC)</Label>
                         <Input type="number" value={formData.battery_bank.voltage_positive_neutral} onChange={e => updateBattery('voltage_positive_neutral', e.target.value)} disabled={isReadOnly} />
                       </div>
                       
                       <div className="space-y-2">
-                        <Label>Tensão do Banco N/- (VDC)</Label>
+                        <Label className="font-bold uppercase">Tensão do Banco N/- (VDC)</Label>
                         <Input type="number" value={formData.battery_bank.voltage_neutral_negative} onChange={e => updateBattery('voltage_neutral_negative', e.target.value)} disabled={isReadOnly} />
                       </div>
                     </>
                   )}
                   
                   <div className="space-y-2">
-                    <Label>Tensão Carregador (VDC)</Label>
+                    <Label className="font-bold uppercase">TENSÃO CARREGADOR (VDC)</Label>
                     <Input type="number" value={formData.battery_bank.charger_voltage} onChange={e => updateBattery('charger_voltage', e.target.value)} disabled={isReadOnly} />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Marca</Label>
+                    <Label className="font-bold uppercase">MARCA</Label>
                     <Input value={formData.battery_bank.brand} onChange={e => updateBattery('brand', e.target.value.toUpperCase())} disabled={isReadOnly} />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Modelo</Label>
+                    <Label className="font-bold uppercase">MODELO</Label>
                     <Input value={formData.battery_bank.model} onChange={e => updateBattery('model', e.target.value.toUpperCase())} disabled={isReadOnly} />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Trocou Baterias</Label>
+                    <Label className="font-bold uppercase">TROCOU BATERIAS</Label>
                     <Select value={formData.battery_bank.trocou_baterias} onValueChange={v => updateBattery('trocou_baterias', v)} disabled={isReadOnly}>
                       <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                       <SelectContent>{YES_NO_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   
-                  {trocouBaterias === 'SIM' && (
+                  {!isBatteryMonitor && trocouBaterias === 'SIM' && (
                     <div className="space-y-2">
-                      <Label>Última Troca</Label>
+                      <Label className="font-bold uppercase">Última Troca</Label>
                       <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                         <PopoverTrigger asChild>
                           <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.battery_bank.last_change && "text-muted-foreground")} disabled={isReadOnly}>
@@ -959,9 +972,9 @@ export default function ReportForm() {
                     </div>
                   )}
                   
-                  {trocouBaterias === 'NÃO' && (
+                  {!isBatteryMonitor && trocouBaterias === 'NÃO' && (
                     <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-                      <Label>Motivo</Label>
+                      <Label className="font-bold uppercase">Motivo</Label>
                       <Textarea 
                         value={formData.battery_bank.motivo_nao_troca} 
                         onChange={e => updateBattery('motivo_nao_troca', e.target.value.toUpperCase())} 
@@ -975,13 +988,14 @@ export default function ReportForm() {
             )}
 
             <TabsContent value="attendance" className="mt-0 space-y-6">
+              <div className="space-y-2"><Label className="font-bold uppercase">PROBLEMAS REPORTADOS</Label><Textarea rows={4} value={formData.reported_problems || ''} onChange={e => updateField('reported_problems', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2"><Label>Inspeção Externa</Label><Textarea rows={4} value={formData.external_inspection} onChange={e => updateField('external_inspection', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
-                <div className="space-y-2"><Label>Inspeção Interna</Label><Textarea rows={4} value={formData.internal_inspection} onChange={e => updateField('internal_inspection', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">INSPEÇÃO EXTERNA</Label><Textarea rows={4} value={formData.external_inspection} onChange={e => updateField('external_inspection', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">INSPEÇÃO INTERNA</Label><Textarea rows={4} value={formData.internal_inspection} onChange={e => updateField('internal_inspection', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
               </div>
-              <div className="space-y-2"><Label>Realizado no Atendimento</Label><Textarea rows={4} value={formData.attendance_description} onChange={e => updateField('attendance_description', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
-              <div className="space-y-2"><Label>Diagnóstico / Necessário</Label><Textarea rows={4} value={formData.diagnosis} onChange={e => updateField('diagnosis', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
-              <div className="space-y-2"><Label>Conclusão / Resultado</Label><Textarea rows={4} value={formData.conclusion} onChange={e => updateField('conclusion', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+              <div className="space-y-2"><Label className="font-bold uppercase">REALIZADO NO ATENDIMENTO</Label><Textarea rows={4} value={formData.attendance_description} onChange={e => updateField('attendance_description', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+              <div className="space-y-2"><Label className="font-bold uppercase">DIAGNÓSTICO / NECESSÁRIO</Label><Textarea rows={4} value={formData.diagnosis} onChange={e => updateField('diagnosis', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+              <div className="space-y-2"><Label className="font-bold uppercase">CONCLUSÃO / RESULTADO</Label><Textarea rows={4} value={formData.conclusion} onChange={e => updateField('conclusion', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
             </TabsContent>
 
             <TabsContent value="photos" className="mt-0 space-y-6">
@@ -1030,11 +1044,11 @@ export default function ReportForm() {
                   <h4 className="font-semibold text-lg flex items-center border-b pb-2"><PenTool className="mr-2 w-5 h-5"/> Assinatura Técnica</h4>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Nome do Técnico</Label>
+                      <Label className="font-bold uppercase">Nome do Técnico</Label>
                       <Input value={selectedTech?.name || ''} readOnly className="bg-muted text-muted-foreground" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Assinatura <span className="text-destructive">*</span></Label>
+                      <Label className="font-bold uppercase">Assinatura <span className="text-destructive">*</span></Label>
                       {formData.technician_signature ? (
                         <div className="space-y-2">
                           <div className="border bg-white rounded-xl p-4 flex justify-center">
@@ -1096,11 +1110,11 @@ export default function ReportForm() {
                   <h4 className="font-semibold text-lg flex items-center border-b pb-2"><PenTool className="mr-2 w-5 h-5"/> Assinatura do Cliente</h4>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Nome do Cliente / Responsável <span className="text-destructive">*</span></Label>
+                      <Label className="font-bold uppercase">Nome do Cliente / Responsável <span className="text-destructive">*</span></Label>
                       <Input value={formData.responsible_person} onChange={e => updateField('responsible_person', e.target.value.toUpperCase())} className={cn(!formData.responsible_person && validationErrors.length > 0 && "border-destructive")} disabled={isReadOnly} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Assinatura <span className="text-destructive">*</span></Label>
+                      <Label className="font-bold uppercase">Assinatura <span className="text-destructive">*</span></Label>
                       {formData.client_signature ? (
                         <div className="space-y-2">
                           <div className="border bg-white rounded-xl p-4 flex justify-center">

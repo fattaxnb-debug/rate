@@ -522,6 +522,7 @@ export default function DashboardPage() {
 
                 </Link>
 
+                {currentUser?.role !== 'Técnico' && (
                 <Link to="/reports/new">
 
                   <Button className="w-full justify-start">
@@ -533,6 +534,7 @@ export default function DashboardPage() {
                   </Button>
 
                 </Link>
+                )}
 
               </CardContent>
 

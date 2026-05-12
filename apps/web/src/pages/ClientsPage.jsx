@@ -48,12 +48,17 @@ export default function ClientsPage() {
   const fetchClients = async () => {
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('[DEBUG] API_BASE_URL:', API_BASE_URL);
+      console.log('[DEBUG] Token:', token ? 'Present' : 'Missing');
+      console.log('[DEBUG] Fetching clients from:', `${API_BASE_URL}/clients`);
       const response = await axios.get(`${API_BASE_URL}/clients`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      console.log('[DEBUG] Response:', response.data);
       setClients(response.data.data || []);
       setLoading(false);
     } catch (error) {
+      console.error('[DEBUG] Error fetching clients:', error);
       toast.error('Erro ao carregar clientes');
       setLoading(false);
     }

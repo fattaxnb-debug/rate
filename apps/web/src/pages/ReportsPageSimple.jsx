@@ -123,6 +123,7 @@ export default function ReportsPageSimple() {
                 width: '300px'
               }}
             />
+            {currentUser?.role !== 'Técnico' && (
             <button
               onClick={() => navigate('/reports/new')}
               style={{
@@ -136,6 +137,7 @@ export default function ReportsPageSimple() {
             >
               Novo Relatório
             </button>
+            )}
           </div>
         </div>
       </div>
@@ -149,7 +151,7 @@ export default function ReportsPageSimple() {
             <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
               {searchTerm ? 'Tente buscar com outros termos' : 'Crie seu primeiro relatório para começar'}
             </p>
-            {!searchTerm && (
+            {!searchTerm && currentUser?.role !== 'Técnico' && (
               <button
                 onClick={() => navigate('/reports/new')}
                 style={{

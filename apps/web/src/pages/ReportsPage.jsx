@@ -26,6 +26,9 @@ export default function ReportsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reportToDelete, setReportToDelete] = useState(null);
+  const [clients, setClients] = useState([]);
+  const [equipments, setEquipments] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
 
   const isGerente = currentUser?.role === 'Gerente';
 
@@ -40,14 +43,46 @@ export default function ReportsPage() {
   const fetchReports = async () => {
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('[REPORTS FRONTEND DEBUG] API_BASE_URL:', API_BASE_URL);
+      console.log('[REPORTS FRONTEND DEBUG] Token:', token ? 'Present' : 'Missing');
+      console.log('[REPORTS FRONTEND DEBUG] Fetching reports from:', `${API_BASE_URL}/reports`);
+      
+      // Buscar relatórios
       const response = await axios.get(`${API_BASE_URL}/reports`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      console.log('[REPORTS FRONTEND DEBUG] Response:', response.data);
       const records = response.data.data || [];
-      setReports(records);
-      setFilteredReports(records);
+      
+      // Buscar clientes, equipamentos e técnicos separadamente
+      const [clientsRes, equipmentsRes, techniciansRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/clients`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        axios.get(`${API_BASE_URL}/equipments`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        axios.get(`${API_BASE_URL}/users?role=Técnico`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      
+      setClients(clientsRes.data.data || []);
+      setEquipments(equipmentsRes.data.data || []);
+      setTechnicians(techniciansRes.data.data || []);
+      
+      // Enriquecer relatórios com dados de cliente, equipamento e técnico
+      const enrichedReports = records.map(report => ({
+        ...report,
+        client_name: clientsRes.data.data?.find(c => c.id === report.client_id)?.name || 'Cliente Inválido',
+        equipment_brand: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.brand || '',
+        equipment_model: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.model || '',
+        equipment_power: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.power || '',
+        equipment_voltage: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.voltage_type || '',
+        equipment_serial: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.serial_number || '',
+        technician_name: techniciansRes.data.data?.find(t => t.id === report.technician_id)?.name || '-'
+      }));
+      
+      setReports(enrichedReports);
+      setFilteredReports(enrichedReports);
       setLoading(false);
     } catch (error) {
+      console.error('[REPORTS FRONTEND DEBUG] Error fetching reports:', error);
+      console.error('[REPORTS FRONTEND DEBUG] Error response:', error.response);
       toast.error('Erro ao carregar relatórios');
       setLoading(false);
     }
@@ -136,12 +171,14 @@ export default function ReportsPage() {
               <h1 className="text-3xl font-bold mb-2" style={{ letterSpacing: '-0.02em' }}>Relatórios</h1>
               <p className="text-muted-foreground">Gerenciamento de relatórios técnicos</p>
             </div>
+            {currentUser?.role !== 'Técnico' && (
             <Link to="/reports/new">
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Relatório
               </Button>
             </Link>
+            )}
           </div>
 
           <div className="mb-6">
@@ -165,13 +202,14 @@ export default function ReportsPage() {
                   <TableHead>Cliente</TableHead>
                   <TableHead>Equipamentos</TableHead>
                   <TableHead>Técnico</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredReports.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                       Nenhum relatório encontrado
                     </TableCell>
                   </TableRow>
@@ -186,17 +224,33 @@ export default function ReportsPage() {
                           {report.service_order_number || '-'}
                         </TableCell>
                         <TableCell>
-                          {report.created ? format(new Date(report.created), 'dd/MM/yyyy') : '-'}
+                          {report.created_date ? format(new Date(report.created_date), 'dd/MM/yyyy') : 
+                           report.created_at ? format(new Date(report.created_at), 'dd/MM/yyyy') : '-'}
                         </TableCell>
                         <TableCell className="font-medium">
                           {report.client_name || 'Cliente Inválido'}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="font-normal">
-                            {eqCount} equipamento{eqCount !== 1 ? 's' : ''}
-                          </Badge>
+                          {report.equipment_brand && report.equipment_model ? (
+                            <div className="text-sm">
+                              <div className="font-medium">{report.equipment_brand} - {report.equipment_model}</div>
+                              {report.equipment_power && <div className="text-muted-foreground">{report.equipment_power}</div>}
+                              {report.equipment_serial && <div className="text-muted-foreground">S/N: {report.equipment_serial}</div>}
+                            </div>
+                          ) : (
+                            <Badge variant="secondary" className="font-normal">
+                              1 equipamento
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>{report.technician_name || '-'}</TableCell>
+                        <TableCell>
+                          {report.status === 'finalizado' ? (
+                            <Badge className="bg-green-500 hover:bg-green-600">Finalizado</Badge>
+                          ) : (
+                            <Badge variant="secondary">Pendente</Badge>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
                             <Button

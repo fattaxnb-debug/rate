@@ -5,13 +5,16 @@ const router = express.Router();
 
 // GET /clients - Listar todos os clientes
 router.get('/', async (req, res) => {
-  console.log('GET /clients called');
+  console.log('[DEBUG] GET /clients called');
+  console.log('[DEBUG] Request headers:', JSON.stringify(req.headers));
   try {
+    console.log('[DEBUG] Querying database...');
     const [clients] = await db.query('SELECT * FROM clients ORDER BY created_at DESC');
-    console.log('Clients found:', clients.length);
+    console.log('[DEBUG] Clients found:', clients.length);
     res.json({ data: clients });
   } catch (error) {
-    console.error('Error fetching clients:', error);
+    console.error('[DEBUG] Error fetching clients:', error);
+    console.error('[DEBUG] Error stack:', error.stack);
     res.status(500).json({ error: 'Erro ao buscar clientes' });
   }
 });

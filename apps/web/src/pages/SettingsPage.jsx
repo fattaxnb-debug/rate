@@ -117,23 +117,37 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       const formData = new FormData();
-      formData.append('userId', currentUser.id);
+      formData.append('user_id', currentUser.id);
       formData.append('company_name', companyName);
+      
+      console.log('[SETTINGS FRONTEND DEBUG] userId:', currentUser.id);
+      console.log('[SETTINGS FRONTEND DEBUG] logoFile:', logoFile);
+      console.log('[SETTINGS FRONTEND DEBUG] sigTiagoFile:', sigTiagoFile);
+      console.log('[SETTINGS FRONTEND DEBUG] sigTitoFile:', sigTitoFile);
+      console.log('[SETTINGS FRONTEND DEBUG] coverPdfFile:', coverPdfFile);
       
       if (logoFile) formData.append('company_logo', logoFile);
       if (sigTiagoFile) formData.append('signature_tiago_viana', sigTiagoFile);
       if (sigTitoFile) formData.append('signature_tito_livio', sigTitoFile);
       if (coverPdfFile) formData.append('cover_pdf', coverPdfFile);
 
+      console.log('[SETTINGS FRONTEND DEBUG] FormData entries:');
+      for (let [key, value] of formData.entries()) {
+        console.log('[SETTINGS FRONTEND DEBUG]', key, value);
+      }
+
       const token = localStorage.getItem('auth_token');
       if (settingsId) {
+        console.log('[SETTINGS FRONTEND DEBUG] PUT /settings/' + settingsId);
         await axios.put(`${API_BASE_URL}/settings/${settingsId}`, formData, {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
       } else {
+        console.log('[SETTINGS FRONTEND DEBUG] POST /settings');
         const newRecordRes = await axios.post(`${API_BASE_URL}/settings`, formData, {
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
+        console.log('[SETTINGS FRONTEND DEBUG] Response:', newRecordRes.data);
         setSettingsId(newRecordRes.data.data.id);
       }
       

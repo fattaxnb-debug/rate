@@ -96,20 +96,6 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   // PAGE 1: Cover Page
   await captureAndAddPage(coverRef, false, true, false);
 
-  if (cachedLogo) {
-    pdf.setPage(1);
-    const logoWidth = 135;
-    const logoHeight = 90;
-    const xPos = (pdfWidth - logoWidth) / 2;
-    const yPos = 25; 
-    pdf.addImage(cachedLogo, 'PNG', xPos, yPos, logoWidth, logoHeight, undefined, 'FAST');
-  } else {
-    pdf.setPage(1);
-    pdf.setFontSize(28);
-    pdf.setTextColor(0, 0, 0);
-    pdf.text("RELATÓRIO TÉCNICO", pdfWidth / 2, 70, { align: "center" });
-  }
-
   // PAGES 2, 3, 4
   await captureAndAddPage(clientEquipRef, true, false, true);
   await captureAndAddPage(infraElecBatRef, true, false, false);
@@ -189,7 +175,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
 
           const imgWrapper = document.createElement('div');
           imgWrapper.style.width = '100%';
-          imgWrapper.style.height = '110px';
+          imgWrapper.style.height = '200px';
           imgWrapper.style.display = 'flex';
           imgWrapper.style.alignItems = 'center';
           imgWrapper.style.justifyContent = 'center';
@@ -203,21 +189,6 @@ export const generateReportPDF = async (report, companySettings, refs) => {
           
           imgWrapper.appendChild(img);
           item.appendChild(imgWrapper);
-
-          if (p.photo_type) {
-            const badge = document.createElement('span');
-            badge.style.fontSize = '9px';
-            badge.style.fontWeight = 'bold';
-            badge.style.textTransform = 'uppercase';
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.marginTop = '6px';
-            badge.style.alignSelf = 'flex-start';
-            badge.style.backgroundColor = '#FFE5E5';
-            badge.style.color = '#E31E24';
-            badge.innerText = p.photo_type;
-            item.appendChild(badge);
-          }
 
           if (p.comment) {
             const text = document.createElement('p');
@@ -252,7 +223,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
         });
       }));
 
-      const canvas = await html2canvas(container, { scale: 2, useCORS: true, logging: false });
+      const canvas = await html2canvas(container, { scale: 3, useCORS: true, logging: false });
       document.body.removeChild(container);
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -296,7 +267,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
         });
       }));
 
-      const canvas = await html2canvas(container, { scale: 2, useCORS: true, logging: false });
+      const canvas = await html2canvas(container, { scale: 3, useCORS: true, logging: false });
       document.body.removeChild(container);
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -353,7 +324,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
       pdf.setFont('helvetica', 'normal');
       const osText = `O.S.: ${report.service_order_number || '-'}`;
       pdf.text(osText, rightX, 19, { align: 'right' });
-      const dateText = `Data: ${report.created ? new Date(report.created).toLocaleDateString('pt-BR') : '-'}`;
+      const dateText = `Data: ${report.created_date ? new Date(report.created_date).toLocaleDateString('pt-BR') : report.attendance_date_time ? new Date(report.attendance_date_time).toLocaleDateString('pt-BR') : '-'}`;
       pdf.text(dateText, rightX, 24, { align: 'right' });
       
       // Red horizontal line separator
@@ -363,10 +334,13 @@ export const generateReportPDF = async (report, companySettings, refs) => {
     }
   }
 
-  const client = report.expand?.client_id || {};
-  const cleanCpfCnpj = (client.cnpj_cpf || '').replace(/\D/g, '');
-  const safeClientName = (client.name || '').replace(/[^a-zA-Z0-9]/g, '_');
+  const client = {
+    name: report.client_name,
+    fantasy_name: report.client_fantasy_name,
+    cnpj_cpf: report.client_cnpj
+  };
+  const safeClientName = (client.name || '').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_').toUpperCase();
   const safeOs = (report.service_order_number || report.id).replace(/[^a-zA-Z0-9-]/g, '_');
   
-  pdf.save(`${cleanCpfCnpj}_${safeClientName}_${safeOs}.pdf`);
+  pdf.save(`${safeOs}_${safeClientName}.pdf`);
 };

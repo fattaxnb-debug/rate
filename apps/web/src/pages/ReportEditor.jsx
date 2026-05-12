@@ -171,21 +171,29 @@ export default function ReportEditor() {
         technician_edit_count: report.technician_edit_count || 0
       });
 
-      if (report.expand?.equipment_id) {
-        setSelectedEquipmentData(report.expand.equipment_id);
+      // Buscar dados do equipamento separadamente
+      if (report.equipment_id) {
+        try {
+          console.log('[REPORT EDITOR DEBUG] Fetching equipment:', report.equipment_id);
+          const equipmentResponse = await axios.get(`${API_BASE_URL}/equipments/${report.equipment_id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          console.log('[REPORT EDITOR DEBUG] Equipment response:', equipmentResponse.data.data);
+          setSelectedEquipmentData(equipmentResponse.data.data);
+        } catch (e) {
+          console.error('[REPORT EDITOR DEBUG] Error fetching equipment:', e);
+          setSelectedEquipmentData(null);
+        }
       }
       
       if (report.client_id) {
         await fetchClientEquipments(report.client_id);
       }
       
-      const photoRes = await axios.get(`${API_BASE_URL}/report-photos?report_id=${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const photoRecords = photoRes.data.data || [];
-      
-      const processedPhotos = await Promise.all(photoRecords.map(async p => {
-        const url = p.photo_url;
+      // Usar fotos do campo photos do relatório
+      const manualPhotos = report.photos || [];
+      const processedPhotos = await Promise.all(manualPhotos.map(async p => {
+        const url = p.photo_url || '';
         const orientation = await getImageOrientation(url);
         return {
           id: p.id,

@@ -5,6 +5,8 @@ import clientsRouter from './clients.js';
 import equipmentsRouter from './equipments.js';
 import schedulesRouter from './schedules.js';
 import reportsRouter from './reports.js';
+import settingsRouter from './settings.js';
+import reportPhotosRouter from './report-photos.js';
 import db from '../config/database.js';
 
 const router = Router();
@@ -44,6 +46,10 @@ export default () => {
     router.use('/schedules', schedulesRouter);
     console.log('Registering /reports route...');
     router.use('/reports', reportsRouter);
+    console.log('Registering /settings route...');
+    router.use('/settings', settingsRouter);
+    console.log('Registering /report-photos route...');
+    router.use('/report-photos', reportPhotosRouter);
     console.log('All routes registered');
 
     return router;
