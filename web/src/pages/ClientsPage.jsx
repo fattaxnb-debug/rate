@@ -34,6 +34,8 @@ export default function ClientsPage() {
   const [clientToView, setClientToView] = useState(null);
 
   const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
+const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
+const canCreate = isGerente || isTecnico;
 
   const { searchTerm, setSearchTerm, filteredItems: filteredClients } = useSearch(clients, [
     'name',
@@ -174,16 +176,16 @@ export default function ClientsPage() {
                 Exportar Excel
               </Button>
               {isGerente && (
-                <>
-                  <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-                    <UploadIcon className="mr-2 h-4 w-4" />
-                    Importar Excel
-                  </Button>
-                  <Button onClick={openCreateDialog}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Cliente
-                  </Button>
-                </>
+                <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+                  <UploadIcon className="mr-2 h-4 w-4" />
+                  Importar Excel
+                </Button>
+              )}
+              {canCreate && (
+                <Button onClick={openCreateDialog}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Cliente
+                </Button>
               )}
             </div>
           </div>

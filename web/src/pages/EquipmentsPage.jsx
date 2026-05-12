@@ -29,6 +29,8 @@ export default function EquipmentsPage() {
   const [equipmentToDelete, setEquipmentToDelete] = useState(null);
 
   const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
+const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
+const canCreate = isGerente || isTecnico;
 
   const { searchTerm, setSearchTerm, filteredItems: filteredEquipments } = useSearch(equipments, [
     'brand', 'model', 'serial_number'
@@ -124,7 +126,7 @@ export default function EquipmentsPage() {
               <h1 className="text-3xl font-bold mb-2">Equipamentos</h1>
               <p className="text-muted-foreground">Gerenciamento de equipamentos</p>
             </div>
-            {isGerente && (
+            {canCreate && (
               <Button onClick={() => { setSelectedEquipment(null); setDialogOpen(true); }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Novo Equipamento
