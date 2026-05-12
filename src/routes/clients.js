@@ -40,12 +40,12 @@ router.get('/:id', async (req, res) => {
 // POST /clients - Criar novo cliente
 router.post('/', async (req, res) => {
   try {
-    const { name, cnpj_cpf, address, phone, email, contact_person } = req.body;
+    const { type, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact } = req.body;
 
     const [result] = await db.query(
-      `INSERT INTO clients (name, cnpj, cpf, address, phone, email, contact_person)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [name, cnpj_cpf, cnpj_cpf, address, phone, email, contact_person]
+      `INSERT INTO clients (type, name, fantasy_name, cnpj, cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, contact_person)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [type, name, fantasy_name, cnpj_cpf, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact]
     );
 
     res.json({ data: { id: result.insertId, ...req.body } });
@@ -58,12 +58,12 @@ router.post('/', async (req, res) => {
 // PUT /clients/:id - Atualizar cliente
 router.put('/:id', async (req, res) => {
   try {
-    const { name, cnpj_cpf, address, phone, email, contact_person } = req.body;
+    const { type, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact } = req.body;
 
     await db.query(
-      `UPDATE clients SET name = ?, cnpj = ?, cpf = ?, address = ?, phone = ?, email = ?, contact_person = ?
+      `UPDATE clients SET type = ?, name = ?, fantasy_name = ?, cnpj = ?, cpf = ?, rg = ?, ie = ?, address = ?, number = ?, complement = ?, neighborhood = ?, city = ?, state = ?, zip_code = ?, phone = ?, mobile = ?, email = ?, contact_person = ?
        WHERE id = ?`,
-      [name, cnpj_cpf, cnpj_cpf, address, phone, email, contact_person, req.params.id]
+      [type, name, fantasy_name, cnpj_cpf, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact, req.params.id]
     );
 
     res.json({ data: { id: req.params.id, ...req.body } });

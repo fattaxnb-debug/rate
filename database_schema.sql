@@ -15,13 +15,25 @@ CREATE TABLE IF NOT EXISTS users (
 -- Tabela de clientes
 CREATE TABLE IF NOT EXISTS clients (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  type ENUM('pessoa_fisica', 'pessoa_juridica') DEFAULT 'pessoa_fisica',
   name VARCHAR(255) NOT NULL,
+  fantasy_name VARCHAR(255),
   cnpj VARCHAR(20),
   cpf VARCHAR(14),
+  rg VARCHAR(20),
+  ie VARCHAR(20),
   address TEXT,
+  number VARCHAR(20),
+  complement VARCHAR(255),
+  neighborhood VARCHAR(255),
+  city VARCHAR(255),
+  state VARCHAR(2),
+  zip_code VARCHAR(10),
   phone VARCHAR(20),
+  mobile VARCHAR(20),
   email VARCHAR(255),
   contact_person VARCHAR(255),
+  technical_contact VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
