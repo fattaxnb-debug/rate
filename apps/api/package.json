@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "node src/server.js",
     "start": "node src/server.js",
+    "build:frontend": "cd web && npm install && npm run build",
+    "build": "npm run build:frontend",
+    "postinstall": "cd web && npm install",
     "lint": "eslint . --quiet"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.0.1",
     "express-rate-limit": "^8.3.1",

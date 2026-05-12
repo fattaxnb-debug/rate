@@ -3,7 +3,6 @@ dotenv.config();
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
@@ -66,12 +65,20 @@ app.use(express.urlencoded({
 
 app.use('/api', routes());
 
+// Servir arquivos estáticos de public/uploads com CORS
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+}, express.static(path.join(__dirname, '../public/uploads')));
+
 // Servir arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, '../dist')));
+app.use(express.static(path.join(__dirname, '../web/dist')));
 
 // SPA fallback - servir index.html para rotas não-API
 app.get(/^(?!\/api).*/, (req, res) => {
-	res.sendFile(path.join(__dirname, '../dist/index.html'));
+	res.sendFile(path.join(__dirname, '../web/dist/index.html'));
 });
 
 app.use(errorMiddleware);
