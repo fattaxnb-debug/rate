@@ -445,7 +445,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
             </SelectTrigger>
             <SelectContent>
               {technicians.map((tech) => (
-                <SelectItem key={tech.id} value={tech.id}>
+                <SelectItem key={tech.id} value={String(tech.id)}>
                   {tech.name}
                 </SelectItem>
               ))}
