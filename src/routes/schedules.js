@@ -20,13 +20,13 @@ router.get('/', async (req, res) => {
     const [schedules] = await db.query(`
       SELECT s.*, 
              c.name as client_name,
-             e.brand, e.model, e.serial_number, e.power_va,
+             e.name as equipment_name, e.type as equipment_type, e.serial_number,
              u.name as technician_name
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
       LEFT JOIN equipments e ON s.equipment_id = e.id
       LEFT JOIN users u ON s.technician_id = u.id
-      ORDER BY s.scheduled_date DESC, s.scheduled_time DESC
+      ORDER BY s.scheduled_date DESC
     `);
     
     console.log('Schedules from DB:', schedules[0]);
@@ -61,10 +61,9 @@ router.get('/', async (req, res) => {
         ...schedule,
         data_hora_agendamento,
         status,
-        equipment_type: schedule.brand || schedule.model ? `${schedule.brand || ''} ${schedule.model || ''}`.trim() : null,
-        equipment_model: schedule.model,
-        equipment_serial: schedule.serial_number,
-        equipment_power: schedule.power_va
+        equipment_type: schedule.equipment_type,
+        equipment_name: schedule.equipment_name,
+        equipment_serial: schedule.serial_number
       };
     });
     
@@ -91,13 +90,7 @@ router.get('/:id', async (req, res) => {
              c.city as client_city,
              c.state as client_state,
              c.technical_contact as client_technical_contact,
-             e.type, e.brand, e.model, e.serial_number, e.power_va,
-             e.voltage_in, e.voltage_out, e.voltage_battery,
-             e.battery_type, e.battery_quantity, e.battery_volts, e.battery_current,
-             e.battery_connection, e.battery_terminal, e.battery_brand, e.battery_model,
-             e.capacity_ah, e.symmetric, e.isolated, e.signalizers_quantity,
-             e.ihm, e.localizadores, e.communication_cable_type, e.fixation,
-             e.quantity, e.voltage_type,
+             e.name as equipment_name, e.type as equipment_type, e.serial_number, e.location,
              u.name as technician_name
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
@@ -142,14 +135,10 @@ router.get('/:id', async (req, res) => {
         ...schedule,
         data_hora_agendamento,
         status,
-        equipment_type: schedule.brand || schedule.model ? `${schedule.brand || ''} ${schedule.model || ''}`.trim() : null,
-        equipment_brand: schedule.brand,
-        equipment_model: schedule.model,
+        equipment_type: schedule.equipment_type,
+        equipment_name: schedule.equipment_name,
         equipment_serial: schedule.serial_number,
-        equipment_power: schedule.power_va,
-        equipment_voltage_in: schedule.voltage_in,
-        equipment_voltage_out: schedule.voltage_out,
-        equipment_current_in: schedule.current_in
+        equipment_location: schedule.location
       };
     });
     
