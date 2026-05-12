@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node apps/api/src/server.js",
+    "start": "node server.js",
     "build": "cd apps/api/web && npm install && npm run build",
     "postinstall": "cd apps/api/web && npm install"
   },
