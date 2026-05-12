@@ -123,7 +123,7 @@ export default function ReportEditor() {
       const token = localStorage.getItem('auth_token');
       const [clientsRes, techRes, reportRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/clients`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(`${API_BASE_URL}/users?role=Técnico`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        axios.get(`${API_BASE_URL}/schedules/technicians`, { headers: { 'Authorization': `Bearer ${token}` } }),
         axios.get(`${API_BASE_URL}/reports/${id}`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       

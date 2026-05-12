@@ -119,10 +119,10 @@ export default function ReportForm() {
       console.log('[REPORT FORM DEBUG] API_BASE_URL:', API_BASE_URL);
       console.log('[REPORT FORM DEBUG] Token:', token ? 'Present' : 'Missing');
       console.log('[REPORT FORM DEBUG] Fetching clients from:', `${API_BASE_URL}/clients`);
-      console.log('[REPORT FORM DEBUG] Fetching technicians from:', `${API_BASE_URL}/users?role=Técnico`);
+      console.log('[REPORT FORM DEBUG] Fetching technicians from:', `${API_BASE_URL}/schedules/technicians`);
       const [clientsRes, techRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/clients`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(`${API_BASE_URL}/users?role=Técnico`, { headers: { 'Authorization': `Bearer ${token}` } })
+        axios.get(`${API_BASE_URL}/schedules/technicians`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       console.log('[REPORT FORM DEBUG] Clients response:', clientsRes.data);
       console.log('[REPORT FORM DEBUG] Technicians response:', techRes.data);

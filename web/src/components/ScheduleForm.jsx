@@ -119,7 +119,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
   const fetchTechnicians = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await axios.get(`${API_BASE_URL}/users?role=Técnico`, {
+      const response = await axios.get(`${API_BASE_URL}/schedules/technicians`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setTechnicians(response.data.data || []);
