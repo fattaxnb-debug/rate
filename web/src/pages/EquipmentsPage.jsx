@@ -28,7 +28,7 @@ export default function EquipmentsPage() {
   const [viewingEquipment, setViewingEquipment] = useState(null);
   const [equipmentToDelete, setEquipmentToDelete] = useState(null);
 
-  const isGerente = currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
 
   const { searchTerm, setSearchTerm, filteredItems: filteredEquipments } = useSearch(equipments, [
     'brand', 'model', 'serial_number'

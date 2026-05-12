@@ -33,7 +33,7 @@ export default function ClientsPage() {
   const [clientToDelete, setClientToDelete] = useState(null);
   const [clientToView, setClientToView] = useState(null);
 
-  const isGerente = currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
 
   const { searchTerm, setSearchTerm, filteredItems: filteredClients } = useSearch(clients, [
     'name',
