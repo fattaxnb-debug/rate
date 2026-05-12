@@ -1,7 +1,7 @@
 -- Adicionar colunas extras à tabela clients na Hostinger
 -- Execute este SQL no phpMyAdmin da Hostinger
 
-ALTER TABLE clients ADD COLUMN type ENUM('pessoa_fisica', 'pessoa_juridica') DEFAULT 'pessoa_fisica';
+ALTER TABLE clients ADD COLUMN type ENUM('pessoa_fisica', 'pessoa_juridica') DEFAULT 'pessoa_juridica';
 ALTER TABLE clients ADD COLUMN fantasy_name VARCHAR(255);
 ALTER TABLE clients ADD COLUMN cnpj VARCHAR(20);
 ALTER TABLE clients ADD COLUMN cpf VARCHAR(14);
