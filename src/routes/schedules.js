@@ -20,11 +20,9 @@ router.get('/', async (req, res) => {
     const [schedules] = await db.query(`
       SELECT s.*, 
              c.name as client_name,
-             e.name as equipment_name, e.type as equipment_type, e.serial_number,
              u.name as technician_name
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
-      LEFT JOIN equipments e ON s.equipment_id = e.id
       LEFT JOIN users u ON s.technician_id = u.id
       ORDER BY s.scheduled_date DESC
     `);
@@ -60,10 +58,7 @@ router.get('/', async (req, res) => {
       return {
         ...schedule,
         data_hora_agendamento,
-        status,
-        equipment_type: schedule.equipment_type,
-        equipment_name: schedule.equipment_name,
-        equipment_serial: schedule.serial_number
+        status
       };
     });
     
@@ -90,11 +85,9 @@ router.get('/:id', async (req, res) => {
              c.city as client_city,
              c.state as client_state,
              c.technical_contact as client_technical_contact,
-             e.name as equipment_name, e.type as equipment_type, e.serial_number, e.location,
              u.name as technician_name
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
-      LEFT JOIN equipments e ON s.equipment_id = e.id
       LEFT JOIN users u ON s.technician_id = u.id
       WHERE s.id = ?
     `, [req.params.id]);
@@ -134,11 +127,7 @@ router.get('/:id', async (req, res) => {
       return {
         ...schedule,
         data_hora_agendamento,
-        status,
-        equipment_type: schedule.equipment_type,
-        equipment_name: schedule.equipment_name,
-        equipment_serial: schedule.serial_number,
-        equipment_location: schedule.location
+        status
       };
     });
     
