@@ -6,7 +6,7 @@ const router = express.Router();
 // GET /technicians - Listar todos os técnicos
 router.get('/technicians', async (req, res) => {
   try {
-    const [technicians] = await db.query('SELECT id, name, email FROM users WHERE role = "Técnico" ORDER BY name ASC');
+    const [technicians] = await db.query('SELECT id, name, email FROM users WHERE role IN ("Técnico", "technician") ORDER BY name ASC');
     res.json({ data: technicians });
   } catch (error) {
     console.error('Error fetching technicians:', error);
