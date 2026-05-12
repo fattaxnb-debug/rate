@@ -51,8 +51,8 @@ function App() {
           <Route path="/schedules/:id" element={<ProtectedRoute><ScheduleViewPage /></ProtectedRoute>} />
           
           <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-          <Route path="/reports/new" element={<ProtectedRoute><ReportFormWrapper isEdit={false} /></ProtectedRoute>} />
-          <Route path="/reports/new/:clientId/:scheduleId" element={<ProtectedRoute><ReportFormWrapper isEdit={false} /></ProtectedRoute>} />
+          <Route path="/reports/new" element={<ProtectedRoute excludedRoles={['Técnico']}><ReportFormWrapper isEdit={false} /></ProtectedRoute>} />
+          <Route path="/reports/new/:clientId/:scheduleId" element={<ProtectedRoute excludedRoles={['Técnico']}><ReportFormWrapper isEdit={false} /></ProtectedRoute>} />
           <Route path="/reports/:id" element={<ProtectedRoute><ReportViewer /></ProtectedRoute>} />
           <Route path="/reports/:id/edit" element={<ProtectedRoute><ReportFormWrapper isEdit={true} /></ProtectedRoute>} />
           

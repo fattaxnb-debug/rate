@@ -79,6 +79,7 @@ export default function SignaturePadNative({ onSave, onClear, width = 400, heigh
     const canvas = canvasRef.current;
     const dataUrl = canvas.toDataURL('image/png');
     console.log('✅ Assinatura confirmada, tamanho:', dataUrl.length);
+    toast.success('Assinatura capturada com sucesso');
     if (onSave) onSave(dataUrl);
   };
 

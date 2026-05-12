@@ -1,0 +1,1 @@
+ALTER TABLE report_photos MODIFY COLUMN photo_url TEXT NOT NULL;

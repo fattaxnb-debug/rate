@@ -54,7 +54,7 @@ export default function DashboardPage() {
 
 
 
-  const isGerente = currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
 
 
 

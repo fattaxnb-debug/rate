@@ -30,7 +30,7 @@ export default function SchedulesPage() {
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [scheduleToDelete, setScheduleToDelete] = useState(null);
 
-  const isGerente = currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
   const isTecnico = currentUser?.role === 'Técnico';
 
   useEffect(() => {

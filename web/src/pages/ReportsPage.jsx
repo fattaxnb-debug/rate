@@ -30,7 +30,7 @@ export default function ReportsPage() {
   const [equipments, setEquipments] = useState([]);
   const [technicians, setTechnicians] = useState([]);
 
-  const isGerente = currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
 
   useEffect(() => {
     fetchReports();

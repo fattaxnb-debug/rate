@@ -105,7 +105,7 @@ export default function ReportEditor() {
   const techSigPad = useRef(null);
 
   const isTech = currentUser?.role === 'Técnico';
-  const isGerente = currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
 
   useEffect(() => {
     initForm();

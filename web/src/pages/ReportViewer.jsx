@@ -32,7 +32,7 @@ export default function ReportViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
+  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
   const isTech = currentUser?.role === 'Técnico';
 
   const [report, setReport] = useState(null);

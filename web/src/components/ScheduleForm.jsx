@@ -41,7 +41,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
   const [clientOpen, setClientOpen] = useState(false);
   const [equipmentOpen, setEquipmentOpen] = useState(false);
 
-  const isGerente = currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
   const isTecnico = currentUser?.role === 'Técnico';
   const isEditing = !!schedule;
   const isEditingOwnSchedule = isEditing && schedule.technician_id === currentUser?.id;
