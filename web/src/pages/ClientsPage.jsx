@@ -230,7 +230,7 @@ const canCreate = isGerente || isTecnico;
                       <TableCell className="font-medium max-w-[200px] truncate" title={client.name}>
                         {client.name}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">{client.cnpj_cpf}</TableCell>
+                      <TableCell className="whitespace-nowrap">{client.cnpj || client.cpf || '-'}</TableCell>
                       <TableCell className="whitespace-nowrap">{client.phone || client.mobile}</TableCell>
                       <TableCell className="max-w-[200px] truncate" title={client.email}>{client.email}</TableCell>
                       <TableCell className="whitespace-nowrap">{client.city}</TableCell>
