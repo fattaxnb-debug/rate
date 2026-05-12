@@ -94,11 +94,20 @@ CREATE TABLE IF NOT EXISTS schedules (
 -- Tabela de relatórios
 CREATE TABLE IF NOT EXISTS reports (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  schedule_id INT,
   client_id INT NOT NULL,
-  technician_id INT NOT NULL,
   equipment_id INT NOT NULL,
+  technician_id INT NOT NULL,
+  created_date TIMESTAMP,
+  service_order_number VARCHAR(50),
+  report_number VARCHAR(50),
   service_type VARCHAR(100),
   attendance_date_time DATETIME,
+  status ENUM('draft', 'completed') DEFAULT 'draft',
+  technician_edit_count INT DEFAULT 0,
+  responsible_person VARCHAR(255),
+  installation_location VARCHAR(100),
+  installation_location_explanation TEXT,
   local VARCHAR(100),
   inadequate_location_reason TEXT,
   
@@ -116,36 +125,38 @@ CREATE TABLE IF NOT EXISTS reports (
   environment VARCHAR(100),
   access VARCHAR(100),
   
-  -- Elétrica (para Nobreak)
-  input_voltage VARCHAR(50),
-  output_voltage VARCHAR(50),
-  current_phase VARCHAR(50),
-  neutral_current VARCHAR(50),
-  ground_current VARCHAR(50),
-  breaker VARCHAR(100),
-  cables_input VARCHAR(100),
-  cables_output VARCHAR(100),
+  -- Elétrica
   power_supply_type VARCHAR(100),
+  breaker VARCHAR(100),
+  cable_entry_phase VARCHAR(100),
+  cable_entry_neutral VARCHAR(100),
+  cable_entry_ground VARCHAR(100),
+  cable_exit_phase VARCHAR(100),
+  cable_exit_neutral VARCHAR(100),
+  external_battery_positive_cable VARCHAR(100),
+  external_battery_negative_cable VARCHAR(100),
+  external_battery_neutral_cable VARCHAR(100),
+  external_battery_connection VARCHAR(100),
+  external_battery_nobreak_connection VARCHAR(100),
+  electrical_measurements TEXT,
   
-  -- Elétrica (para Trifásico)
-  l1_current VARCHAR(50),
-  l2_current VARCHAR(50),
-  l3_current VARCHAR(50),
+  -- Baterias
+  battery_bank TEXT,
+  cooled_environment VARCHAR(10),
   
-  -- Baterias (para Monitor de Bateria)
-  battery_quantity INT,
-  battery_volts VARCHAR(50),
-  battery_current VARCHAR(50),
-  bank_voltage VARCHAR(50),
-  charger_voltage VARCHAR(50),
-  battery_brand VARCHAR(100),
-  battery_model VARCHAR(100),
-  battery_replaced BOOLEAN DEFAULT FALSE,
-  
-  -- Descrição
-  problems_reported TEXT,
+  -- Inspeção e Descrição
   external_inspection TEXT,
   internal_inspection TEXT,
+  attendance_description TEXT,
+  diagnosis TEXT,
+  conclusion TEXT,
+  reported_problems TEXT,
+  identified_defects TEXT,
+  procedures_performed TEXT,
+  replaced_parts TEXT,
+  parts_request TEXT,
+  observations TEXT,
+  problems_reported TEXT,
   technical_description TEXT,
   
   -- Assinaturas
@@ -155,10 +166,6 @@ CREATE TABLE IF NOT EXISTS reports (
   -- Fotos (JSON array)
   photos TEXT,
   
-  -- Status
-  status ENUM('draft', 'completed') DEFAULT 'draft',
-  
-  created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   
