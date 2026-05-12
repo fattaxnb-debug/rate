@@ -45,11 +45,20 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b-2 border-red-500/20 bg-gradient-to-r from-white to-gray-50/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-primary" style={{ letterSpacing: '-0.02em' }}>FATTAX</span>
+          <Link to="/" className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-md">
+              <span className="text-white font-bold text-lg">F</span>
+            </div>
+            <div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent" style={{ letterSpacing: '-0.02em' }}>FATTAX</span>
+              <div className="flex items-center space-x-1 mt-1">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span className="text-xs text-gray-600 font-medium uppercase tracking-wider">Admin</span>
+              </div>
+            </div>
           </Link>
 
           {isAuthenticated && (
@@ -59,8 +68,10 @@ export default function Header() {
                   <Link
                     key={link.path}
                     to={link.path}
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
-                      isActive(link.path) ? 'text-primary' : 'text-foreground/60'
+                    className={`text-sm font-semibold transition-all duration-200 px-3 py-2 rounded-lg ${
+                      isActive(link.path)
+                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md'
+                        : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
                     }`}
                   >
                     {link.label}
