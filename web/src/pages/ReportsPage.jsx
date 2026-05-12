@@ -193,17 +193,17 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border overflow-x-auto shadow-sm">
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-red-500/20 shadow-lg overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>O.S.</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Equipamentos</TableHead>
-                  <TableHead>Técnico</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                <TableRow className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700">
+                  <TableHead className="text-white font-bold">O.S.</TableHead>
+                  <TableHead className="text-white font-bold">Data</TableHead>
+                  <TableHead className="text-white font-bold">Cliente</TableHead>
+                  <TableHead className="text-white font-bold">Equipamentos</TableHead>
+                  <TableHead className="text-white font-bold">Técnico</TableHead>
+                  <TableHead className="text-white font-bold">Status</TableHead>
+                  <TableHead className="text-white font-bold text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -214,23 +214,23 @@ export default function ReportsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredReports.map((report) => {
+                  filteredReports.map((report, index) => {
                     const eqCount = getEquipmentCount(report);
                     const isResponsible = isUserResponsible(report);
 
                     return (
-                      <TableRow key={report.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell className="font-medium text-primary">
+                      <TableRow key={report.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50 hover:bg-red-50/50 transition-colors'}>
+                        <TableCell className="font-semibold text-red-600">
                           {report.service_order_number || '-'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-700">
                           {report.created_date ? format(new Date(report.created_date), 'dd/MM/yyyy') : 
                            report.created_at ? format(new Date(report.created_at), 'dd/MM/yyyy') : '-'}
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium text-gray-900">
                           {report.client_name || 'Cliente Inválido'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-700">
                           {report.equipment_brand && report.equipment_model ? (
                             <div className="text-sm">
                               <div className="font-medium">{report.equipment_brand} - {report.equipment_model}</div>
@@ -243,7 +243,7 @@ export default function ReportsPage() {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell>{report.technician_name || '-'}</TableCell>
+                        <TableCell className="text-gray-700">{report.technician_name || '-'}</TableCell>
                         <TableCell>
                           {report.status === 'finalizado' ? (
                             <Badge className="bg-green-500 hover:bg-green-600">Finalizado</Badge>
