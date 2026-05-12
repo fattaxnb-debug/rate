@@ -294,95 +294,106 @@ const canCreate = isGerente || isTecnico;
 
           <div className="space-y-4 md:hidden">
             {filteredClients.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground border rounded-lg">
+              <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-red-500/30 rounded-xl bg-gradient-to-br from-black/5 to-red-500/5">
                 Nenhum resultado
               </div>
             ) : (
               filteredClients.map((client) => (
-                <div key={client.id} className="bg-card rounded-lg border">
+                <div key={client.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-red-500/20 shadow-lg hover:shadow-xl transition-all duration-300">
                   <div 
-                    className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                    className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-red-500/5 hover:to-yellow-500/5 transition-colors relative overflow-hidden"
                     onClick={() => toggleCard(client.id)}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500 to-yellow-500"></div>
+                    <div className="flex items-center justify-between pl-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">{client.name}</h3>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          <span className="mr-4">{client.cnpj || client.cpf || '-'}</span>
-                          <span className="mr-4">{client.phone || client.mobile || '-'}</span>
+                        <h3 className="font-bold text-gray-900 truncate text-base">{client.name}</h3>
+                        <div className="text-sm text-gray-600 mt-2 space-y-1">
+                          <div className="flex items-center">
+                            <span className="font-semibold text-red-600 w-24">CNPJ/CPF:</span>
+                            <span className="text-gray-900">{client.cnpj || client.cpf || '-'}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="font-semibold text-red-600 w-24">Telefone:</span>
+                            <span className="text-gray-900">{client.phone || client.mobile || '-'}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 ml-4">
-                        {expandedCards[client.id] ? (
-                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                        )}
+                        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-full p-2 shadow-md">
+                          {expandedCards[client.id] ? (
+                            <ChevronUp className="h-4 w-4 text-white" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-white" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                   
                   {expandedCards[client.id] && (
-                    <div className="px-4 pb-4 border-t pt-4">
-                      <div className="grid grid-cols-1 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium text-muted-foreground">Tipo:</span>
-                          <span className="ml-2">{client.type === 'pessoa_juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</span>
+                    <div className="px-4 pb-4 border-t border-red-500/20 pt-4 bg-gradient-to-b from-red-500/5 to-transparent">
+                      <div className="grid grid-cols-1 gap-3 text-sm">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Tipo:</span>
+                          <span className="text-gray-900 font-medium">{client.type === 'pessoa_juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Nome Fantasia:</span>
-                          <span className="ml-2">{client.fantasy_name || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Nome Fantasia:</span>
+                          <span className="text-gray-900">{client.fantasy_name || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">RG:</span>
-                          <span className="ml-2">{client.type !== 'pessoa_juridica' ? (client.rg || '-') : '-'}</span>
+                        {client.type !== 'pessoa_juridica' && (
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-red-600">RG:</span>
+                            <span className="text-gray-900">{client.rg || '-'}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Inscrição Estadual:</span>
+                          <span className="text-gray-900">{client.ie || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Inscrição Estadual:</span>
-                          <span className="ml-2">{client.ie || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Endereço:</span>
+                          <span className="text-gray-900">{client.address || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Endereço:</span>
-                          <span className="ml-2">{client.address || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Número:</span>
+                          <span className="text-gray-900">{client.number || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Número:</span>
-                          <span className="ml-2">{client.number || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Complemento:</span>
+                          <span className="text-gray-900">{client.complement || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Complemento:</span>
-                          <span className="ml-2">{client.complement || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Bairro:</span>
+                          <span className="text-gray-900">{client.neighborhood || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Bairro:</span>
-                          <span className="ml-2">{client.neighborhood || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Cidade:</span>
+                          <span className="text-gray-900">{client.city || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Cidade:</span>
-                          <span className="ml-2">{client.city || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Estado:</span>
+                          <span className="text-gray-900">{client.state || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Estado:</span>
-                          <span className="ml-2">{client.state || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">CEP:</span>
+                          <span className="text-gray-900">{client.zip_code || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">CEP:</span>
-                          <span className="ml-2">{client.zip_code || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">Celular:</span>
+                          <span className="text-gray-900">{client.mobile || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Celular:</span>
-                          <span className="ml-2">{client.mobile || '-'}</span>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-red-600">E-mail:</span>
+                          <span className="text-gray-900">{client.email || '-'}</span>
                         </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">E-mail:</span>
-                          <span className="ml-2">{client.email || '-'}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-muted-foreground">Contato Técnico:</span>
-                          <span className="ml-2">{client.technical_contact || '-'}</span>
+                        <div className="flex justify-between items-center py-2">
+                          <span className="font-semibold text-red-600">Contato Técnico:</span>
+                          <span className="text-gray-900">{client.technical_contact || '-'}</span>
                         </div>
                       </div>
-                      <div className="flex justify-end space-x-2 mt-4 pt-4 border-t">
+                      <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-red-500/20">
                         {(client.phone || client.mobile) && (
                           <Button
                             variant="ghost"
@@ -392,8 +403,9 @@ const canCreate = isGerente || isTecnico;
                               window.open(getWhatsAppLink(client.mobile || client.phone), '_blank');
                             }}
                             title="WhatsApp"
+                            className="bg-green-500 hover:bg-green-600 text-white rounded-full shadow-md"
                           >
-                            <MessageCircle className="h-4 w-4 text-emerald-600" />
+                            <MessageCircle className="h-4 w-4" />
                           </Button>
                         )}
                         <Button
@@ -404,6 +416,7 @@ const canCreate = isGerente || isTecnico;
                             openViewDialog(client);
                           }}
                           title="Visualizar"
+                          className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black rounded-full shadow-md"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -417,6 +430,7 @@ const canCreate = isGerente || isTecnico;
                                 openEditDialog(client);
                               }}
                               title="Editar"
+                              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-md"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -428,7 +442,7 @@ const canCreate = isGerente || isTecnico;
                                 openDeleteDialog(client);
                               }}
                               title="Excluir"
-                              className="text-destructive hover:text-destructive"
+                              className="bg-black hover:bg-gray-800 text-white rounded-full shadow-md"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
