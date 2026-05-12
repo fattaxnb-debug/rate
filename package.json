@@ -4,8 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "build": "cd web && npm install && npm run build",
-    "postinstall": "cd web && npm install"
+    "build": "cd web && npm run build"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
