@@ -74,11 +74,11 @@ app.use('/uploads', (req, res, next) => {
 }, express.static(path.join(__dirname, '../public/uploads')));
 
 // Servir arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, '../web/dist')));
+app.use(express.static(path.join(__dirname, '../../web/dist')));
 
 // SPA fallback - servir index.html para rotas não-API
 app.get(/^(?!\/api).*/, (req, res) => {
-	res.sendFile(path.join(__dirname, '../web/dist/index.html'));
+	res.sendFile(path.join(__dirname, '../../web/dist/index.html'));
 });
 
 app.use(errorMiddleware);
