@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Search, MessageCircle, Download, Upload as UploadIcon, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, MessageCircle, Download, Upload as UploadIcon, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -23,6 +22,7 @@ export default function ClientsPage() {
   const { currentUser } = useAuth();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedCards, setExpandedCards] = useState({});
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -36,6 +36,13 @@ export default function ClientsPage() {
   const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
 const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
 const canCreate = isGerente || isTecnico;
+
+  const toggleCard = (clientId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [clientId]: !prev[clientId]
+    }));
+  };
 
   const { searchTerm, setSearchTerm, filteredItems: filteredClients } = useSearch(clients, [
     'name',
@@ -205,83 +212,155 @@ const canCreate = isGerente || isTecnico;
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome/Razão Social</TableHead>
-                  <TableHead>CNPJ/CPF</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>E-mail</TableHead>
-                  <TableHead>Cidade</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClients.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Nenhum resultado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredClients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium max-w-[200px] truncate" title={client.name}>
-                        {client.name}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">{client.cnpj || client.cpf || '-'}</TableCell>
-                      <TableCell className="whitespace-nowrap">{client.phone || client.mobile}</TableCell>
-                      <TableCell className="max-w-[200px] truncate" title={client.email}>{client.email}</TableCell>
-                      <TableCell className="whitespace-nowrap">{client.city}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          {(client.phone || client.mobile) && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => window.open(getWhatsAppLink(client.mobile || client.phone), '_blank')}
-                              title="WhatsApp"
-                            >
-                              <MessageCircle className="h-4 w-4 text-emerald-600" />
-                            </Button>
-                          )}
+          <div className="space-y-4">
+            {filteredClients.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                Nenhum resultado
+              </div>
+            ) : (
+              filteredClients.map((client) => (
+                <div key={client.id} className="bg-card rounded-lg border">
+                  <div 
+                    className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => toggleCard(client.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate">{client.name}</h3>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          <span className="mr-4">{client.cnpj || client.cpf || '-'}</span>
+                          <span className="mr-4">{client.phone || client.mobile || '-'}</span>
+                          <span className="hidden md:inline">{client.city || '-'}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 ml-4">
+                        {expandedCards[client.id] ? (
+                          <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {expandedCards[client.id] && (
+                    <div className="px-4 pb-4 border-t pt-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-muted-foreground">Tipo:</span>
+                          <span className="ml-2">{client.type === 'pessoa_juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Nome Fantasia:</span>
+                          <span className="ml-2">{client.fantasy_name || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">RG:</span>
+                          <span className="ml-2">{client.type !== 'pessoa_juridica' ? (client.rg || '-') : '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Inscrição Estadual:</span>
+                          <span className="ml-2">{client.ie || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Endereço:</span>
+                          <span className="ml-2">{client.address || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Número:</span>
+                          <span className="ml-2">{client.number || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Complemento:</span>
+                          <span className="ml-2">{client.complement || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Bairro:</span>
+                          <span className="ml-2">{client.neighborhood || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Cidade:</span>
+                          <span className="ml-2">{client.city || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Estado:</span>
+                          <span className="ml-2">{client.state || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">CEP:</span>
+                          <span className="ml-2">{client.zip_code || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Celular:</span>
+                          <span className="ml-2">{client.mobile || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">E-mail:</span>
+                          <span className="ml-2">{client.email || '-'}</span>
+                        </div>
+                        <div className="md:col-span-2">
+                          <span className="font-medium text-muted-foreground">Contato Técnico:</span>
+                          <span className="ml-2">{client.technical_contact || '-'}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-end space-x-2 mt-4 pt-4 border-t">
+                        {(client.phone || client.mobile) && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => openViewDialog(client)}
-                            title="Visualizar"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(getWhatsAppLink(client.mobile || client.phone), '_blank');
+                            }}
+                            title="WhatsApp"
                           >
-                            <Eye className="h-4 w-4" />
+                            <MessageCircle className="h-4 w-4 text-emerald-600" />
                           </Button>
-                          {isGerente && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEditDialog(client)}
-                                title="Editar"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openDeleteDialog(client)}
-                                title="Excluir"
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openViewDialog(client);
+                          }}
+                          title="Visualizar"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {isGerente && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditDialog(client);
+                              }}
+                              title="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDeleteDialog(client);
+                              }}
+                              title="Excluir"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </main>
 
