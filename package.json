@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "postinstall": "npm install --prefix web",
+    "postinstall": "npm install --prefix web --include=dev",
     "build": "npm run build --prefix web",
     "start": "node server.js"
   },
