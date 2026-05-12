@@ -1,18 +1,21 @@
 {
-  "name": "monorepo",
-  "version": "0.0.0",
-  "private": true,
+  "name": "fattax-rat",
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "concurrently --kill-others --raw \"npm run dev --prefix apps/web\" \"npm run dev --prefix apps/api\"",
-    "build": "concurrently --raw \"npm run build --prefix apps/web\"",
-    "start": "concurrently --kill-others --raw \"npm run start --prefix apps/api\"",
-    "lint": "concurrently --raw \"npm run lint --prefix apps/web\" \"npm run lint --prefix apps/api\""
+    "start": "node apps/api/src/server.js",
+    "build": "cd apps/api/web && npm install && npm run build",
+    "postinstall": "cd apps/api/web && npm install"
   },
-  "devDependencies": {
-    "concurrently": "^9.1.2"
-  },
-  "workspaces": [
-    "apps/*"
-  ],
-  "comment": "Migrated to backend API - clean deploy"
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^16.4.7",
+    "express": "^5.0.1",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.0",
+    "multer": "^2.1.1",
+    "mysql2": "^3.22.3"
+  }
 }
