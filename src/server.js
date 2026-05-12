@@ -6,11 +6,11 @@ import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import routes from './src/routes/index.js';
-import { errorMiddleware } from './src/middleware/error.js';
-import { globalRateLimit } from './src/middleware/global-rate-limit.js';
-import logger from './src/utils/logger.js';
-import { BodyLimit } from './src/constants/common.js';
+import routes from './routes/index.js';
+import { errorMiddleware } from './middleware/error.js';
+import { globalRateLimit } from './middleware/global-rate-limit.js';
+import logger from './utils/logger.js';
+import { BodyLimit } from './constants/common.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +41,10 @@ process.on('SIGTERM', async () => {
 	process.exit();
 });
 
+// CORS não necessário quando frontend e backend estão no mesmo domínio
+// app.use(cors(corsOptions));
+// app.options('*', cors(corsOptions));
+
 app.use((req, res, next) => {
 	logger.info(`Request: ${req.method} ${req.url}`);
 	logger.info(`Origin: ${req.headers.origin}`);
@@ -48,6 +52,7 @@ app.use((req, res, next) => {
 	next();
 });
 
+// app.use(helmet());
 app.use(morgan('combined'));
 app.use(globalRateLimit);
 app.use(express.json({
@@ -66,14 +71,14 @@ app.use('/uploads', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
-}, express.static(path.join(__dirname, 'public/uploads')));
+}, express.static(path.join(__dirname, '../public/uploads')));
 
 // Servir arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, 'web/dist')));
+app.use(express.static(path.join(__dirname, '../web/dist')));
 
 // SPA fallback - servir index.html para rotas não-API
 app.get(/^(?!\/api).*/, (req, res) => {
-	res.sendFile(path.join(__dirname, 'web/dist/index.html'));
+	res.sendFile(path.join(__dirname, '../web/dist/index.html'));
 });
 
 app.use(errorMiddleware);
