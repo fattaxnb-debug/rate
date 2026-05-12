@@ -183,18 +183,18 @@ export default function SchedulesPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border overflow-x-auto">
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-red-500/20 shadow-lg overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>DATA/HORA</TableHead>
-                  <TableHead>CLIENTE</TableHead>
-                  <TableHead>EQUIPAMENTO</TableHead>
-                  <TableHead>NÚMERO DE SÉRIE</TableHead>
-                  <TableHead>POTÊNCIA</TableHead>
-                  <TableHead>TÉCNICO</TableHead>
-                  <TableHead>STATUS</TableHead>
-                  <TableHead className="text-right">AÇÕES</TableHead>
+                <TableRow className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700">
+                  <TableHead className="text-white font-bold">DATA/HORA</TableHead>
+                  <TableHead className="text-white font-bold">CLIENTE</TableHead>
+                  <TableHead className="text-white font-bold">EQUIPAMENTO</TableHead>
+                  <TableHead className="text-white font-bold">NÚMERO DE SÉRIE</TableHead>
+                  <TableHead className="text-white font-bold">POTÊNCIA</TableHead>
+                  <TableHead className="text-white font-bold">TÉCNICO</TableHead>
+                  <TableHead className="text-white font-bold">STATUS</TableHead>
+                  <TableHead className="text-white font-bold text-right">AÇÕES</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -205,26 +205,26 @@ export default function SchedulesPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredSchedules.map((schedule) => {
+                  filteredSchedules.map((schedule, index) => {
                     return (
-                      <TableRow key={schedule.id}>
-                        <TableCell className="font-medium">
+                      <TableRow key={schedule.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50 hover:bg-red-50/50 transition-colors'}>
+                        <TableCell className="font-semibold text-gray-900">
                           {(() => {
                             if (!schedule.data_hora_agendamento) return '-';
                             return new Date(schedule.data_hora_agendamento).toLocaleString('pt-BR');
                           })()}
                         </TableCell>
-                        <TableCell>{schedule.client_name || '-'}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-700">{schedule.client_name || '-'}</TableCell>
+                        <TableCell className="text-gray-700">
                           {schedule.equipment_type ? `${schedule.equipment_type} - ${schedule.equipment_model}` : <span className="text-muted-foreground italic">SEM EQUIPAMENTO</span>}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-700">
                           {schedule.equipment_serial || '-'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-700 font-medium">
                           {schedule.equipment_power ? `${schedule.equipment_power} VA` : '-'}
                         </TableCell>
-                        <TableCell>{schedule.technician_name || '-'}</TableCell>
+                        <TableCell className="text-gray-700">{schedule.technician_name || '-'}</TableCell>
                         <TableCell>
                           <Badge className={`${getStatusColor(schedule.status)} text-white`}>
                             {schedule.status?.toUpperCase() || 'SEM STATUS'}
