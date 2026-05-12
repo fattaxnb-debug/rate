@@ -337,7 +337,7 @@ const canCreate = isGerente || isTecnico;
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Tipo</label>
-                  <p className="text-sm">{clientToView.type === 'juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</p>
+                  <p className="text-sm">{clientToView.type === 'pessoa_juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Nome/Razão Social</label>
@@ -349,12 +349,14 @@ const canCreate = isGerente || isTecnico;
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">CNPJ/CPF</label>
-                  <p className="text-sm">{clientToView.cnpj_cpf || '-'}</p>
+                  <p className="text-sm">{clientToView.cnpj || clientToView.cpf || '-'}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">RG</label>
-                  <p className="text-sm">{clientToView.rg || '-'}</p>
-                </div>
+                {clientToView.type !== 'pessoa_juridica' && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">RG</label>
+                    <p className="text-sm">{clientToView.rg || '-'}</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Inscrição Estadual</label>
                   <p className="text-sm">{clientToView.ie || '-'}</p>
