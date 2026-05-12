@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Pencil, Trash2, Search, MessageCircle, Download, Upload as UploadIcon, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -212,7 +213,86 @@ const canCreate = isGerente || isTecnico;
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="bg-card rounded-lg border overflow-x-auto hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome/Razão Social</TableHead>
+                  <TableHead>CNPJ/CPF</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>E-mail</TableHead>
+                  <TableHead>Cidade</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredClients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      Nenhum resultado
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredClients.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium max-w-[200px] truncate" title={client.name}>
+                        {client.name}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{client.cnpj || client.cpf || '-'}</TableCell>
+                      <TableCell className="whitespace-nowrap">{client.phone || client.mobile}</TableCell>
+                      <TableCell className="max-w-[200px] truncate" title={client.email}>{client.email}</TableCell>
+                      <TableCell className="whitespace-nowrap">{client.city}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          {(client.phone || client.mobile) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => window.open(getWhatsAppLink(client.mobile || client.phone), '_blank')}
+                              title="WhatsApp"
+                            >
+                              <MessageCircle className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openViewDialog(client)}
+                            title="Visualizar"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {isGerente && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditDialog(client)}
+                                title="Editar"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openDeleteDialog(client)}
+                                title="Excluir"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="space-y-4 md:hidden">
             {filteredClients.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground border rounded-lg">
                 Nenhum resultado
@@ -230,7 +310,6 @@ const canCreate = isGerente || isTecnico;
                         <div className="text-sm text-muted-foreground mt-1">
                           <span className="mr-4">{client.cnpj || client.cpf || '-'}</span>
                           <span className="mr-4">{client.phone || client.mobile || '-'}</span>
-                          <span className="hidden md:inline">{client.city || '-'}</span>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 ml-4">
@@ -245,7 +324,7 @@ const canCreate = isGerente || isTecnico;
                   
                   {expandedCards[client.id] && (
                     <div className="px-4 pb-4 border-t pt-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-1 gap-4 text-sm">
                         <div>
                           <span className="font-medium text-muted-foreground">Tipo:</span>
                           <span className="ml-2">{client.type === 'pessoa_juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</span>
@@ -298,7 +377,7 @@ const canCreate = isGerente || isTecnico;
                           <span className="font-medium text-muted-foreground">E-mail:</span>
                           <span className="ml-2">{client.email || '-'}</span>
                         </div>
-                        <div className="md:col-span-2">
+                        <div>
                           <span className="font-medium text-muted-foreground">Contato Técnico:</span>
                           <span className="ml-2">{client.technical_contact || '-'}</span>
                         </div>
