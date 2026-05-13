@@ -345,10 +345,18 @@ export default function ReportForm() {
     
     const isTecnico = currentUser?.role === 'Técnico';
     
+    // Formatar data local sem conversão para UTC
+    const formatDateLocal = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
     const payload = { 
       ...formData,
       attendance_date_time: new Date().toISOString(),
-      created_date: createdDate.toISOString().split('T')[0],
+      created_date: formatDateLocal(createdDate),
       external_battery_positive_cable: formData.external_battery_positive_cable || null,
       external_battery_negative_cable: formData.external_battery_negative_cable || null,
       external_battery_neutral_cable: formData.external_battery_neutral_cable || null,
@@ -378,11 +386,19 @@ export default function ReportForm() {
     if (!validateForm()) return;
     setSaving(true);
     
+    // Formatar data local sem conversão para UTC
+    const formatDateLocal = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
     const payload = { 
       client_id: formData.client_id,
       equipment_id: formData.equipment_id,
       technician_id: formData.technician_id,
-      created_date: createdDate.toISOString().split('T')[0],
+      created_date: formatDateLocal(createdDate),
       service_order_number: formData.service_order_number,
       service_type: formData.service_type,
       status: 'draft',
