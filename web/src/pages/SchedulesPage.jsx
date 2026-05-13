@@ -31,9 +31,17 @@ export default function SchedulesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [scheduleToDelete, setScheduleToDelete] = useState(null);
+  const [expandedCards, setExpandedCards] = useState({});
 
   const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
   const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
+
+  const toggleCard = (scheduleId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [scheduleId]: !prev[scheduleId]
+    }));
+  };
 
   useEffect(() => {
     fetchSchedules();
@@ -357,7 +365,10 @@ export default function SchedulesPage() {
                 const temporalClass = getTemporalRowClass(schedule);
                 return (
                   <div key={schedule.id} className={`rounded-xl border-2 shadow-xl overflow-hidden ${temporalClass}`}>
-                    <div className="p-4">
+                    <div 
+                      className="p-4 cursor-pointer hover:bg-black/5 transition-colors relative overflow-hidden"
+                      onClick={() => toggleCard(schedule.id)}
+                    >
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-gray-900 truncate text-base">
@@ -368,20 +379,61 @@ export default function SchedulesPage() {
                           </h3>
                           <div className="text-sm text-gray-600 mt-2 space-y-1">
                             <div className="flex items-center">
-                              <span className="font-semibold text-blue-600 w-20">Cliente:</span>
+                              <span className="font-semibold text-blue-600 w-24">Cliente:</span>
                               <span className="text-gray-900">{schedule.client_name || '-'}</span>
                             </div>
                             <div className="flex items-center">
-                              <span className="font-semibold text-blue-600 w-20">Técnico:</span>
+                              <span className="font-semibold text-blue-600 w-24">Técnico:</span>
                               <span className="text-gray-900">{schedule.technician_name || '-'}</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2 ml-4">
+                          <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-2 shadow-md">
+                            {expandedCards[schedule.id] ? (
+                              <ChevronUp className="h-4 w-4 text-white" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-white" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {expandedCards[schedule.id] && (
+                      <div className="px-4 pb-4 border-t border-blue-500/20 pt-4 bg-black/5">
+                        <div className="grid grid-cols-1 gap-3 text-sm">
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Status:</span>
+                            <span className="text-gray-900 font-medium">
+                              {schedule.status === 'completed' ? 'Concluído' : schedule.status === 'cancelled' ? 'Cancelado' : schedule.status === 'pending' ? 'Pendente' : schedule.status || '-'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Cliente:</span>
+                            <span className="text-gray-900 font-medium">{schedule.client_name || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Técnico:</span>
+                            <span className="text-gray-900 font-medium">{schedule.technician_name || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Equipamento:</span>
+                            <span className="text-gray-900 font-medium">{schedule.equipment_type ? `${schedule.equipment_brand} ${schedule.equipment_model}` : '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Observações:</span>
+                            <span className="text-gray-900 font-medium">{schedule.notes || '-'}</span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-blue-500/20">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/schedules/${schedule.id}`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/schedules/${schedule.id}`);
+                            }}
                             title="Visualizar"
                             className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                           >
@@ -392,7 +444,11 @@ export default function SchedulesPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => { setSelectedSchedule(schedule); setDialogOpen(true); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedSchedule(schedule);
+                                  setDialogOpen(true);
+                                }}
                                 title="Editar"
                                 className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                               >
@@ -401,7 +457,11 @@ export default function SchedulesPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => { setScheduleToDelete(schedule); setDeleteDialogOpen(true); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setScheduleToDelete(schedule);
+                                  setDeleteDialogOpen(true);
+                                }}
                                 title="Excluir"
                                 className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                               >
@@ -411,7 +471,7 @@ export default function SchedulesPage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })

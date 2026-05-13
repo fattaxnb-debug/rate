@@ -29,8 +29,16 @@ export default function ReportsPage() {
   const [clients, setClients] = useState([]);
   const [equipments, setEquipments] = useState([]);
   const [technicians, setTechnicians] = useState([]);
+  const [expandedCards, setExpandedCards] = useState({});
 
   const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
+
+  const toggleCard = (reportId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [reportId]: !prev[reportId]
+    }));
+  };
 
   useEffect(() => {
     fetchReports();
@@ -336,19 +344,23 @@ export default function ReportsPage() {
                 const isResponsible = isUserResponsible(report);
                 return (
                   <div key={report.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex items-center justify-between">
+                    <div 
+                      className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors relative overflow-hidden"
+                      onClick={() => toggleCard(report.id)}
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-500"></div>
+                      <div className="flex items-center justify-between pl-2">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-gray-900 truncate text-base">
                             {report.service_order_number || 'Sem O.S.'}
                           </h3>
                           <div className="text-sm text-gray-600 mt-2 space-y-1">
                             <div className="flex items-center">
-                              <span className="font-semibold text-blue-600 w-20">Cliente:</span>
+                              <span className="font-semibold text-blue-600 w-24">Cliente:</span>
                               <span className="text-gray-900">{report.client_name || '-'}</span>
                             </div>
                             <div className="flex items-center">
-                              <span className="font-semibold text-blue-600 w-20">Status:</span>
+                              <span className="font-semibold text-blue-600 w-24">Status:</span>
                               <span className="text-gray-900">
                                 {report.status === 'finalizado' ? (
                                   <Badge className="bg-green-500">Finalizado</Badge>
@@ -360,10 +372,59 @@ export default function ReportsPage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2 ml-4">
+                          <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-2 shadow-md">
+                            {expandedCards[report.id] ? (
+                              <ChevronUp className="h-4 w-4 text-white" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-white" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {expandedCards[report.id] && (
+                      <div className="px-4 pb-4 border-t border-blue-500/20 pt-4 bg-gradient-to-b from-blue-500/5 to-transparent">
+                        <div className="grid grid-cols-1 gap-3 text-sm">
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">O.S.:</span>
+                            <span className="text-gray-900 font-medium">{report.service_order_number || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Cliente:</span>
+                            <span className="text-gray-900 font-medium">{report.client_name || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Equipamento:</span>
+                            <span className="text-gray-900 font-medium">{report.equipment_type || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Técnico:</span>
+                            <span className="text-gray-900 font-medium">{report.technician_name || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Data:</span>
+                            <span className="text-gray-900 font-medium">{report.created_date ? format(new Date(report.created_date), 'dd/MM/yyyy') : report.attendance_date_time ? format(new Date(report.attendance_date_time), 'dd/MM/yyyy') : '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2">
+                            <span className="font-semibold text-blue-600">Status:</span>
+                            <span className="text-gray-900 font-medium">
+                              {report.status === 'finalizado' ? (
+                                <Badge className="bg-green-500">Finalizado</Badge>
+                              ) : (
+                                <Badge variant="secondary">Pendente</Badge>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-blue-500/20">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate(`/reports/${report.id}`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/reports/${report.id}`);
+                            }}
                             title="Visualizar"
                             className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                           >
@@ -373,7 +434,10 @@ export default function ReportsPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => navigate(`/reports/${report.id}/edit`)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/reports/${report.id}/edit`);
+                              }}
                               title="Editar"
                               className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
@@ -384,7 +448,11 @@ export default function ReportsPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => { setReportToDelete(report); setDeleteDialogOpen(true); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setReportToDelete(report);
+                                setDeleteDialogOpen(true);
+                              }}
                               title="Excluir"
                               className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
@@ -393,7 +461,7 @@ export default function ReportsPage() {
                           )}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })
