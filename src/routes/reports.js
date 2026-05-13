@@ -113,6 +113,8 @@ router.post('/', async (req, res) => {
   try {
     console.log('[REPORTS DEBUG] Request body:', JSON.stringify(req.body, null, 2));
     console.log('[REPORTS DEBUG] Request body keys:', Object.keys(req.body));
+    console.log('[REPORTS DEBUG] created_date received:', req.body.created_date);
+    console.log('[REPORTS DEBUG] created_date type:', typeof req.body.created_date);
     
     const { 
       schedule_id, 
