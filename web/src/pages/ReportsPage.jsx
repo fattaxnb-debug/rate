@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Search, Eye, FileEdit } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Eye, FileEdit, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext.jsx';
@@ -29,8 +29,16 @@ export default function ReportsPage() {
   const [clients, setClients] = useState([]);
   const [equipments, setEquipments] = useState([]);
   const [technicians, setTechnicians] = useState([]);
+  const [expandedCards, setExpandedCards] = useState({});
 
-  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
+
+  const toggleCard = (reportId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [reportId]: !prev[reportId]
+    }));
+  };
 
   useEffect(() => {
     fetchReports();
@@ -77,8 +85,11 @@ export default function ReportsPage() {
         technician_name: techniciansRes.data.data?.find(t => t.id === report.technician_id)?.name || '-'
       }));
       
-      setReports(enrichedReports);
-      setFilteredReports(enrichedReports);
+      // Ordenar por data de criação (mais recente primeiro)
+      const sortedReports = enrichedReports.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      setReports(sortedReports);
+      setFilteredReports(sortedReports);
       setLoading(false);
     } catch (error) {
       console.error('[REPORTS FRONTEND DEBUG] Error fetching reports:', error);
@@ -193,34 +204,38 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-red-500/20 shadow-lg overflow-x-auto">
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
             <Table>
-              <TableHeader>
-                <TableRow className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700">
-                  <TableHead className="text-white font-bold">O.S.</TableHead>
-                  <TableHead className="text-white font-bold">Data</TableHead>
-                  <TableHead className="text-white font-bold">Cliente</TableHead>
-                  <TableHead className="text-white font-bold">Equipamentos</TableHead>
-                  <TableHead className="text-white font-bold">Técnico</TableHead>
-                  <TableHead className="text-white font-bold">Status</TableHead>
-                  <TableHead className="text-white font-bold text-right">Ações</TableHead>
+              <TableHeader className="bg-gradient-to-r from-gray-100 to-gray-200">
+                <TableRow>
+                  <TableHead className="font-bold text-gray-900">O.S.</TableHead>
+                  <TableHead className="font-bold text-gray-900">Data</TableHead>
+                  <TableHead className="font-bold text-gray-900">Cliente</TableHead>
+                  <TableHead className="font-bold text-gray-900">Equipamentos</TableHead>
+                  <TableHead className="font-bold text-gray-900">Técnico</TableHead>
+                  <TableHead className="font-bold text-gray-900">Status</TableHead>
+                  <TableHead className="text-right font-bold text-gray-900">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredReports.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                      Nenhum relatório encontrado
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="text-6xl mb-4">📄</div>
+                        <p className="text-lg font-semibold">Nenhum relatório encontrado</p>
+                        <p className="text-sm">Tente ajustar os filtros de busca</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredReports.map((report, index) => {
+                  filteredReports.map((report) => {
                     const eqCount = getEquipmentCount(report);
                     const isResponsible = isUserResponsible(report);
 
                     return (
-                      <TableRow key={report.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50 hover:bg-red-50/50 transition-colors'}>
-                        <TableCell className="font-semibold text-red-600">
+                      <TableRow key={report.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors duration-200">
+                        <TableCell className="font-semibold text-primary">
                           {report.service_order_number || '-'}
                         </TableCell>
                         <TableCell className="text-gray-700">
@@ -258,8 +273,9 @@ export default function ReportsPage() {
                               size="icon"
                               onClick={() => navigate(`/reports/${report.id}`)}
                               title="Visualizar"
+                              className="hover:bg-blue-100 hover:text-blue-700 transition-colors"
                             >
-                              <Eye className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                              <Eye className="h-4 w-4" />
                             </Button>
 
                             {isGerente ? (
@@ -267,7 +283,7 @@ export default function ReportsPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => navigate(`/reports/${report.id}/edit`)}
-                                className="font-medium"
+                                className="font-medium hover:bg-amber-100 hover:text-amber-700 transition-colors"
                               >
                                 <Pencil className="mr-1 h-3 w-3" />
                                 EDITAR
@@ -290,8 +306,9 @@ export default function ReportsPage() {
                                 size="icon"
                                 onClick={() => { setReportToDelete(report); setDeleteDialogOpen(true); }}
                                 title="Excluir"
+                                className="text-destructive hover:bg-red-100 hover:text-red-700 transition-colors"
                               >
-                                <Trash2 className="h-4 w-4 text-destructive hover:text-destructive" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
@@ -302,6 +319,170 @@ export default function ReportsPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="space-y-4 md:hidden">
+            {filteredReports.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="text-6xl mb-4">📄</div>
+                <p className="text-lg font-semibold">Nenhum relatório encontrado</p>
+                <p className="text-sm">Tente ajustar os filtros de busca</p>
+              </div>
+            ) : (
+              filteredReports.map((report) => {
+                const isResponsible = isUserResponsible(report);
+                return (
+                  <div key={report.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
+                    <div 
+                      className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors relative overflow-hidden"
+                      onClick={() => toggleCard(report.id)}
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-500"></div>
+                      <div className="flex items-center justify-between pl-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 truncate text-base">
+                            {report.service_order_number || 'Sem O.S.'}
+                          </h3>
+                          <div className="text-sm text-gray-600 mt-2 space-y-1">
+                            <div className="flex items-center">
+                              <span className="font-semibold text-blue-600 w-24">Cliente:</span>
+                              <span className="text-gray-900">{report.client_name || '-'}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="font-semibold text-blue-600 w-24">Status:</span>
+                              <span className="text-gray-900">
+                                {report.status === 'finalizado' ? (
+                                  <Badge className="bg-green-500">Finalizado</Badge>
+                                ) : (
+                                  <Badge variant="secondary">Pendente</Badge>
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-2 shadow-md">
+                            {expandedCards[report.id] ? (
+                              <ChevronUp className="h-4 w-4 text-white" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-white" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {expandedCards[report.id] && (
+                      <div className="px-4 pb-4 border-t border-blue-500/20 pt-4 bg-gradient-to-b from-blue-500/5 to-transparent">
+                        <div className="grid grid-cols-1 gap-3 text-sm">
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">O.S.:</span>
+                            <span className="text-gray-900 font-medium">{report.service_order_number || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Data:</span>
+                            <span className="text-gray-900">
+                              {report.created_date ? format(new Date(report.created_date), 'dd/MM/yyyy') : 
+                               report.created_at ? format(new Date(report.created_at), 'dd/MM/yyyy') : '-'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Cliente:</span>
+                            <span className="text-gray-900">{report.client_name || 'Cliente Inválido'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Equipamento:</span>
+                            <span className="text-gray-900">
+                              {report.equipment_brand && report.equipment_model ? (
+                                <div className="text-sm">
+                                  <div className="font-medium">{report.equipment_brand} - {report.equipment_model}</div>
+                                  {report.equipment_power && <div className="text-muted-foreground">{report.equipment_power}</div>}
+                                  {report.equipment_serial && <div className="text-muted-foreground">S/N: {report.equipment_serial}</div>}
+                                </div>
+                              ) : (
+                                <Badge variant="secondary" className="font-normal">1 equipamento</Badge>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Técnico:</span>
+                            <span className="text-gray-900">{report.technician_name || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2">
+                            <span className="font-semibold text-blue-600">Status:</span>
+                            <span className="text-gray-900">
+                              {report.status === 'finalizado' ? (
+                                <Badge className="bg-green-500">Finalizado</Badge>
+                              ) : (
+                                <Badge variant="secondary">Pendente</Badge>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-blue-500/20">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/reports/${report.id}`);
+                            }}
+                            title="Visualizar"
+                            className="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-full shadow-md"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+
+                          {isGerente ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/reports/${report.id}/edit`);
+                              }}
+                              className="font-medium bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-full shadow-md"
+                            >
+                              <Pencil className="mr-1 h-3 w-3" />
+                              EDITAR
+                            </Button>
+                          ) : isResponsible && report.status === 'draft' ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/reports/${report.id}/edit`);
+                              }}
+                              className="bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-full shadow-md"
+                            >
+                              <FileEdit className="mr-1 h-3 w-3" />
+                              PREENCHER
+                            </Button>
+                          ) : null}
+
+                          {isGerente && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setReportToDelete(report);
+                                setDeleteDialogOpen(true);
+                              }}
+                              title="Excluir"
+                              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-md"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </main>
 

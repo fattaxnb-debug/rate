@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../config/database.js';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
@@ -57,9 +58,9 @@ router.post('/', async (req, res) => {
   try {
     const allowedFields = ['client_id', 'type', 'brand', 'model', 'serial_number', 'power_va', 'voltage_in', 'voltage_out', 'voltage_battery', 'voltage_type', 'battery_type', 'battery_quantity', 'battery_volts', 'battery_bank_voltage', 'battery_current', 'battery_connection', 'battery_terminal', 'battery_brand', 'battery_model', 'capacity_ah', 'symmetric', 'isolated', 'signalizers_quantity', 'ihm', 'localizadores', 'communication_cable_type', 'fixation', 'quantity', 'installation_date'];
     
-    const fields = [];
-    const values = [];
-    const placeholders = [];
+    const fields = ['id'];
+    const values = [uuidv4()];
+    const placeholders = ['?'];
     
     for (const field of allowedFields) {
       if (req.body[field] !== undefined && req.body[field] !== '') {
@@ -80,7 +81,7 @@ router.post('/', async (req, res) => {
     
     const [result] = await db.query(sql, values);
 
-    res.json({ data: { id: result.insertId, ...req.body } });
+    res.json({ data: { id: values[0], ...req.body } });
   } catch (error) {
     console.error('Error creating equipment:', error);
     console.error('Error details:', error.message);

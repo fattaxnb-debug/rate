@@ -43,11 +43,11 @@ export default function SettingsPage() {
       if (settings) {
         setSettingsId(settings.id);
         setCompanyName(settings.company_name || '');
-        if (settings.company_logo) setLogoUrl(settings.company_logo);
-        if (settings.signature_tiago_viana) setSigTiagoUrl(settings.signature_tiago_viana);
-        if (settings.signature_tito_livio) setSigTitoUrl(settings.signature_tito_livio);
+        if (settings.company_logo) setLogoUrl(`http://localhost:3001/uploads/${settings.company_logo}`);
+        if (settings.signature_tiago_viana) setSigTiagoUrl(`http://localhost:3001/uploads/${settings.signature_tiago_viana}`);
+        if (settings.signature_tito_livio) setSigTitoUrl(`http://localhost:3001/uploads/${settings.signature_tito_livio}`);
         if (settings.cover_pdf) {
-          setCoverPdfUrl(settings.cover_pdf);
+          setCoverPdfUrl(`http://localhost:3001/uploads/${settings.cover_pdf}`);
           setCoverPdfName(settings.cover_pdf);
         }
       }

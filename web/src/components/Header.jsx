@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
-import { Menu, X, LogOut, User, Settings } from 'lucide-react';
+import { Menu, X, LogOut, User, Settings, LayoutDashboard, Users, Wrench, Calendar, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -22,36 +22,35 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import axios from 'axios';
 import { API_BASE_URL } from '@/config/api.js';
+import axios from 'axios';
 
 export default function Header() {
   const { currentUser, logout, isAuthenticated } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-  const [logoUrl, setLogoUrl] = useState('');
-  const [companyName, setCompanyName] = useState('FATTAX');
-
-  const isActive = (path) => location.pathname === path;
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      if (!currentUser?.id) return;
-      try {
-        const token = localStorage.getItem('auth_token');
-        const response = await axios.get(`${API_BASE_URL}/settings/user/${currentUser.id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const settings = response.data.data || {};
-        if (settings.company_logo) setLogoUrl(settings.company_logo);
-        if (settings.company_name) setCompanyName(settings.company_name);
-      } catch (error) {
-        console.log('Erro ao carregar configurações:', error);
-      }
-    };
-    fetchSettings();
-  }, [currentUser?.id]);
+    if (isAuthenticated && currentUser?.id) {
+      fetchSettings();
+    }
+  }, [isAuthenticated, currentUser]);
+
+  const fetchSettings = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await axios.get(`${API_BASE_URL}/settings/user/${currentUser.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setSettings(response.data.data);
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    }
+  };
+
+  const isActive = (path) => location.pathname === path;
 
   const handleLogout = () => {
     setLogoutDialogOpen(false);
@@ -59,50 +58,54 @@ export default function Header() {
   };
 
   const navLinks = [
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/clients', label: 'Clientes' },
-    { path: '/equipments', label: 'Equipamentos' },
-    { path: '/schedules', label: 'Agendamentos' },
-    { path: '/reports', label: 'Relatórios' },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/clients', label: 'Clientes', icon: Users },
+    { path: '/equipments', label: 'Equipamentos', icon: Wrench },
+    { path: '/schedules', label: 'Agendamentos', icon: Calendar },
+    { path: '/reports', label: 'Relatórios', icon: FileText },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b-2 border-red-500/20 bg-gradient-to-r from-white to-gray-50/50 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center space-x-3">
-            {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
-            ) : (
-              <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-lg">F</span>
-              </div>
-            )}
-            <div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent" style={{ letterSpacing: '-0.02em' }}>{companyName}</span>
-              <div className="flex items-center space-x-1 mt-1">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <span className="text-xs text-gray-600 font-medium uppercase tracking-wider">Admin</span>
-              </div>
-            </div>
+          <Link to="/" className="flex items-center space-x-2">
+            {settings?.company_logo ? (
+              <img 
+                src={`http://localhost:3001/uploads/${settings.company_logo}`} 
+                alt="Logo" 
+                className="h-10 w-auto object-contain"
+                onError={(e) => {
+                  console.error('Error loading logo');
+                  e.target.style.display = 'none';
+                  const textSpan = e.target.parentElement.querySelector('span');
+                  if (textSpan) textSpan.style.display = 'block';
+                }}
+              />
+            ) : null}
+            <span className="text-2xl font-bold text-primary" style={{ letterSpacing: '-0.02em', display: settings?.company_logo ? 'none' : 'block' }}>FATTAX</span>
           </Link>
 
           {isAuthenticated && (
             <>
-              <nav className="hidden md:flex items-center space-x-6">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`text-sm font-semibold transition-all duration-200 px-3 py-2 rounded-lg ${
-                      isActive(link.path)
-                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md'
-                        : 'text-gray-600 hover:bg-red-50 hover:text-red-600'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+              <nav className="hidden md:flex items-center space-x-1">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                        isActive(link.path)
+                          ? 'bg-primary text-primary-foreground shadow-md'
+                          : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {link.label}
+                    </Link>
+                  );
+                })}
               </nav>
 
               <div className="flex items-center space-x-4">
@@ -142,19 +145,25 @@ export default function Header() {
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="right">
-                    <nav className="flex flex-col space-y-4 mt-8">
-                      {navLinks.map((link) => (
-                        <Link
-                          key={link.path}
-                          to={link.path}
-                          onClick={() => setMobileOpen(false)}
-                          className={`text-sm font-medium transition-colors hover:text-primary ${
-                            isActive(link.path) ? 'text-primary' : 'text-foreground/60'
-                          }`}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
+                    <nav className="flex flex-col space-y-2 mt-8">
+                      {navLinks.map((link) => {
+                        const Icon = link.icon;
+                        return (
+                          <Link
+                            key={link.path}
+                            to={link.path}
+                            onClick={() => setMobileOpen(false)}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                              isActive(link.path)
+                                ? 'bg-primary text-primary-foreground shadow-md'
+                                : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                            }`}
+                          >
+                            <Icon className="h-5 w-5" />
+                            {link.label}
+                          </Link>
+                        );
+                      })}
                       <div className="pt-4 border-t mt-auto">
                         <p className="text-sm font-medium mb-1">{currentUser?.name}</p>
                         <p className="text-xs text-muted-foreground mb-1">{currentUser?.email}</p>

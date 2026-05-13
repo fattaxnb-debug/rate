@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../config/database.js';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
@@ -156,10 +157,12 @@ router.post('/', async (req, res) => {
       client_id, equipment_id, technician_id, service_order_number, created_date, service_type, status
     });
     
+    const id = uuidv4();
+    
     // Inserir todos os campos
     const [result] = await db.query(
       `INSERT INTO reports (
-        schedule_id, client_id, equipment_id, technician_id, created_date, service_order_number, 
+        id, schedule_id, client_id, equipment_id, technician_id, created_date, service_order_number, 
         service_type, status, technician_edit_count, responsible_person, installation_location,
         installation_location_explanation, power_supply_type, breaker, cable_entry_phase,
         cable_entry_neutral, cable_entry_ground, cable_exit_phase, cable_exit_neutral,
@@ -171,6 +174,7 @@ router.post('/', async (req, res) => {
         client_signature, technician_signature
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        id,
         schedule_id || null,
         client_id, 
         equipment_id, 
@@ -215,7 +219,7 @@ router.post('/', async (req, res) => {
     );
 
     console.log('[REPORTS DEBUG] Insert result:', result);
-    res.json({ data: { id: result.insertId, ...req.body } });
+    res.json({ data: { id, ...req.body } });
   } catch (error) {
     console.error('[REPORTS DEBUG] Error creating report:', error);
     console.error('[REPORTS DEBUG] Error message:', error.message);

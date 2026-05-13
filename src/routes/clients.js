@@ -1,5 +1,6 @@
 import express from 'express';
 import db from '../config/database.js';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
@@ -42,16 +43,18 @@ router.post('/', async (req, res) => {
   try {
     const { type, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact } = req.body;
 
-    // Converter type para o formato do banco
-    const dbType = type === 'juridica' ? 'pessoa_juridica' : 'pessoa_fisica';
+    // Converter type para o formato do banco (fisica/juridica)
+    const dbType = type === 'juridica' ? 'juridica' : 'fisica';
+
+    const id = uuidv4();
 
     const [result] = await db.query(
-      `INSERT INTO clients (type, name, fantasy_name, cnpj, cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, contact_person, technical_contact)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [dbType, name, fantasy_name, cnpj_cpf, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact, technical_contact]
+      `INSERT INTO clients (id, type, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, dbType, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact]
     );
 
-    res.json({ data: { id: result.insertId, ...req.body } });
+    res.json({ data: { id, ...req.body } });
   } catch (error) {
     console.error('Error creating client:', error);
     res.status(500).json({ error: 'Erro ao criar cliente' });
@@ -63,13 +66,13 @@ router.put('/:id', async (req, res) => {
   try {
     const { type, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact } = req.body;
 
-    // Converter type para o formato do banco
-    const dbType = type === 'juridica' ? 'pessoa_juridica' : 'pessoa_fisica';
+    // Converter type para o formato do banco (fisica/juridica)
+    const dbType = type === 'juridica' ? 'juridica' : 'fisica';
 
     await db.query(
-      `UPDATE clients SET type = ?, name = ?, fantasy_name = ?, cnpj = ?, cpf = ?, rg = ?, ie = ?, address = ?, number = ?, complement = ?, neighborhood = ?, city = ?, state = ?, zip_code = ?, phone = ?, mobile = ?, email = ?, contact_person = ?, technical_contact = ?
+      `UPDATE clients SET type = ?, name = ?, fantasy_name = ?, cnpj_cpf = ?, rg = ?, ie = ?, address = ?, number = ?, complement = ?, neighborhood = ?, city = ?, state = ?, zip_code = ?, phone = ?, mobile = ?, email = ?, technical_contact = ?
        WHERE id = ?`,
-      [dbType, name, fantasy_name, cnpj_cpf, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact, technical_contact, req.params.id]
+      [dbType, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact, req.params.id]
     );
 
     res.json({ data: { id: req.params.id, ...req.body } });

@@ -23,7 +23,8 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     client_id: '',
     equipment_id: '',
-    data_hora_agendamento: '',
+    scheduled_date: '',
+    scheduled_time: '',
     status: 'Aberto',
     technician_id: '',
     notes: ''
@@ -66,14 +67,12 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
   useEffect(() => {
     if (schedule) {
       console.log('Loading schedule data:', schedule);
-      const parsedDateTime = schedule.data_hora_agendamento 
-        ? schedule.data_hora_agendamento.replace(' ', 'T').slice(0, 16) 
-        : '';
-        
+      
       const newFormData = {
         client_id: schedule.client_id || '',
         equipment_id: schedule.equipment_id || '',
-        data_hora_agendamento: parsedDateTime,
+        scheduled_date: schedule.scheduled_date || '',
+        scheduled_time: schedule.scheduled_time || '',
         status: schedule.status && schedule.status !== '' ? schedule.status : 'Aberto',
         technician_id: schedule.technician_id || '',
         notes: schedule.notes || ''
@@ -191,7 +190,8 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
     const newErrors = {};
     if (!formData.client_id) newErrors.client_id = 'CLIENTE É OBRIGATÓRIO';
     if (hasEquipment && !formData.equipment_id) newErrors.equipment_id = 'EQUIPAMENTO É OBRIGATÓRIO';
-    if (!formData.data_hora_agendamento) newErrors.data_hora_agendamento = 'DATA/HORA É OBRIGATÓRIA';
+    if (!formData.scheduled_date) newErrors.scheduled_date = 'DATA É OBRIGATÓRIA';
+    if (!formData.scheduled_time) newErrors.scheduled_time = 'HORA É OBRIGATÓRIA';
     if (!formData.status) newErrors.status = 'STATUS É OBRIGATÓRIO';
     if (!formData.technician_id) newErrors.technician_id = 'TÉCNICO É OBRIGATÓRIO';
     
@@ -221,17 +221,12 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
 
     setLoading(true);
     try {
-      let isoDate = '';
-      if (formData.data_hora_agendamento) {
-        const localDateTime = new Date(formData.data_hora_agendamento);
-        // Corrects datetime offset to effectively save local time values strictly as UTC.
-        isoDate = new Date(localDateTime.getTime() - localDateTime.getTimezoneOffset() * 60000).toISOString();
-      }
-
+      // Enviar campos separados de data e hora
       const formattedData = {
         ...formData,
         equipment_id: hasEquipment ? formData.equipment_id : null,
-        data_hora_agendamento: isoDate
+        scheduled_date: formData.scheduled_date,
+        scheduled_time: formData.scheduled_time
       };
 
       if (isTecnico && isEditingOwnSchedule) {
@@ -258,7 +253,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col space-y-1.5">
-          <Label htmlFor="client_id">CLIENTE *</Label>
+          <Label htmlFor="client_id" className="font-bold">CLIENTE *</Label>
           <Popover open={clientOpen} onOpenChange={(open) => { setClientOpen(open); if (!open) setClientSearchTerm(''); }}>
             <PopoverTrigger asChild>
               <Button
@@ -313,7 +308,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
         </div>
 
         <div className="flex flex-col space-y-3">
-          <Label>VINCULAR EQUIPAMENTO?</Label>
+          <Label className="font-bold">VINCULAR EQUIPAMENTO?</Label>
           <RadioGroup
             value={hasEquipment ? "sim" : "nao"}
             onValueChange={(val) => {
@@ -341,7 +336,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
 
         {hasEquipment && (
           <div className="flex flex-col space-y-1.5 md:col-span-2">
-            <Label htmlFor="equipment_id">EQUIPAMENTO *</Label>
+            <Label htmlFor="equipment_id" className="font-bold">EQUIPAMENTO *</Label>
             <Popover open={equipmentOpen} onOpenChange={(open) => { setEquipmentOpen(open); if (!open) setEquipmentSearchTerm(''); }}>
               <PopoverTrigger asChild>
                 <Button
@@ -399,21 +394,35 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
           </div>
         )}
 
-        <div>
-          <Label htmlFor="data_hora_agendamento">DATA E HORA *</Label>
-          <Input
-            type="datetime-local"
-            name="data_hora_agendamento"
-            value={formData.data_hora_agendamento}
-            onChange={handleChange}
-            className={errors.data_hora_agendamento ? 'border-destructive' : ''}
-            disabled={!canEditField('data_hora_agendamento')}
-          />
-          {errors.data_hora_agendamento && <p className="text-sm text-destructive mt-1">{errors.data_hora_agendamento}</p>}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="scheduled_date" className="font-bold">DATA *</Label>
+            <Input
+              type="date"
+              name="scheduled_date"
+              value={formData.scheduled_date}
+              onChange={handleChange}
+              className={errors.scheduled_date ? 'border-destructive' : ''}
+              disabled={!canEditField('scheduled_date')}
+            />
+            {errors.scheduled_date && <p className="text-sm text-destructive mt-1">{errors.scheduled_date}</p>}
+          </div>
+          <div>
+            <Label htmlFor="scheduled_time" className="font-bold">HORA *</Label>
+            <Input
+              type="time"
+              name="scheduled_time"
+              value={formData.scheduled_time}
+              onChange={handleChange}
+              className={errors.scheduled_time ? 'border-destructive' : ''}
+              disabled={!canEditField('scheduled_time')}
+            />
+            {errors.scheduled_time && <p className="text-sm text-destructive mt-1">{errors.scheduled_time}</p>}
+          </div>
         </div>
 
         <div>
-          <Label htmlFor="status">STATUS *</Label>
+          <Label htmlFor="status" className="font-bold">STATUS *</Label>
           <Select 
             value={formData.status} 
             onValueChange={(value) => handleSelectChange('status', value)}
@@ -434,7 +443,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
         </div>
 
         <div>
-          <Label htmlFor="technician_id">TÉCNICO RESPONSÁVEL *</Label>
+          <Label htmlFor="technician_id" className="font-bold">TÉCNICO RESPONSÁVEL *</Label>
           <Select 
             value={formData.technician_id} 
             onValueChange={(value) => handleSelectChange('technician_id', value)}
@@ -455,7 +464,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
         </div>
 
         <div className="md:col-span-2">
-          <Label htmlFor="notes">OBSERVAÇÕES</Label>
+          <Label htmlFor="notes" className="font-bold">OBSERVAÇÕES</Label>
           <Textarea 
             name="notes" 
             value={formData.notes} 

@@ -34,8 +34,8 @@ export default function ClientsPage() {
   const [clientToDelete, setClientToDelete] = useState(null);
   const [clientToView, setClientToView] = useState(null);
 
-  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
-const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
+const isTecnico = currentUser?.role === 'Técnico';
 const canCreate = isGerente || isTecnico;
 
   const toggleCard = (clientId) => {
@@ -65,7 +65,10 @@ const canCreate = isGerente || isTecnico;
         headers: { 'Authorization': `Bearer ${token}` }
       });
       console.log('[DEBUG] Response:', response.data);
-      setClients(response.data.data || []);
+      const clients = response.data.data || [];
+      // Ordenar por data de criação (mais recente primeiro)
+      const sortedClients = clients.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setClients(sortedClients);
       setLoading(false);
     } catch (error) {
       console.error('[DEBUG] Error fetching clients:', error);
@@ -213,35 +216,39 @@ const canCreate = isGerente || isTecnico;
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border overflow-x-auto hidden md:block">
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-gradient-to-r from-gray-100 to-gray-200">
                 <TableRow>
-                  <TableHead>Nome/Razão Social</TableHead>
-                  <TableHead>CNPJ/CPF</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>E-mail</TableHead>
-                  <TableHead>Cidade</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="font-bold text-gray-900">Nome/Razão Social</TableHead>
+                  <TableHead className="font-bold text-gray-900">CNPJ/CPF</TableHead>
+                  <TableHead className="font-bold text-gray-900">Telefone</TableHead>
+                  <TableHead className="font-bold text-gray-900">E-mail</TableHead>
+                  <TableHead className="font-bold text-gray-900">Cidade</TableHead>
+                  <TableHead className="text-right font-bold text-gray-900">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredClients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Nenhum resultado
+                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="text-6xl mb-4">🔍</div>
+                        <p className="text-lg font-semibold">Nenhum resultado encontrado</p>
+                        <p className="text-sm">Tente ajustar os filtros de busca</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredClients.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium max-w-[200px] truncate" title={client.name}>
+                  filteredClients.map((client, index) => (
+                    <TableRow key={client.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors duration-200">
+                      <TableCell className="font-semibold text-gray-900 max-w-[200px] truncate" title={client.name}>
                         {client.name}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">{client.cnpj || client.cpf || '-'}</TableCell>
-                      <TableCell className="whitespace-nowrap">{client.phone || client.mobile}</TableCell>
-                      <TableCell className="max-w-[200px] truncate" title={client.email}>{client.email}</TableCell>
-                      <TableCell className="whitespace-nowrap">{client.city}</TableCell>
+                      <TableCell className="whitespace-nowrap text-gray-700">{client.cnpj || client.cpf || '-'}</TableCell>
+                      <TableCell className="whitespace-nowrap text-gray-700">{client.phone || client.mobile}</TableCell>
+                      <TableCell className="max-w-[200px] truncate text-gray-700" title={client.email}>{client.email}</TableCell>
+                      <TableCell className="whitespace-nowrap text-gray-700">{client.city}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           {(client.phone || client.mobile) && (
@@ -250,6 +257,7 @@ const canCreate = isGerente || isTecnico;
                               size="icon"
                               onClick={() => window.open(getWhatsAppLink(client.mobile || client.phone), '_blank')}
                               title="WhatsApp"
+                              className="hover:bg-green-100 hover:text-green-700 transition-colors"
                             >
                               <MessageCircle className="h-4 w-4 text-emerald-600" />
                             </Button>
@@ -259,6 +267,7 @@ const canCreate = isGerente || isTecnico;
                             size="icon"
                             onClick={() => openViewDialog(client)}
                             title="Visualizar"
+                            className="hover:bg-blue-100 hover:text-blue-700 transition-colors"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -269,6 +278,7 @@ const canCreate = isGerente || isTecnico;
                                 size="icon"
                                 onClick={() => openEditDialog(client)}
                                 title="Editar"
+                                className="hover:bg-amber-100 hover:text-amber-700 transition-colors"
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -277,7 +287,7 @@ const canCreate = isGerente || isTecnico;
                                 size="icon"
                                 onClick={() => openDeleteDialog(client)}
                                 title="Excluir"
-                                className="text-destructive hover:text-destructive"
+                                className="text-destructive hover:bg-red-100 hover:text-red-700 transition-colors"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -294,33 +304,35 @@ const canCreate = isGerente || isTecnico;
 
           <div className="space-y-4 md:hidden">
             {filteredClients.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-red-500/30 rounded-xl bg-gradient-to-br from-black/5 to-red-500/5">
-                Nenhum resultado
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="text-6xl mb-4">🔍</div>
+                <p className="text-lg font-semibold">Nenhum resultado encontrado</p>
+                <p className="text-sm">Tente ajustar os filtros de busca</p>
               </div>
             ) : (
               filteredClients.map((client) => (
-                <div key={client.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-red-500/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div key={client.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
                   <div 
-                    className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-red-500/5 hover:to-yellow-500/5 transition-colors relative overflow-hidden"
+                    className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors relative overflow-hidden"
                     onClick={() => toggleCard(client.id)}
                   >
-                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500 to-yellow-500"></div>
+                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-500"></div>
                     <div className="flex items-center justify-between pl-2">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-gray-900 truncate text-base">{client.name}</h3>
                         <div className="text-sm text-gray-600 mt-2 space-y-1">
                           <div className="flex items-center">
-                            <span className="font-semibold text-red-600 w-24">CNPJ/CPF:</span>
+                            <span className="font-semibold text-blue-600 w-24">CNPJ/CPF:</span>
                             <span className="text-gray-900">{client.cnpj || client.cpf || '-'}</span>
                           </div>
                           <div className="flex items-center">
-                            <span className="font-semibold text-red-600 w-24">Telefone:</span>
+                            <span className="font-semibold text-blue-600 w-24">Telefone:</span>
                             <span className="text-gray-900">{client.phone || client.mobile || '-'}</span>
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 ml-4">
-                        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-full p-2 shadow-md">
+                        <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-2 shadow-md">
                           {expandedCards[client.id] ? (
                             <ChevronUp className="h-4 w-4 text-white" />
                           ) : (
@@ -332,68 +344,68 @@ const canCreate = isGerente || isTecnico;
                   </div>
                   
                   {expandedCards[client.id] && (
-                    <div className="px-4 pb-4 border-t border-red-500/20 pt-4 bg-gradient-to-b from-red-500/5 to-transparent">
+                    <div className="px-4 pb-4 border-t border-blue-500/20 pt-4 bg-gradient-to-b from-blue-500/5 to-transparent">
                       <div className="grid grid-cols-1 gap-3 text-sm">
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Tipo:</span>
+                          <span className="font-semibold text-blue-600">Tipo:</span>
                           <span className="text-gray-900 font-medium">{client.type === 'pessoa_juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Nome Fantasia:</span>
+                          <span className="font-semibold text-blue-600">Nome Fantasia:</span>
                           <span className="text-gray-900">{client.fantasy_name || '-'}</span>
                         </div>
                         {client.type !== 'pessoa_juridica' && (
                           <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                            <span className="font-semibold text-red-600">RG:</span>
+                            <span className="font-semibold text-blue-600">RG:</span>
                             <span className="text-gray-900">{client.rg || '-'}</span>
                           </div>
                         )}
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Inscrição Estadual:</span>
+                          <span className="font-semibold text-blue-600">Inscrição Estadual:</span>
                           <span className="text-gray-900">{client.ie || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Endereço:</span>
+                          <span className="font-semibold text-blue-600">Endereço:</span>
                           <span className="text-gray-900">{client.address || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Número:</span>
+                          <span className="font-semibold text-blue-600">Número:</span>
                           <span className="text-gray-900">{client.number || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Complemento:</span>
+                          <span className="font-semibold text-blue-600">Complemento:</span>
                           <span className="text-gray-900">{client.complement || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Bairro:</span>
+                          <span className="font-semibold text-blue-600">Bairro:</span>
                           <span className="text-gray-900">{client.neighborhood || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Cidade:</span>
+                          <span className="font-semibold text-blue-600">Cidade:</span>
                           <span className="text-gray-900">{client.city || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Estado:</span>
+                          <span className="font-semibold text-blue-600">Estado:</span>
                           <span className="text-gray-900">{client.state || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">CEP:</span>
+                          <span className="font-semibold text-blue-600">CEP:</span>
                           <span className="text-gray-900">{client.zip_code || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">Celular:</span>
+                          <span className="font-semibold text-blue-600">Celular:</span>
                           <span className="text-gray-900">{client.mobile || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-red-600">E-mail:</span>
+                          <span className="font-semibold text-blue-600">E-mail:</span>
                           <span className="text-gray-900">{client.email || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2">
-                          <span className="font-semibold text-red-600">Contato Técnico:</span>
+                          <span className="font-semibold text-blue-600">Contato Técnico:</span>
                           <span className="text-gray-900">{client.technical_contact || '-'}</span>
                         </div>
                       </div>
-                      <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-red-500/20">
+                      <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-blue-500/20">
                         {(client.phone || client.mobile) && (
                           <Button
                             variant="ghost"
@@ -416,7 +428,7 @@ const canCreate = isGerente || isTecnico;
                             openViewDialog(client);
                           }}
                           title="Visualizar"
-                          className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black rounded-full shadow-md"
+                          className="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-full shadow-md"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -430,7 +442,7 @@ const canCreate = isGerente || isTecnico;
                                 openEditDialog(client);
                               }}
                               title="Editar"
-                              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-md"
+                              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-full shadow-md"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -442,7 +454,7 @@ const canCreate = isGerente || isTecnico;
                                 openDeleteDialog(client);
                               }}
                               title="Excluir"
-                              className="bg-black hover:bg-gray-800 text-white rounded-full shadow-md"
+                              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-md"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
