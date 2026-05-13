@@ -58,13 +58,13 @@ app.use(express.urlencoded({
 
 app.use('/api', routes());
 
-// Servir arquivos estáticos de public/uploads com CORS
-app.use('/uploads', (req, res, next) => {
+// Servir arquivos estáticos de uploads com CORS
+app.use('/api/uploads', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
-}, express.static(path.join(__dirname, 'public/uploads')));
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Servir arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, 'web/dist')));
