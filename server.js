@@ -66,6 +66,17 @@ app.use('/api/uploads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, 'uploads')));
 
+// Servir arquivos PWA com MIME type correto
+app.use('/serviceWorker.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'web/public/serviceWorker.js'));
+});
+
+app.use('/manifest.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.sendFile(path.join(__dirname, 'web/public/manifest.json'));
+});
+
 // Servir arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, 'web/dist')));
 
