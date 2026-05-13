@@ -5,6 +5,7 @@ import ScrollToTop from '@/components/ScrollToTop.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { ThemeProvider } from '@/contexts/ThemeContext.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt.jsx';
 
 import HomePage from '@/pages/HomePage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
@@ -63,6 +64,7 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
           <Toaster position="top-right" richColors />
+          <PWAInstallPrompt />
         </AuthProvider>
       </ThemeProvider>
     </Router>
