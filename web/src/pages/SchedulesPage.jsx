@@ -238,7 +238,7 @@ export default function SchedulesPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
+          <div className="hidden md:block bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
             <Table>
               <TableHeader className="bg-gradient-to-r from-gray-100 to-gray-200">
                 <TableRow>
