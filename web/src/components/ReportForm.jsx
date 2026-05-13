@@ -245,6 +245,12 @@ export default function ReportForm() {
     : ['equipment', 'installation', 'electrical', ...(hasBattery ? ['battery'] : []), 'attendance', 'photos', 'signatures'];
 
   const handleNextTab = () => {
+    // Fechar modais antes de navegar
+    setClientOpen(false);
+    setEquipmentModalOpen(false);
+    setDatePickerOpen(false);
+    setZoomPhoto(null);
+    
     const idx = tabsOrder.indexOf(activeTab);
     if (idx < tabsOrder.length - 1) {
       setActiveTab(tabsOrder[idx + 1]);
@@ -253,6 +259,12 @@ export default function ReportForm() {
   };
 
   const handlePrevTab = () => {
+    // Fechar modais antes de navegar
+    setClientOpen(false);
+    setEquipmentModalOpen(false);
+    setDatePickerOpen(false);
+    setZoomPhoto(null);
+    
     const idx = tabsOrder.indexOf(activeTab);
     if (idx > 0) {
       setActiveTab(tabsOrder[idx - 1]);
