@@ -303,6 +303,24 @@ const canCreate = isGerente || isTecnico;
           </div>
 
           <div className="space-y-4 md:hidden">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <Button variant="outline" size="sm" onClick={handleExportExcel}>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar
+              </Button>
+              {isGerente && (
+                <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
+                  <UploadIcon className="mr-2 h-4 w-4" />
+                  Importar
+                </Button>
+              )}
+              {canCreate && (
+                <Button size="sm" onClick={openCreateDialog}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Cliente
+                </Button>
+              )}
+            </div>
             {filteredClients.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <div className="text-6xl mb-4">🔍</div>

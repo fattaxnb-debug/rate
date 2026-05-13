@@ -312,17 +312,6 @@ export default function SchedulesPage() {
                               <Eye className="h-4 w-4" />
                             </Button>
 
-                            {(isGerente || (isTecnico && schedule.technician_id === currentUser?.id)) && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => { setSelectedSchedule(schedule); setDialogOpen(true); }}
-                                title="EDITAR AGENDAMENTO"
-                                className="hover:bg-amber-100 hover:text-amber-700 transition-colors"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            )}
 
                             {isGerente && (
                               <Button
@@ -346,6 +335,14 @@ export default function SchedulesPage() {
           </div>
 
           <div className="space-y-4 md:hidden">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {(isGerente || isTecnico) && (
+                <Button size="sm" onClick={() => { setSelectedSchedule(null); setDialogOpen(true); }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  NOVO AGENDAMENTO
+                </Button>
+              )}
+            </div>
             {filteredSchedules.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <div className="text-6xl mb-4">📅</div>
@@ -449,7 +446,7 @@ export default function SchedulesPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
 
-                          {(isGerente || (isTecnico && schedule.technician_id === currentUser?.id)) && (
+                          {(isGerente && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -463,7 +460,7 @@ export default function SchedulesPage() {
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                          )}
+                          ))}
 
                           {isGerente && (
                             <Button

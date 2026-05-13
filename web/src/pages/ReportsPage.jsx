@@ -322,6 +322,16 @@ export default function ReportsPage() {
           </div>
 
           <div className="space-y-4 md:hidden">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {currentUser?.role !== 'Técnico' && (
+                <Link to="/reports/new">
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Relatório
+                  </Button>
+                </Link>
+              )}
+            </div>
             {filteredReports.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <div className="text-6xl mb-4">📄</div>

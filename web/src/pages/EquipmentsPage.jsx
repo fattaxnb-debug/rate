@@ -242,6 +242,14 @@ const canCreate = isGerente || isTecnico;
           </div>
 
           <div className="space-y-4 md:hidden">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {canCreate && (
+                <Button size="sm" onClick={() => { setSelectedEquipment(null); setDialogOpen(true); }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Equipamento
+                </Button>
+              )}
+            </div>
             {filteredEquipments.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <div className="text-6xl mb-4">🔍</div>
