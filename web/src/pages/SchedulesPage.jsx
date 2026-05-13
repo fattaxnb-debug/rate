@@ -307,11 +307,10 @@ export default function SchedulesPage() {
                               size="icon"
                               onClick={() => navigate(`/schedules/${schedule.id}`)}
                               title="VISUALIZAR"
-                              className="hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                              className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-
 
                             {isGerente && (
                               <Button
@@ -319,7 +318,7 @@ export default function SchedulesPage() {
                                 size="icon"
                                 onClick={() => { setScheduleToDelete(schedule); setDeleteDialogOpen(true); }}
                                 title="EXCLUIR"
-                                className="text-destructive hover:bg-red-100 hover:text-red-700 transition-colors"
+                                className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -432,7 +431,7 @@ export default function SchedulesPage() {
                             <span className="text-gray-900">{schedule.scheduled_time || '-'}</span>
                           </div>
                         </div>
-                        <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-blue-500/20">
+                        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-blue-500/20">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -441,9 +440,9 @@ export default function SchedulesPage() {
                               navigate(`/schedules/${schedule.id}`);
                             }}
                             title="Visualizar"
-                            className="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-full shadow-md"
+                            className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-5 w-5" />
                           </Button>
 
                           {(isGerente && (
@@ -456,9 +455,9 @@ export default function SchedulesPage() {
                                 setDialogOpen(true);
                               }}
                               title="Editar"
-                              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-full shadow-md"
+                              className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-5 w-5" />
                             </Button>
                           ))}
 
@@ -472,9 +471,9 @@ export default function SchedulesPage() {
                                 setDeleteDialogOpen(true);
                               }}
                               title="Excluir"
-                              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-md"
+                              className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-5 w-5" />
                             </Button>
                           )}
                         </div>

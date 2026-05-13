@@ -257,9 +257,9 @@ const canCreate = isGerente || isTecnico;
                               size="icon"
                               onClick={() => window.open(getWhatsAppLink(client.mobile || client.phone), '_blank')}
                               title="WhatsApp"
-                              className="hover:bg-green-100 hover:text-green-700 transition-colors"
+                              className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                             >
-                              <MessageCircle className="h-4 w-4 text-emerald-600" />
+                              <MessageCircle className="h-4 w-4" />
                             </Button>
                           )}
                           <Button
@@ -267,7 +267,7 @@ const canCreate = isGerente || isTecnico;
                             size="icon"
                             onClick={() => openViewDialog(client)}
                             title="Visualizar"
-                            className="hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                            className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -278,7 +278,7 @@ const canCreate = isGerente || isTecnico;
                                 size="icon"
                                 onClick={() => openEditDialog(client)}
                                 title="Editar"
-                                className="hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                                className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -287,7 +287,7 @@ const canCreate = isGerente || isTecnico;
                                 size="icon"
                                 onClick={() => openDeleteDialog(client)}
                                 title="Excluir"
-                                className="text-destructive hover:bg-red-100 hover:text-red-700 transition-colors"
+                                className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -423,7 +423,7 @@ const canCreate = isGerente || isTecnico;
                           <span className="text-gray-900">{client.technical_contact || '-'}</span>
                         </div>
                       </div>
-                      <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-blue-500/20">
+                      <div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-blue-500/20">
                         {(client.phone || client.mobile) && (
                           <Button
                             variant="ghost"
@@ -433,9 +433,9 @@ const canCreate = isGerente || isTecnico;
                               window.open(getWhatsAppLink(client.mobile || client.phone), '_blank');
                             }}
                             title="WhatsApp"
-                            className="bg-green-500 hover:bg-green-600 text-white rounded-full shadow-md"
+                            className="bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                           >
-                            <MessageCircle className="h-4 w-4" />
+                            <MessageCircle className="h-5 w-5" />
                           </Button>
                         )}
                         <Button
@@ -446,9 +446,9 @@ const canCreate = isGerente || isTecnico;
                             openViewDialog(client);
                           }}
                           title="Visualizar"
-                          className="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-full shadow-md"
+                          className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-5 w-5" />
                         </Button>
                         {isGerente && (
                           <>
@@ -460,9 +460,9 @@ const canCreate = isGerente || isTecnico;
                                 openEditDialog(client);
                               }}
                               title="Editar"
-                              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-full shadow-md"
+                              className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-5 w-5" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -472,9 +472,9 @@ const canCreate = isGerente || isTecnico;
                                 openDeleteDialog(client);
                               }}
                               title="Excluir"
-                              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-md"
+                              className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-5 w-5" />
                             </Button>
                           </>
                         )}

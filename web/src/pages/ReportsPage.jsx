@@ -273,30 +273,30 @@ export default function ReportsPage() {
                               size="icon"
                               onClick={() => navigate(`/reports/${report.id}`)}
                               title="Visualizar"
-                              className="hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                              className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
 
                             {isGerente ? (
                               <Button
-                                variant="outline"
-                                size="sm"
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => navigate(`/reports/${report.id}/edit`)}
-                                className="font-medium hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                                title="Editar"
+                                className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                               >
-                                <Pencil className="mr-1 h-3 w-3" />
-                                EDITAR
+                                <Pencil className="h-4 w-4" />
                               </Button>
                             ) : isResponsible && report.status === 'draft' ? (
                               <Button
-                                variant="default"
-                                size="sm"
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => navigate(`/reports/${report.id}/edit`)}
-                                className="bg-amber-500 hover:bg-amber-600 text-white font-medium"
+                                title="Preencher"
+                                className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                               >
-                                <FileEdit className="mr-1 h-3 w-3" />
-                                PREENCHER
+                                <FileEdit className="h-4 w-4" />
                               </Button>
                             ) : null}
 
@@ -306,7 +306,7 @@ export default function ReportsPage() {
                                 size="icon"
                                 onClick={() => { setReportToDelete(report); setDeleteDialogOpen(true); }}
                                 title="Excluir"
-                                className="text-destructive hover:bg-red-100 hover:text-red-700 transition-colors"
+                                className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -429,7 +429,7 @@ export default function ReportsPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-blue-500/20">
+                        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-blue-500/20">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -438,36 +438,36 @@ export default function ReportsPage() {
                               navigate(`/reports/${report.id}`);
                             }}
                             title="Visualizar"
-                            className="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-full shadow-md"
+                            className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-5 w-5" />
                           </Button>
 
                           {isGerente ? (
                             <Button
-                              variant="outline"
-                              size="sm"
+                              variant="ghost"
+                              size="icon"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/reports/${report.id}/edit`);
                               }}
-                              className="font-medium bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-full shadow-md"
+                              title="Editar"
+                              className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
-                              <Pencil className="mr-1 h-3 w-3" />
-                              EDITAR
+                              <Pencil className="h-5 w-5" />
                             </Button>
                           ) : isResponsible && report.status === 'draft' ? (
                             <Button
-                              variant="default"
-                              size="sm"
+                              variant="ghost"
+                              size="icon"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/reports/${report.id}/edit`);
                               }}
-                              className="bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-full shadow-md"
+                              title="Preencher"
+                              className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
-                              <FileEdit className="mr-1 h-3 w-3" />
-                              PREENCHER
+                              <FileEdit className="h-5 w-5" />
                             </Button>
                           ) : null}
 
@@ -481,9 +481,9 @@ export default function ReportsPage() {
                                 setDeleteDialogOpen(true);
                               }}
                               title="Excluir"
-                              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-md"
+                              className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-5 w-5" />
                             </Button>
                           )}
                         </div>
