@@ -288,4 +288,54 @@ router.post('/clients', async (req, res) => {
   }
 });
 
+// POST /migrate/schedules-add-time - Adicionar coluna scheduled_time na tabela schedules
+router.post('/schedules-add-time', async (req, res) => {
+  // CORS headers para permitir requisições de qualquer origem
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  try {
+    console.log('=== Starting schedules add scheduled_time migration ===');
+
+    // Verificar quais colunas existem na tabela schedules
+    const [existingColumns] = await db.query(`
+      SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'schedules'
+    `);
+
+    console.log('Existing columns:', existingColumns.map(c => c.COLUMN_NAME));
+
+    const columnNames = existingColumns.map(c => c.COLUMN_NAME);
+    const migrations = [];
+
+    // Adicionar coluna scheduled_time se não existir
+    if (!columnNames.includes('scheduled_time')) {
+      console.log('Adding column: scheduled_time');
+      await db.query(`ALTER TABLE schedules ADD COLUMN scheduled_time time DEFAULT NULL`);
+      migrations.push('scheduled_time');
+    }
+
+    console.log(`Migration completed: ${migrations.join(', ')}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Coluna scheduled_time adicionada com sucesso',
+      migrations: migrations
+    });
+
+  } catch (error) {
+    console.error('Error during schedules add scheduled_time migration:', error);
+    res.status(500).json({ 
+      error: 'Erro durante migração de schedules', 
+      message: error.message 
+    });
+  }
+});
+
 export default router;
