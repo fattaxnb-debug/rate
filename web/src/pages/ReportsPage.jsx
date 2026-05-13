@@ -66,7 +66,7 @@ export default function ReportsPage() {
       const [clientsRes, equipmentsRes, techniciansRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/clients`, { headers: { 'Authorization': `Bearer ${token}` } }),
         axios.get(`${API_BASE_URL}/equipments`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(`${API_BASE_URL}/users?role=Técnico`, { headers: { 'Authorization': `Bearer ${token}` } })
+        axios.get(`${API_BASE_URL}/users`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       
       setClients(clientsRes.data.data || []);

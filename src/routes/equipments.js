@@ -4,15 +4,25 @@ import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
-// GET /equipments - Listar todos os equipamentos
+// GET /equipments - Listar todos os equipamentos (opcionalmente filtrar por client_id)
 router.get('/', async (req, res) => {
   try {
-    const [equipments] = await db.query(`
+    const { client_id } = req.query;
+    let query = `
       SELECT e.*, c.name as client_name 
       FROM equipments e 
       LEFT JOIN clients c ON e.client_id = c.id 
-      ORDER BY e.created_at DESC
-    `);
+    `;
+    const params = [];
+    
+    if (client_id) {
+      query += ' WHERE e.client_id = ?';
+      params.push(client_id);
+    }
+    
+    query += ' ORDER BY e.created_at DESC';
+    
+    const [equipments] = await db.query(query, params);
     res.json({ data: equipments });
   } catch (error) {
     console.error('Error fetching equipments:', error);
