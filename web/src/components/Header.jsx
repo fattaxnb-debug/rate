@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
-import { Menu, X, LogOut, User, Settings, LayoutDashboard, Users, Wrench, Calendar, FileText } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext.jsx';
+import { Menu, X, LogOut, User, Settings, LayoutDashboard, Users, Wrench, Calendar, FileText, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -27,6 +28,7 @@ import axios from 'axios';
 
 export default function Header() {
   const { currentUser, logout, isAuthenticated } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -195,6 +197,14 @@ export default function Header() {
                             Configurações
                           </Button>
                         </Link>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => toggleTheme()} 
+                          className="w-full justify-start gap-2 bg-white border-slate-200 hover:border-blue-300 hover:shadow-md h-12"
+                        >
+                          {isDark ? <Sun className="h-5 w-5 text-yellow-500" /> : <Moon className="h-5 w-5 text-blue-500" />}
+                          {isDark ? 'Tema Claro' : 'Tema Escuro'}
+                        </Button>
                         <Button 
                           variant="outline" 
                           onClick={() => { setMobileOpen(false); setLogoutDialogOpen(true); }} 

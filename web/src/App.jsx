@@ -3,6 +3,7 @@ import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
+import { ThemeProvider } from '@/contexts/ThemeContext.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 
 import HomePage from '@/pages/HomePage.jsx';
@@ -38,30 +39,32 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
 
-          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
-          <Route path="/equipments" element={<ProtectedRoute><EquipmentsPage /></ProtectedRoute>} />
-          <Route path="/schedules" element={<ProtectedRoute><SchedulesPage /></ProtectedRoute>} />
-          <Route path="/schedules/:id" element={<ProtectedRoute><ScheduleViewPage /></ProtectedRoute>} />
-          
-          <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-          <Route path="/reports/new" element={<ProtectedRoute excludedRoles={['Técnico']}><ReportFormWrapper isEdit={false} /></ProtectedRoute>} />
-          <Route path="/reports/new/:clientId/:scheduleId" element={<ProtectedRoute excludedRoles={['Técnico']}><ReportFormWrapper isEdit={false} /></ProtectedRoute>} />
-          <Route path="/reports/:id" element={<ProtectedRoute><ReportViewer /></ProtectedRoute>} />
-          <Route path="/reports/:id/edit" element={<ProtectedRoute><ReportFormWrapper isEdit={true} /></ProtectedRoute>} />
-          
-          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
+            <Route path="/equipments" element={<ProtectedRoute><EquipmentsPage /></ProtectedRoute>} />
+            <Route path="/schedules" element={<ProtectedRoute><SchedulesPage /></ProtectedRoute>} />
+            <Route path="/schedules/:id" element={<ProtectedRoute><ScheduleViewPage /></ProtectedRoute>} />
+            
+            <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+            <Route path="/reports/new" element={<ProtectedRoute excludedRoles={['Técnico']}><ReportFormWrapper isEdit={false} /></ProtectedRoute>} />
+            <Route path="/reports/new/:clientId/:scheduleId" element={<ProtectedRoute excludedRoles={['Técnico']}><ReportFormWrapper isEdit={false} /></ProtectedRoute>} />
+            <Route path="/reports/:id" element={<ProtectedRoute><ReportViewer /></ProtectedRoute>} />
+            <Route path="/reports/:id/edit" element={<ProtectedRoute><ReportFormWrapper isEdit={true} /></ProtectedRoute>} />
+            
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-        <Toaster position="top-right" richColors />
-      </AuthProvider>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }
