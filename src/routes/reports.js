@@ -181,6 +181,9 @@ router.post('/', async (req, res) => {
     
     console.log('[REPORTS DEBUG] All required fields present');
     
+    console.log('[REPORTS DEBUG] technician_id:', technician_id);
+    console.log('[REPORTS DEBUG] technician_id type:', typeof technician_id);
+    
     const id = uuidv4();
     console.log('[REPORTS DEBUG] Generated UUID:', id);
     
