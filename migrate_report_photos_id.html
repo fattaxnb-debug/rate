@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Migração report_photos - INT para UUID</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .step { background: #f5f5f5; padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .sql { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Migração da tabela report_photos - INT para UUID</h1>
+    
+    <div class="warning">
+        <strong>⚠️ IMPORTANTE:</strong> Execute cada SQL em ordem no phpMyAdmin. Não pule nenhuma etapa.
+    </div>
+
+    <div class="step">
+        <h3>1. Backup da tabela report_photos</h3>
+        <div class="sql">CREATE TABLE report_photos_backup AS SELECT * FROM report_photos;</div>
+    </div>
+
+    <div class="step">
+        <h3>2. Converter coluna id de INT para VARCHAR(36)</h3>
+        <div class="sql">ALTER TABLE report_photos MODIFY COLUMN id varchar(36) NOT NULL;</div>
+    </div>
+
+    <div class="step">
+        <h3>3. Atualizar valores existentes com UUIDs</h3>
+        <div class="sql">UPDATE report_photos SET id = UUID() WHERE id REGEXP '^[0-9]+$';</div>
+    </div>
+
+    <div class="step">
+        <h3>4. Verificar resultado</h3>
+        <div class="sql">SELECT * FROM report_photos LIMIT 5;</div>
+    </div>
+
+    <div class="warning">
+        <strong>Nota:</strong> Após executar estas SQLs, tente salvar uma foto de relatório novamente para verificar se o erro foi resolvido.
+    </div>
+</body>
+</html>

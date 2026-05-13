@@ -541,26 +541,27 @@ export default function ReportViewer() {
                       {renderElecBlock('entrada', 'Entrada')}
                       {renderElecBlock('saida', 'Saída')}
                     </div>
-                    {hasBattery && bat && hasValue(bat.type) && (
-                      <div className="mt-6 border-t pt-6">
-                        <h3 className="font-bold uppercase mb-4 text-sm tracking-wide" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Banco de Baterias</h3>
-                        <div className="grid grid-cols-3 gap-4 text-sm p-4 rounded-lg border border-gray-200 bg-white">
-                          {!isBatteryMonitor && renderField('Banco de Baterias', bat.type)}
-                          {renderField('QUANTIDADE BATERIAS', bat.quantity)}
-                          {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
-                          {renderField('CORRENTE BATERIA (AH/W)', bat.battery_current)}
-                          {renderField('TENSÃO DO BANCO +/- (VDC)', bat.voltage)}
-                          {!isBatteryMonitor && bat.voltage_positive_neutral && renderField('Tensão Positivo/Neutro (VDC)', bat.voltage_positive_neutral)}
-                          {!isBatteryMonitor && bat.voltage_neutral_negative && renderField('Tensão Neutro/Negativo (VDC)', bat.voltage_neutral_negative)}
-                          {renderField('TENSÃO DO CARREGADOR (VDC)', bat.charger_voltage)}
-                          {renderField('MARCA', bat.brand)}
-                          {renderField('MODELO', bat.model)}
-                          {renderField('TROCOU BATERIAS', bat.trocou_baterias)}
-                          {!isBatteryMonitor && bat.trocou_baterias === 'Sim' && bat.last_change && renderField('Última Troca', bat.last_change)}
-                          {!isBatteryMonitor && bat.trocou_baterias === 'Não' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
-                        </div>
-                      </div>
-                    )}
+                  </div>
+                </section>
+                )}
+
+                {hasBattery && bat && hasValue(bat.type) && (
+                <section className="border border-border rounded-lg overflow-hidden">
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Banco de Baterias</h2>
+                  <div className="grid grid-cols-3 gap-4 text-sm p-5 bg-white">
+                    {!isBatteryMonitor && renderField('Banco de Baterias', bat.type)}
+                    {renderField('QUANTIDADE BATERIAS', bat.quantity)}
+                    {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
+                    {renderField('CORRENTE BATERIA (AH/W)', bat.battery_current)}
+                    {renderField('TENSÃO DO BANCO +/- (VDC)', bat.voltage)}
+                    {!isBatteryMonitor && bat.voltage_positive_neutral && renderField('Tensão Positivo/Neutro (VDC)', bat.voltage_positive_neutral)}
+                    {!isBatteryMonitor && bat.voltage_neutral_negative && renderField('Tensão Neutro/Negativo (VDC)', bat.voltage_neutral_negative)}
+                    {renderField('TENSÃO DO CARREGADOR (VDC)', bat.charger_voltage)}
+                    {renderField('MARCA', bat.brand)}
+                    {renderField('MODELO', bat.model)}
+                    {renderField('TROCOU BATERIAS', bat.trocou_baterias)}
+                    {!isBatteryMonitor && bat.trocou_baterias === 'Sim' && bat.last_change && renderField('Última Troca', bat.last_change)}
+                    {!isBatteryMonitor && bat.trocou_baterias === 'Não' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
                   </div>
                 </section>
                 )}
@@ -878,29 +879,31 @@ export default function ReportViewer() {
                       {renderElecBlock('entrada', 'Entrada')}
                       {renderElecBlock('saida', 'Saída')}
                     </div>
+                  </div>
+                </section>
+                )}
 
-                    {hasBattery && bat && hasValue(bat.type) && (
-                      <div className="mt-6 border-t pt-6 report-section battery-item">
-                        <h3 className="font-bold uppercase mb-4 text-sm tracking-wide" style={{
-                          color: colorMode === 'color' ? '#E31E24' : '#000000'
-                        }}>Banco de Baterias</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm p-4 rounded-lg border border-gray-200 bg-white">
-                          {!isBatteryMonitor && renderField('Banco de Baterias', bat.type)}
-                          {renderField('QUANTIDADE BATERIAS', bat.quantity)}
-                          {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
-                          {renderField('CORRENTE BATERIA (AH/W)', bat.battery_current)}
-                          {renderField('TENSÃO DO BANCO +/- (VDC)', bat.voltage)}
-                          {!isBatteryMonitor && bat.voltage_positive_neutral && renderField('Tensão Positivo/Neutro (VDC)', bat.voltage_positive_neutral)}
-                          {!isBatteryMonitor && bat.voltage_neutral_negative && renderField('Tensão Neutro/Negativo (VDC)', bat.voltage_neutral_negative)}
-                          {renderField('TENSÃO DO CARREGADOR (VDC)', bat.charger_voltage)}
-                          {renderField('MARCA', bat.brand)}
-                          {renderField('MODELO', bat.model)}
-                          {renderField('TROCOU BATERIAS', bat.trocou_baterias)}
-                          {!isBatteryMonitor && bat.trocou_baterias === 'Sim' && bat.last_change && renderField('Última Troca', bat.last_change)}
-                          {!isBatteryMonitor && bat.trocou_baterias === 'Não' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
-                        </div>
-                      </div>
-                    )}
+                {hasBattery && bat && hasValue(bat.type) && (
+                <section className="border border-border rounded-lg overflow-hidden report-section">
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{
+                    backgroundColor: sectionBgColor,
+                    borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
+                    color: sectionTitleColor
+                  }}>Banco de Baterias</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm p-5 bg-white">
+                    {!isBatteryMonitor && renderField('Banco de Baterias', bat.type)}
+                    {renderField('QUANTIDADE BATERIAS', bat.quantity)}
+                    {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
+                    {renderField('CORRENTE BATERIA (AH/W)', bat.battery_current)}
+                    {renderField('TENSÃO DO BANCO +/- (VDC)', bat.voltage)}
+                    {!isBatteryMonitor && bat.voltage_positive_neutral && renderField('Tensão Positivo/Neutro (VDC)', bat.voltage_positive_neutral)}
+                    {!isBatteryMonitor && bat.voltage_neutral_negative && renderField('Tensão Neutro/Negativo (VDC)', bat.voltage_neutral_negative)}
+                    {renderField('TENSÃO DO CARREGADOR (VDC)', bat.charger_voltage)}
+                    {renderField('MARCA', bat.brand)}
+                    {renderField('MODELO', bat.model)}
+                    {renderField('TROCOU BATERIAS', bat.trocou_baterias)}
+                    {!isBatteryMonitor && bat.trocou_baterias === 'Sim' && bat.last_change && renderField('Última Troca', bat.last_change)}
+                    {!isBatteryMonitor && bat.trocou_baterias === 'Não' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
                   </div>
                 </section>
                 )}
