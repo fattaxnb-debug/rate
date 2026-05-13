@@ -62,7 +62,7 @@ export default function ReportsPage() {
       console.log('[REPORTS FRONTEND DEBUG] Response:', response.data);
       const records = response.data.data || [];
       
-      // Buscar clientes, equipamentos e técnicos separadamente
+      // Buscar clientes, equipamentos e técnicos separadamente (sem filtro de role)
       const [clientsRes, equipmentsRes, techniciansRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/clients`, { headers: { 'Authorization': `Bearer ${token}` } }),
         axios.get(`${API_BASE_URL}/equipments`, { headers: { 'Authorization': `Bearer ${token}` } }),
