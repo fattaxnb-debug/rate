@@ -72,7 +72,7 @@ export default function Header() {
           <Link to="/" className="flex items-center space-x-2">
             {settings?.company_logo ? (
               <img 
-                src={`http://localhost:3001/uploads/${settings.company_logo}`} 
+                src={`${API_BASE_URL}/uploads/${settings.company_logo}`} 
                 alt="Logo" 
                 className="h-10 w-auto object-contain"
                 onError={(e) => {
