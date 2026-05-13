@@ -89,8 +89,42 @@ app.use(errorMiddleware);
 
 const port = process.env.PORT || 3001;
 
-app.listen(port, '0.0.0.0', () => {
-	logger.info(`🚀 Server running on http://0.0.0.0:${port}`);
+// Função para executar migrações automáticas ao iniciar
+async function runMigrations() {
+  try {
+    logger.info('=== Running automatic migrations ===');
+    
+    // Verificar e adicionar coluna scheduled_time na tabela schedules
+    const [columns] = await db.query(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'schedules'
+    `);
+    
+    const columnNames = columns.map(c => c.COLUMN_NAME);
+    
+    if (!columnNames.includes('scheduled_time')) {
+      logger.info('Adding column scheduled_time to schedules table');
+      await db.query(`ALTER TABLE schedules ADD COLUMN scheduled_time time DEFAULT NULL`);
+      logger.info('Column scheduled_time added successfully');
+    } else {
+      logger.info('Column scheduled_time already exists');
+    }
+    
+    logger.info('=== Automatic migrations completed ===');
+  } catch (error) {
+    logger.error('Error running automatic migrations:', error);
+  }
+}
+
+// Iniciar servidor após migrações
+runMigrations().then(() => {
+  app.listen(port, '0.0.0.0', () => {
+    logger.info(`🚀 Server running on http://0.0.0.0:${port}`);
+  });
+}).catch(error => {
+  logger.error('Failed to start server:', error);
+  process.exit(1);
 });
 
 export default app;
