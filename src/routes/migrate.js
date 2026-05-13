@@ -224,4 +224,68 @@ router.post('/reports', async (req, res) => {
   }
 });
 
+// POST /migrate/clients - Migrar tabela clients para adicionar coluna cnpj_cpf
+router.post('/clients', async (req, res) => {
+  // CORS headers para permitir requisições de qualquer origem
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  try {
+    console.log('=== Starting clients table migration ===');
+
+    // Verificar quais colunas existem na tabela clients
+    const [existingColumns] = await db.query(`
+      SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'clients'
+    `);
+
+    console.log('Existing columns:', existingColumns.map(c => c.COLUMN_NAME));
+
+    const columnNames = existingColumns.map(c => c.COLUMN_NAME);
+    const migrations = [];
+
+    // Adicionar coluna cnpj_cpf se não existir
+    if (!columnNames.includes('cnpj_cpf')) {
+      console.log('Adding column: cnpj_cpf');
+      await db.query(`ALTER TABLE clients ADD COLUMN cnpj_cpf varchar(20) DEFAULT NULL`);
+      migrations.push('cnpj_cpf');
+    }
+
+    // Migrar dados de cnpj para cnpj_cpf se existir
+    if (columnNames.includes('cnpj') && !columnNames.includes('cnpj_cpf_migrated')) {
+      console.log('Migrating data from cnpj to cnpj_cpf');
+      await db.query(`UPDATE clients SET cnpj_cpf = cnpj WHERE cnpj IS NOT NULL`);
+      migrations.push('migrated cnpj data');
+    }
+
+    // Migrar dados de cpf para cnpj_cpf se existir
+    if (columnNames.includes('cpf') && !columnNames.includes('cpf_migrated')) {
+      console.log('Migrating data from cpf to cnpj_cpf');
+      await db.query(`UPDATE clients SET cnpj_cpf = cpf WHERE cnpj_cpf IS NULL AND cpf IS NOT NULL`);
+      migrations.push('migrated cpf data');
+    }
+
+    console.log(`Migration completed: ${migrations.join(', ')}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Tabela clients migrada com sucesso',
+      migrations: migrations
+    });
+
+  } catch (error) {
+    console.error('Error during clients migration:', error);
+    res.status(500).json({ 
+      error: 'Erro durante migração de clients', 
+      message: error.message 
+    });
+  }
+});
+
 export default router;
