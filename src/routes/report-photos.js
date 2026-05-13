@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db from '../config/database.js';
-import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
@@ -28,7 +28,7 @@ router.post('/', upload.single('photo_url'), async (req, res) => {
     const { report_id, comment, photo_type, sequence } = req.body;
     const photo_url = req.file ? `/uploads/${req.file.filename}` : '';
     
-    const id = crypto.randomUUID();
+    const id = uuidv4();
     
     await db.query(
       `INSERT INTO report_photos (id, report_id, photo_url, comment, photo_type, sequence, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())`,

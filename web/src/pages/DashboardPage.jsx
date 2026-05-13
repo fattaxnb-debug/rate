@@ -54,7 +54,7 @@ export default function DashboardPage() {
 
 
 
-  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
 
 
 
@@ -106,6 +106,10 @@ export default function DashboardPage() {
 
       const filteredReports = isGerente ? reports : myReports;
 
+      // Count only pending reports (not completed/finalized)
+
+      const pendingReports = filteredReports.filter(r => r.status !== 'Finalizado' && r.status !== 'Concluído' && r.status !== 'completed');
+
 
 
       setStats({
@@ -116,7 +120,7 @@ export default function DashboardPage() {
 
         schedules: schedules.length,
 
-        reports: filteredReports.length,
+        reports: pendingReports.length,
 
         myReports: myReports.length,
 
@@ -192,47 +196,29 @@ export default function DashboardPage() {
 
         <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
 
             {[1, 2, 3, 4, 5].map(i => (
 
-              <Card key={i}>
+              <Card key={i} className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 border-0 shadow-xl">
 
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
 
-                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-28" />
+
+                  <Skeleton className="h-8 w-8 rounded-lg" />
 
                 </CardHeader>
 
                 <CardContent>
 
-                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-10 w-20" />
 
                 </CardContent>
 
               </Card>
 
             ))}
-
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
-
-            <Card>
-
-              <CardHeader>
-
-                <Skeleton className="h-4 w-32" />
-
-              </CardHeader>
-
-              <CardContent>
-
-                <Skeleton className="h-8 w-16" />
-
-              </CardContent>
-
-            </Card>
 
           </div>
 
@@ -288,146 +274,95 @@ export default function DashboardPage() {
 
 
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
 
-            <Card className="hover:shadow-lg transition-all duration-200">
+            <Link to="/clients">
+              <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 border-0 shadow-xl cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm font-semibold text-white/90">Total de Clientes</CardTitle>
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-4xl font-bold text-white">{stats.clients}</div>
+                    <div className="text-xs text-white/70">cadastrados</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <Link to="/equipments">
+              <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 border-0 shadow-xl cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm font-semibold text-white/90">Total de Equipamentos</CardTitle>
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <Wrench className="h-5 w-5 text-white" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-4xl font-bold text-white">{stats.equipments}</div>
+                    <div className="text-xs text-white/70">registrados</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total de Clientes</CardTitle>
+            <Link to="/schedules">
+              <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-amber-500 via-orange-500 to-orange-600 border-0 shadow-xl cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm font-semibold text-white/90">
+                    {isGerente ? 'Total de Agendamentos' : 'Meus Agendamentos'}
+                  </CardTitle>
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-4xl font-bold text-white">{stats.schedules}</div>
+                    <div className="text-xs text-white/70">agendados</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
-                <Users className="h-4 w-4 text-muted-foreground" />
+            <Link to="/reports">
+              <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 border-0 shadow-xl cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm font-semibold text-white/90">
+                    {isGerente ? 'Relatórios Pendentes' : 'Meus Relatórios'}
+                  </CardTitle>
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <FileText className="h-5 w-5 text-white" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-4xl font-bold text-white">{stats.reports}</div>
+                    <div className="text-xs text-white/70">pendentes</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
-              </CardHeader>
-
-              <CardContent>
-
-                <div className="text-3xl font-bold">{stats.clients}</div>
-
-              </CardContent>
-
-            </Card>
-
-
-
-            <Card className="hover:shadow-lg transition-all duration-200">
-
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total de Equipamentos</CardTitle>
-
-                <Wrench className="h-4 w-4 text-muted-foreground" />
-
-              </CardHeader>
-
-              <CardContent>
-
-                <div className="text-3xl font-bold">{stats.equipments}</div>
-
-              </CardContent>
-
-            </Card>
-
-
-
-            <Card className="hover:shadow-lg transition-all duration-200">
-
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-
-                  {isGerente ? 'Total de Agendamentos' : 'Meus Agendamentos'}
-
-                </CardTitle>
-
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-
-              </CardHeader>
-
-              <CardContent>
-
-                <div className="text-3xl font-bold">{stats.schedules}</div>
-
-              </CardContent>
-
-            </Card>
-
-
-
-            <Card className="hover:shadow-lg transition-all duration-200">
-
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-
-                  {isGerente ? 'Total de Relatórios (Geral)' : 'Meus Relatórios'}
-
-                </CardTitle>
-
-                <FileText className="h-4 w-4 text-muted-foreground" />
-
-              </CardHeader>
-
-              <CardContent>
-
-                <div className="text-3xl font-bold">{stats.reports}</div>
-
-              </CardContent>
-
-            </Card>
-
-
-
-            <Card className="hover:shadow-lg transition-all duration-200 border-primary/20">
-
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-
-                <CardTitle className="text-sm font-medium text-primary">
-
+            <Card className="bg-gradient-to-br from-slate-500 via-slate-600 to-slate-700 border-0 shadow-xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-sm font-semibold text-white/90">
                   Total de Relatórios
-
                 </CardTitle>
-
-                <FileText className="h-4 w-4 text-primary" />
-
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <FileText className="h-5 w-5 text-white" />
+                </div>
               </CardHeader>
-
               <CardContent>
-
-                <div className="text-3xl font-bold text-primary">{stats.myReports}</div>
-
+                <div className="flex items-baseline gap-2">
+                  <div className="text-4xl font-bold text-white">{stats.allReports}</div>
+                  <div className="text-xs text-white/70">total</div>
+                </div>
               </CardContent>
-
-            </Card>
-
-          </div>
-
-
-
-          {/* Second row for the new general reports card */}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
-
-            <Card className="hover:shadow-lg transition-all duration-200">
-
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-
-                  Total de Relatórios (Geral)
-
-                </CardTitle>
-
-                <FileText className="h-4 w-4 text-muted-foreground" />
-
-              </CardHeader>
-
-              <CardContent>
-
-                <div className="text-3xl font-bold">{stats.allReports}</div>
-
-              </CardContent>
-
             </Card>
 
           </div>

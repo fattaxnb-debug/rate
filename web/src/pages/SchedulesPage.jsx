@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Search, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { API_BASE_URL } from '@/config/api.js';
@@ -23,19 +23,36 @@ export default function SchedulesPage() {
   const navigate = useNavigate();
   const [schedules, setSchedules] = useState([]);
   const [filteredSchedules, setFilteredSchedules] = useState([]);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [scheduleToDelete, setScheduleToDelete] = useState(null);
+  const [expandedCards, setExpandedCards] = useState({});
 
-  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
   const isTecnico = currentUser?.role === 'Técnico';
+
+  const toggleCard = (scheduleId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [scheduleId]: !prev[scheduleId]
+    }));
+  };
 
   useEffect(() => {
     fetchSchedules();
   }, [currentUser]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Atualiza a cada minuto
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const sorted = sortSchedulesByUrgency(
@@ -133,6 +150,51 @@ export default function SchedulesPage() {
     }
   };
 
+  const getTemporalStatus = (schedule) => {
+    // Se o status for Em Andamento, retorna azul
+    if (schedule.status === 'Em Andamento') return 'em_andamento';
+    // Se o status for Realizado, retorna laranja
+    if (schedule.status === 'Realizado') return 'realizado';
+    // Se o status for Finalizado, retorna sem destaque
+    if (schedule.status === 'Finalizado') return 'concluido';
+    
+    if (!schedule.data_hora_agendamento && !schedule.scheduled_date) return null;
+    
+    const now = currentTime;
+    const appointmentDate = schedule.data_hora_agendamento ? new Date(schedule.data_hora_agendamento) : new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`);
+    const diffMs = appointmentDate.getTime() - now.getTime();
+    const diffMinutes = diffMs / (1000 * 60);
+    const diffHours = diffMs / (1000 * 60 * 60);
+    
+    // Um minuto após a data e hora do agendamento: vermelha
+    if (diffMs < -60000) return 'atrasado';
+    // Até duas horas da data e hora do agendamento: verde
+    if (diffMs >= 0 && diffHours <= 2) return 'verde';
+    // Menos de duas horas (entre 2h e 0): amarelo
+    if (diffMs < 0 && diffMs >= -60000) return 'amarelo';
+    // Mais de duas horas: sem destaque
+    return 'normal';
+  };
+
+  const getTemporalRowClass = (schedule) => {
+    // Se o status for Em Andamento, retorna azul
+    if (schedule.status === 'Em Andamento') return 'bg-blue-50 dark:bg-blue-950/20';
+    // Se o status for Realizado, retorna laranja
+    if (schedule.status === 'Realizado') return 'bg-orange-50 dark:bg-orange-950/20';
+    // Se o status for Finalizado, retorna sem destaque
+    if (schedule.status === 'Finalizado') return '';
+    
+    const status = getTemporalStatus(schedule);
+    if (!status) return '';
+    
+    switch (status) {
+      case 'atrasado': return 'bg-red-50 dark:bg-red-950/20';
+      case 'verde': return 'bg-green-50 dark:bg-green-950/20';
+      case 'amarelo': return 'bg-yellow-50 dark:bg-yellow-950/20';
+      default: return '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -183,48 +245,56 @@ export default function SchedulesPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border overflow-x-auto">
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-gradient-to-r from-gray-100 to-gray-200">
                 <TableRow>
-                  <TableHead>DATA/HORA</TableHead>
-                  <TableHead>CLIENTE</TableHead>
-                  <TableHead>EQUIPAMENTO</TableHead>
-                  <TableHead>NÚMERO DE SÉRIE</TableHead>
-                  <TableHead>POTÊNCIA</TableHead>
-                  <TableHead>TÉCNICO</TableHead>
-                  <TableHead>STATUS</TableHead>
-                  <TableHead className="text-right">AÇÕES</TableHead>
+                  <TableHead className="font-bold text-gray-900">DATA/HORA</TableHead>
+                  <TableHead className="font-bold text-gray-900">CLIENTE</TableHead>
+                  <TableHead className="font-bold text-gray-900">EQUIPAMENTO</TableHead>
+                  <TableHead className="font-bold text-gray-900">NÚMERO DE SÉRIE</TableHead>
+                  <TableHead className="font-bold text-gray-900">POTÊNCIA</TableHead>
+                  <TableHead className="font-bold text-gray-900">TÉCNICO</TableHead>
+                  <TableHead className="font-bold text-gray-900">STATUS</TableHead>
+                  <TableHead className="text-right font-bold text-gray-900">AÇÕES</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredSchedules.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      NENHUM AGENDAMENTO ENCONTRADO
+                    <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="text-6xl mb-4">📅</div>
+                        <p className="text-lg font-semibold">Nenhum agendamento encontrado</p>
+                        <p className="text-sm">Tente ajustar os filtros de busca</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredSchedules.map((schedule) => {
                     return (
-                      <TableRow key={schedule.id}>
-                        <TableCell className="font-medium">
+                      <TableRow key={schedule.id} className={`${getTemporalRowClass(schedule)} hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors duration-200`}>
+                        <TableCell className="font-semibold text-gray-900">
                           {(() => {
-                            if (!schedule.data_hora_agendamento) return '-';
-                            return new Date(schedule.data_hora_agendamento).toLocaleString('pt-BR');
+                            if (!schedule.scheduled_date) return '-';
+                            // Converter data do formato YYYY-MM-DD para DD/MM/YYYY
+                            const [year, month, day] = schedule.scheduled_date.split('-');
+                            const formattedDate = `${day}/${month}/${year}`;
+                            const formattedTime = schedule.scheduled_time || '00:00';
+                            return `${formattedDate} ${formattedTime}`;
                           })()}
                         </TableCell>
-                        <TableCell>{schedule.client_name || '-'}</TableCell>
-                        <TableCell>
-                          {schedule.equipment_type ? `${schedule.equipment_type} - ${schedule.equipment_model}` : <span className="text-muted-foreground italic">SEM EQUIPAMENTO</span>}
+                        <TableCell className="text-gray-700">{schedule.client_name || '-'}</TableCell>
+                        <TableCell className="text-gray-700">
+                          {schedule.equipment_brand && schedule.equipment_model ? `${schedule.equipment_brand} - ${schedule.equipment_model}` : <span className="text-muted-foreground italic">SEM EQUIPAMENTO</span>}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-700">
                           {schedule.equipment_serial || '-'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-700">
                           {schedule.equipment_power ? `${schedule.equipment_power} VA` : '-'}
                         </TableCell>
-                        <TableCell>{schedule.technician_name || '-'}</TableCell>
+                        <TableCell className="text-gray-700">{schedule.technician_name || '-'}</TableCell>
                         <TableCell>
                           <Badge className={`${getStatusColor(schedule.status)} text-white`}>
                             {schedule.status?.toUpperCase() || 'SEM STATUS'}
@@ -237,6 +307,7 @@ export default function SchedulesPage() {
                               size="icon"
                               onClick={() => navigate(`/schedules/${schedule.id}`)}
                               title="VISUALIZAR"
+                              className="hover:bg-blue-100 hover:text-blue-700 transition-colors"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -247,6 +318,7 @@ export default function SchedulesPage() {
                                 size="icon"
                                 onClick={() => { setSelectedSchedule(schedule); setDialogOpen(true); }}
                                 title="EDITAR AGENDAMENTO"
+                                className="hover:bg-amber-100 hover:text-amber-700 transition-colors"
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -258,6 +330,7 @@ export default function SchedulesPage() {
                                 size="icon"
                                 onClick={() => { setScheduleToDelete(schedule); setDeleteDialogOpen(true); }}
                                 title="EXCLUIR"
+                                className="text-destructive hover:bg-red-100 hover:text-red-700 transition-colors"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -270,6 +343,150 @@ export default function SchedulesPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="space-y-4 md:hidden">
+            {filteredSchedules.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="text-6xl mb-4">📅</div>
+                <p className="text-lg font-semibold">Nenhum agendamento encontrado</p>
+                <p className="text-sm">Tente ajustar os filtros de busca</p>
+              </div>
+            ) : (
+              filteredSchedules.map((schedule) => {
+                const temporalClass = getTemporalRowClass(schedule);
+                return (
+                  <div key={schedule.id} className={`rounded-xl border-2 shadow-xl overflow-hidden ${temporalClass}`}>
+                    <div 
+                      className="p-4 cursor-pointer hover:bg-black/5 transition-colors relative overflow-hidden"
+                      onClick={() => toggleCard(schedule.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 truncate text-base">
+                            {(() => {
+                              const date = schedule.data_hora_agendamento ? new Date(schedule.data_hora_agendamento) : new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`);
+                              return format(date, 'dd/MM/yyyy');
+                            })()} - {format(new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`), 'HH:mm')}
+                          </h3>
+                          <div className="text-sm text-gray-600 mt-2 space-y-1">
+                            <div className="flex items-center">
+                              <span className="font-semibold text-blue-600 w-24">Cliente:</span>
+                              <span className="text-gray-900">{schedule.client_name || '-'}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="font-semibold text-blue-600 w-24">Técnico:</span>
+                              <span className="text-gray-900">{schedule.technician_name || '-'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-2 shadow-md">
+                            {expandedCards[schedule.id] ? (
+                              <ChevronUp className="h-4 w-4 text-white" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-white" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {expandedCards[schedule.id] && (
+                      <div className="px-4 pb-4 border-t border-blue-500/20 pt-4 bg-black/5">
+                        <div className="grid grid-cols-1 gap-3 text-sm">
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Status:</span>
+                            <span className="text-gray-900 font-medium">
+                              {schedule.status === 'Em Andamento' ? (
+                                <Badge className="bg-blue-500">Em Andamento</Badge>
+                              ) : schedule.status === 'Realizado' ? (
+                                <Badge className="bg-orange-500">Realizado</Badge>
+                              ) : schedule.status === 'Finalizado' ? (
+                                <Badge variant="secondary">Finalizado</Badge>
+                              ) : (
+                                <Badge variant="secondary">{schedule.status || 'Pendente'}</Badge>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Cliente:</span>
+                            <span className="text-gray-900">{schedule.client_name || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Técnico:</span>
+                            <span className="text-gray-900">{schedule.technician_name || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Equipamento:</span>
+                            <span className="text-gray-900">{schedule.equipment_type || '-'} {schedule.equipment_brand || ''} {schedule.equipment_model || ''}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Data:</span>
+                            <span className="text-gray-900">
+                              {(() => {
+                                const date = schedule.data_hora_agendamento ? new Date(schedule.data_hora_agendamento) : new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`);
+                                return format(date, 'dd/MM/yyyy');
+                              })()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center py-2">
+                            <span className="font-semibold text-blue-600">Hora:</span>
+                            <span className="text-gray-900">{schedule.scheduled_time || '-'}</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-blue-500/20">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/schedules/${schedule.id}`);
+                            }}
+                            title="Visualizar"
+                            className="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-full shadow-md"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+
+                          {(isGerente || (isTecnico && schedule.technician_id === currentUser?.id)) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedSchedule(schedule);
+                                setDialogOpen(true);
+                              }}
+                              title="Editar"
+                              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-full shadow-md"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+
+                          {isGerente && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setScheduleToDelete(schedule);
+                                setDeleteDialogOpen(true);
+                              }}
+                              title="Excluir"
+                              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-md"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </main>
         <Footer />

@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
 
@@ -85,15 +86,18 @@ router.post('/register', async (req, res) => {
 
     // Hash da senha
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Gerar UUID
+    const id = uuidv4();
 
     // Inserir usuário
     const [result] = await db.query(
-      'INSERT INTO users (email, password, name, role) VALUES (?, ?, ?, ?)',
-      [email, hashedPassword, name, role || 'Técnico']
+      'INSERT INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)',
+      [id, email, hashedPassword, name, role || 'Técnico']
     );
 
     const newUser = {
-      id: result.insertId,
+      id,
       email,
       name,
       role: role || 'Técnico'

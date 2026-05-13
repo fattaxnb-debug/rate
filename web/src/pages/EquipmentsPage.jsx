@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Search, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { API_BASE_URL } from '@/config/api.js';
@@ -27,10 +27,18 @@ export default function EquipmentsPage() {
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [viewingEquipment, setViewingEquipment] = useState(null);
   const [equipmentToDelete, setEquipmentToDelete] = useState(null);
+  const [expandedCards, setExpandedCards] = useState({});
 
-  const isGerente = currentUser?.role === 'manager' || currentUser?.role === 'Gerente';
-const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
+const isTecnico = currentUser?.role === 'Técnico';
 const canCreate = isGerente || isTecnico;
+
+  const toggleCard = (equipmentId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [equipmentId]: !prev[equipmentId]
+    }));
+  };
 
   const { searchTerm, setSearchTerm, filteredItems: filteredEquipments } = useSearch(equipments, [
     'brand', 'model', 'serial_number'
@@ -46,7 +54,10 @@ const canCreate = isGerente || isTecnico;
       const response = await axios.get(`${API_BASE_URL}/equipments`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setEquipments(response.data.data || []);
+      const equipments = response.data.data || [];
+      // Ordenar por data de criação (mais recente primeiro)
+      const sortedEquipments = equipments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setEquipments(sortedEquipments);
       setLoading(false);
     } catch (error) {
       toast.error('Erro ao carregar equipamentos');
@@ -149,37 +160,41 @@ const canCreate = isGerente || isTecnico;
             </div>
           </div>
 
-          <div className="bg-card rounded-lg border overflow-x-auto">
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-gradient-to-r from-gray-100 to-gray-200">
                 <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Modelo</TableHead>
-                  <TableHead>Número de Série</TableHead>
-                  <TableHead>Potência (VA)</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Data de Instalação</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="font-bold text-gray-900">Tipo</TableHead>
+                  <TableHead className="font-bold text-gray-900">Marca</TableHead>
+                  <TableHead className="font-bold text-gray-900">Modelo</TableHead>
+                  <TableHead className="font-bold text-gray-900">Número de Série</TableHead>
+                  <TableHead className="font-bold text-gray-900">Potência (VA)</TableHead>
+                  <TableHead className="font-bold text-gray-900">Cliente</TableHead>
+                  <TableHead className="font-bold text-gray-900">Data de Instalação</TableHead>
+                  <TableHead className="text-right font-bold text-gray-900">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredEquipments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Nenhum resultado encontrado
+                    <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="text-6xl mb-4">🔍</div>
+                        <p className="text-lg font-semibold">Nenhum resultado encontrado</p>
+                        <p className="text-sm">Tente ajustar os filtros de busca</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredEquipments.map((equipment) => (
-                    <TableRow key={equipment.id}>
-                      <TableCell className="font-medium">{equipment.type ? equipment.type.toUpperCase() : '-'}</TableCell>
-                      <TableCell>{equipment.brand}</TableCell>
-                      <TableCell>{equipment.model}</TableCell>
-                      <TableCell>{equipment.serial_number}</TableCell>
-                      <TableCell>{equipment.power_va ? `${equipment.power_va} VA` : '-'}</TableCell>
-                      <TableCell>{equipment.client_name ? equipment.client_name.replace(/\d+/g, '').trim().split(' ').slice(0, 3).join(' ') : '-'}</TableCell>
-                      <TableCell>
+                    <TableRow key={equipment.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors duration-200">
+                      <TableCell className="font-semibold text-gray-900">{equipment.type ? equipment.type.toUpperCase() : '-'}</TableCell>
+                      <TableCell className="text-gray-700">{equipment.brand}</TableCell>
+                      <TableCell className="text-gray-700">{equipment.model}</TableCell>
+                      <TableCell className="text-gray-700">{equipment.serial_number}</TableCell>
+                      <TableCell className="text-gray-700">{equipment.power_va ? `${equipment.power_va} VA` : '-'}</TableCell>
+                      <TableCell className="text-gray-700">{equipment.client_name ? equipment.client_name.replace(/\d+/g, '').trim().split(' ').slice(0, 3).join(' ') : '-'}</TableCell>
+                      <TableCell className="text-gray-700">
                         {equipment.installation_date ? format(new Date(equipment.installation_date), 'dd/MM/yyyy') : '-'}
                       </TableCell>
                       <TableCell className="text-right">
@@ -190,6 +205,7 @@ const canCreate = isGerente || isTecnico;
                             size="icon"
                             onClick={() => handleView(equipment)}
                             title="Visualizar equipamento"
+                            className="hover:bg-blue-100 hover:text-blue-700 transition-colors"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -201,6 +217,7 @@ const canCreate = isGerente || isTecnico;
                                 size="icon"
                                 onClick={() => { setSelectedEquipment(equipment); setDialogOpen(true); }}
                                 title="Editar equipamento"
+                                className="hover:bg-amber-100 hover:text-amber-700 transition-colors"
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -209,6 +226,7 @@ const canCreate = isGerente || isTecnico;
                                 size="icon"
                                 onClick={() => { setEquipmentToDelete(equipment); setDeleteDialogOpen(true); }}
                                 title="Excluir equipamento"
+                                className="text-destructive hover:bg-red-100 hover:text-red-700 transition-colors"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -221,6 +239,138 @@ const canCreate = isGerente || isTecnico;
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="space-y-4 md:hidden">
+            {filteredEquipments.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="text-6xl mb-4">🔍</div>
+                <p className="text-lg font-semibold">Nenhum resultado encontrado</p>
+                <p className="text-sm">Tente ajustar os filtros de busca</p>
+              </div>
+            ) : (
+              filteredEquipments.map((equipment) => (
+                <div key={equipment.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
+                  <div 
+                    className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors relative overflow-hidden"
+                    onClick={() => toggleCard(equipment.id)}
+                  >
+                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-500"></div>
+                    <div className="flex items-center justify-between pl-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 truncate text-base">{equipment.brand} - {equipment.model}</h3>
+                        <div className="text-sm text-gray-600 mt-2 space-y-1">
+                          <div className="flex items-center">
+                            <span className="font-semibold text-blue-600 w-24">Tipo:</span>
+                            <span className="text-gray-900">{equipment.type ? equipment.type.toUpperCase() : '-'}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="font-semibold text-blue-600 w-24">Série:</span>
+                            <span className="text-gray-900">{equipment.serial_number || '-'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-2 shadow-md">
+                          {expandedCards[equipment.id] ? (
+                            <ChevronUp className="h-4 w-4 text-white" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-white" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {expandedCards[equipment.id] && (
+                    <div className="px-4 pb-4 border-t border-blue-500/20 pt-4 bg-gradient-to-b from-blue-500/5 to-transparent">
+                      <div className="grid grid-cols-1 gap-3 text-sm">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Marca:</span>
+                          <span className="text-gray-900 font-medium">{equipment.brand || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Modelo:</span>
+                          <span className="text-gray-900">{equipment.model || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Número de Série:</span>
+                          <span className="text-gray-900">{equipment.serial_number || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Potência:</span>
+                          <span className="text-gray-900">{equipment.power_va ? `${equipment.power_va} VA` : '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Cliente:</span>
+                          <span className="text-gray-900">{equipment.client_name ? equipment.client_name.replace(/\d+/g, '').trim().split(' ').slice(0, 3).join(' ') : '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Data Instalação:</span>
+                          <span className="text-gray-900">{equipment.installation_date ? format(new Date(equipment.installation_date), 'dd/MM/yyyy') : '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Tensão Entrada:</span>
+                          <span className="text-gray-900">{equipment.voltage_in || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Tensão Saída:</span>
+                          <span className="text-gray-900">{equipment.voltage_out || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                          <span className="font-semibold text-blue-600">Observações:</span>
+                          <span className="text-gray-900">{equipment.notes || '-'}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-end space-x-2 mt-4 pt-4 border-t border-blue-500/20">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleView(equipment);
+                          }}
+                          title="Visualizar"
+                          className="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-full shadow-md"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {isGerente && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedEquipment(equipment);
+                                setDialogOpen(true);
+                              }}
+                              title="Editar"
+                              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white rounded-full shadow-md"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEquipmentToDelete(equipment);
+                                setDeleteDialogOpen(true);
+                              }}
+                              title="Excluir"
+                              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-md"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </main>
 

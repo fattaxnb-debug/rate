@@ -1,11 +1,33 @@
 import { Router } from 'express';
 import multer from 'multer';
 import db from '../config/database.js';
+import path from 'path';
+import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
 
 // Configurar multer para upload de arquivos
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // Usar o diretório uploads na raiz do projeto, independente de onde o backend é executado
+    const uploadDir = path.join(process.cwd().includes('src') ? path.dirname(process.cwd()) : process.cwd(), 'uploads');
+    console.log('[MULTER DEBUG] Upload directory:', uploadDir);
+    console.log('[MULTER DEBUG] Directory exists:', fs.existsSync(uploadDir));
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+      console.log('[MULTER DEBUG] Directory created');
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+    console.log('[MULTER DEBUG] Saving file:', filename);
+    cb(null, filename);
+  }
+});
+
 const upload = multer({ storage: storage });
 
 // GET /settings/user/:userId - Buscar configurações do usuário (sempre usa configurações globais para logo)
@@ -64,18 +86,18 @@ router.post('/', upload.fields([
       return res.status(400).json({ error: 'user_id is required' });
     }
     
-    // Converter arquivos para base64
+    // Salvar apenas o nome do arquivo se foi enviado
     const company_logo = req.files?.company_logo?.[0] 
-      ? `data:${req.files.company_logo[0].mimetype};base64,${req.files.company_logo[0].buffer.toString('base64')}` 
+      ? req.files.company_logo[0].filename 
       : '';
     const signature_tiago_viana = req.files?.signature_tiago_viana?.[0] 
-      ? `data:${req.files.signature_tiago_viana[0].mimetype};base64,${req.files.signature_tiago_viana[0].buffer.toString('base64')}` 
+      ? req.files.signature_tiago_viana[0].filename 
       : '';
     const signature_tito_livio = req.files?.signature_tito_livio?.[0] 
-      ? `data:${req.files.signature_tito_livio[0].mimetype};base64,${req.files.signature_tito_livio[0].buffer.toString('base64')}` 
+      ? req.files.signature_tito_livio[0].filename 
       : '';
     const cover_pdf = req.files?.cover_pdf?.[0] 
-      ? `data:${req.files.cover_pdf[0].mimetype};base64,${req.files.cover_pdf[0].buffer.toString('base64')}` 
+      ? req.files.cover_pdf[0].filename 
       : '';
     
     console.log('[SETTINGS BACKEND DEBUG] Saving settings for user_id:', user_id);
@@ -103,15 +125,16 @@ router.post('/', upload.fields([
       console.log('[SETTINGS BACKEND DEBUG] Settings updated successfully');
     } else {
       console.log('[SETTINGS BACKEND DEBUG] Inserting new settings...');
+      const id = uuidv4();
       // Inserir
       await db.query(
-        'INSERT INTO company_settings (user_id, company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf) VALUES (?, ?, ?, ?, ?)',
-        [user_id, company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf]
+        'INSERT INTO company_settings (id, user_id, company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, user_id, company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf]
       );
       console.log('[SETTINGS BACKEND DEBUG] Settings inserted successfully');
     }
     
-    res.json({ data: { id: existing[0]?.id, user_id, company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf } });
+    res.json({ data: { id: existing[0]?.id || id, user_id, company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf } });
   } catch (error) {
     console.error('Error saving settings:', error);
     res.status(500).json({ error: 'Erro ao salvar configurações' });
@@ -119,28 +142,34 @@ router.post('/', upload.fields([
 });
 
 // PUT /settings/:id - Atualizar configurações por ID
-router.put('/:id', upload.fields([
+router.put('/:id', (req, res, next) => {
+  console.log('[SETTINGS BACKEND DEBUG] PUT /settings/:id - BEFORE MULTER');
+  next();
+}, upload.fields([
   { name: 'company_logo' },
   { name: 'signature_tiago_viana' },
   { name: 'signature_tito_livio' },
   { name: 'cover_pdf' }
 ]), async (req, res) => {
   console.log('[SETTINGS BACKEND DEBUG] PUT /settings/:id called');
+  console.log('[SETTINGS BACKEND DEBUG] Request body:', req.body);
+  console.log('[SETTINGS BACKEND DEBUG] Request files:', req.files);
+  console.log('[SETTINGS BACKEND DEBUG] company_logo file:', req.files?.company_logo?.[0]);
   try {
     const settingsId = req.params.id;
     
-    // Converter arquivos para base64
+    // Salvar apenas o nome do arquivo se foi enviado
     const company_logo = req.files?.company_logo?.[0] 
-      ? `data:${req.files.company_logo[0].mimetype};base64,${req.files.company_logo[0].buffer.toString('base64')}` 
+      ? req.files.company_logo[0].filename 
       : req.body.company_logo || '';
     const signature_tiago_viana = req.files?.signature_tiago_viana?.[0] 
-      ? `data:${req.files.signature_tiago_viana[0].mimetype};base64,${req.files.signature_tiago_viana[0].buffer.toString('base64')}` 
+      ? req.files.signature_tiago_viana[0].filename 
       : req.body.signature_tiago_viana || '';
     const signature_tito_livio = req.files?.signature_tito_livio?.[0] 
-      ? `data:${req.files.signature_tito_livio[0].mimetype};base64,${req.files.signature_tito_livio[0].buffer.toString('base64')}` 
+      ? req.files.signature_tito_livio[0].filename 
       : req.body.signature_tito_livio || '';
     const cover_pdf = req.files?.cover_pdf?.[0] 
-      ? `data:${req.files.cover_pdf[0].mimetype};base64,${req.files.cover_pdf[0].buffer.toString('base64')}` 
+      ? req.files.cover_pdf[0].filename 
       : req.body.cover_pdf || '';
     
     await db.query(
