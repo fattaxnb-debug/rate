@@ -145,6 +145,14 @@ export default function Header() {
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="right" className="w-80 bg-gradient-to-br from-slate-50 to-slate-100">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setMobileOpen(false)}
+                      className="absolute right-4 top-4 h-10 w-10 rounded-full bg-white border-2 border-slate-200 hover:border-blue-300 hover:bg-blue-50 shadow-md transition-all"
+                    >
+                      <X className="h-5 w-5 text-slate-600" />
+                    </Button>
                     <nav className="flex flex-col space-y-3 mt-8">
                       <div className="mb-6 p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg">
                         <div className="flex items-center gap-3 mb-3">
