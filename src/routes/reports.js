@@ -22,6 +22,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     console.log('[REPORTS DEBUG] Fetching report with ID:', req.params.id);
+    console.log('[REPORTS DEBUG] Querying database...');
     
     const [reports] = await db.query(
       `SELECT r.*, 
@@ -49,11 +50,15 @@ router.get('/:id', async (req, res) => {
        WHERE r.id = ?`,
       [req.params.id]
     );
+    console.log('[REPORTS DEBUG] Reports fetched:', reports.length);
+    
     if (reports.length === 0) {
+      console.log('[REPORTS DEBUG] Report not found');
       return res.status(404).json({ error: 'Relatório não encontrado' });
     }
     
     const report = reports[0];
+    console.log('[REPORTS DEBUG] Report data keys:', Object.keys(report));
     
     // Parse campos JSON
     console.log('[REPORTS DEBUG] Parsing JSON fields...');
@@ -86,7 +91,7 @@ router.get('/:id', async (req, res) => {
     // Buscar fotos da tabela report_photos
     console.log('[REPORTS DEBUG] Fetching photos for report:', req.params.id);
     const [photos] = await db.query(
-      `SELECT * FROM report_photos WHERE report_id = ? ORDER BY sequence ASC`,
+      `SELECT * FROM report_photos WHERE report_id = ?`,
       [req.params.id]
     );
     console.log('[REPORTS DEBUG] Photos fetched:', photos.length);
@@ -107,6 +112,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     console.log('[REPORTS DEBUG] Request body:', JSON.stringify(req.body, null, 2));
+    console.log('[REPORTS DEBUG] Request body keys:', Object.keys(req.body));
     
     const { 
       schedule_id, 
@@ -157,22 +163,42 @@ router.post('/', async (req, res) => {
       client_id, equipment_id, technician_id, service_order_number, created_date, service_type, status
     });
     
+    console.log('[REPORTS DEBUG] Validating required fields...');
+    if (!client_id) {
+      console.error('[REPORTS DEBUG] Missing client_id');
+      return res.status(400).json({ error: 'client_id is required' });
+    }
+    if (!equipment_id) {
+      console.error('[REPORTS DEBUG] Missing equipment_id');
+      return res.status(400).json({ error: 'equipment_id is required' });
+    }
+    if (!technician_id) {
+      console.error('[REPORTS DEBUG] Missing technician_id');
+      return res.status(400).json({ error: 'technician_id is required' });
+    }
+    
+    console.log('[REPORTS DEBUG] All required fields present');
+    
     const id = uuidv4();
+    console.log('[REPORTS DEBUG] Generated UUID:', id);
+    
+    console.log('[REPORTS DEBUG] Preparing to insert into database...');
     
     // Inserir todos os campos
     const [result] = await db.query(
       `INSERT INTO reports (
         id, schedule_id, client_id, equipment_id, technician_id, created_date, service_order_number, 
-        service_type, status, technician_edit_count, responsible_person, installation_location,
-        installation_location_explanation, power_supply_type, breaker, cable_entry_phase,
+        report_number, service_type, attendance_date_time, status, technician_edit_count, responsible_person, installation_location,
+        installation_location_explanation, local, inadequate_location_reason, equipment_type, manufacturer, model, serial_number, capacity, installation_date,
+        installation_type, location_details, environment, access, power_supply_type, breaker, cable_entry_phase,
         cable_entry_neutral, cable_entry_ground, cable_exit_phase, cable_exit_neutral,
         external_battery_positive_cable, external_battery_negative_cable, external_battery_neutral_cable,
         external_battery_connection, external_battery_nobreak_connection, electrical_measurements,
         battery_bank, cooled_environment, external_inspection, internal_inspection,
         attendance_description, diagnosis, conclusion, reported_problems, identified_defects,
-        procedures_performed, replaced_parts, parts_request, observations,
-        client_signature, technician_signature
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        procedures_performed, replaced_parts, parts_request, observations, problems_reported, technical_description,
+        client_signature, technician_signature, photos
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         schedule_id || null,
@@ -181,12 +207,26 @@ router.post('/', async (req, res) => {
         technician_id, 
         created_date || null,
         service_order_number || null,
+        report_number || null,
         service_type || null,
+        attendance_date_time || null,
         status || 'draft',
         technician_edit_count || 0,
         responsible_person || '',
         installation_location || '',
         installation_location_explanation || '',
+        req.body.local || '',
+        req.body.inadequate_location_reason || '',
+        req.body.equipment_type || '',
+        req.body.manufacturer || '',
+        req.body.model || '',
+        req.body.serial_number || '',
+        req.body.capacity || '',
+        req.body.installation_date || null,
+        req.body.installation_type || '',
+        req.body.location_details || '',
+        req.body.environment || '',
+        req.body.access || '',
         power_supply_type || '',
         breaker || '',
         cable_entry_phase || '',
@@ -213,8 +253,11 @@ router.post('/', async (req, res) => {
         replaced_parts || '',
         parts_request || '',
         observations || '',
+        req.body.problems_reported || '',
+        req.body.technical_description || '',
         client_signature || '',
-        technician_signature || ''
+        technician_signature || '',
+        req.body.photos ? JSON.stringify(req.body.photos) : null
       ]
     );
 

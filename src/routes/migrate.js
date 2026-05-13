@@ -87,4 +87,33 @@ router.post('/schedules', async (req, res) => {
   }
 });
 
+// POST /migrate/photo-urls - Atualizar URLs das fotos antigas de /api/uploads/ para /uploads/
+router.post('/photo-urls', async (req, res) => {
+  try {
+    console.log('=== Starting photo URLs migration ===');
+
+    // Atualizar URLs das fotos antigas
+    const [result] = await db.query(`
+      UPDATE report_photos 
+      SET photo_url = REPLACE(photo_url, '/api/uploads/', '/uploads/')
+      WHERE photo_url LIKE '/api/uploads/%'
+    `);
+
+    console.log(`Updated ${result.affectedRows} photo URLs`);
+
+    res.json({ 
+      success: true, 
+      message: 'URLs das fotos atualizadas com sucesso',
+      updatedCount: result.affectedRows
+    });
+
+  } catch (error) {
+    console.error('Error during photo URLs migration:', error);
+    res.status(500).json({ 
+      error: 'Erro durante migração de URLs de fotos', 
+      message: error.message 
+    });
+  }
+});
+
 export default router;

@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../../public/uploads'));
+    cb(null, path.join(__dirname, '../../uploads'));
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -25,17 +25,17 @@ const upload = multer({ storage: storage });
 // POST /report-photos - Salvar foto do relatório
 router.post('/', upload.single('photo_url'), async (req, res) => {
   try {
-    const { report_id, comment, photo_type, sequence } = req.body;
+    const { report_id, comment, photo_type } = req.body;
     const photo_url = req.file ? `/uploads/${req.file.filename}` : '';
     
     const id = uuidv4();
     
     await db.query(
-      `INSERT INTO report_photos (id, report_id, photo_url, comment, photo_type, sequence, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [id, report_id, photo_url, comment || '', photo_type || 'outro', sequence || 0]
+      `INSERT INTO report_photos (id, report_id, photo_url, comment, photo_type, created_at) VALUES (?, ?, ?, ?, ?, NOW())`,
+      [id, report_id, photo_url, comment || '', photo_type || 'outro']
     );
     
-    res.json({ data: { id, report_id, photo_url, comment, photo_type, sequence } });
+    res.json({ data: { id, report_id, photo_url, comment, photo_type } });
   } catch (error) {
     console.error('Error saving report photo:', error);
     res.status(500).json({ error: 'Erro ao salvar foto' });
@@ -78,7 +78,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/report/:report_id', async (req, res) => {
   try {
     const [photos] = await db.query(
-      `SELECT * FROM report_photos WHERE report_id = ? ORDER BY sequence ASC`,
+      `SELECT * FROM report_photos WHERE report_id = ?`,
       [req.params.report_id]
     );
     
