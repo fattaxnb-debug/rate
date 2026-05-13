@@ -118,6 +118,15 @@ router.post('/photo-urls', async (req, res) => {
 
 // POST /migrate/reports - Migrar tabela reports para adicionar colunas faltantes
 router.post('/reports', async (req, res) => {
+  // CORS headers para permitir requisições de qualquer origem
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   try {
     console.log('=== Starting reports table migration ===');
 
