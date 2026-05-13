@@ -338,4 +338,73 @@ router.post('/schedules-add-time', async (req, res) => {
   }
 });
 
+// POST /migrate/reports-uuid - Migrar tabela reports para UUID
+router.post('/reports-uuid', async (req, res) => {
+  // CORS headers para permitir requisições de qualquer origem
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  try {
+    console.log('=== Starting reports UUID migration ===');
+
+    // Verificar o tipo atual da coluna id
+    const [columnInfo] = await db.query(`
+      SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'reports' AND COLUMN_NAME = 'id'
+    `);
+
+    if (columnInfo.length === 0) {
+      return res.status(404).json({ error: 'Tabela reports não encontrada' });
+    }
+
+    console.log('Current id column type:', columnInfo[0].COLUMN_TYPE);
+
+    // Verificar se já é varchar(36)
+    if (columnInfo[0].DATA_TYPE === 'varchar') {
+      return res.json({ 
+        success: true, 
+        message: 'Tabela reports já está com UUID',
+        alreadyMigrated: true 
+      });
+    }
+
+    // Fazer backup dos dados existentes
+    console.log('Creating backup of existing data...');
+    await db.query('CREATE TABLE IF NOT EXISTS reports_backup AS SELECT * FROM reports');
+    const [backupCount] = await db.query('SELECT COUNT(*) as count FROM reports_backup');
+    console.log(`Backup created with ${backupCount[0].count} records`);
+
+    // Converter id de INT para VARCHAR(36)
+    console.log('Converting id column to VARCHAR(36)...');
+    await db.query(`
+      ALTER TABLE reports 
+      MODIFY COLUMN id varchar(36) NOT NULL,
+      DROP PRIMARY KEY,
+      ADD PRIMARY KEY (id)
+    `);
+
+    console.log('=== Migration completed successfully ===');
+    
+    res.json({ 
+      success: true, 
+      message: 'Tabela reports migrada para UUID com sucesso',
+      backupRecords: backupCount[0].count,
+      alreadyMigrated: false
+    });
+
+  } catch (error) {
+    console.error('Error during reports UUID migration:', error);
+    res.status(500).json({ 
+      error: 'Erro durante migração de reports para UUID', 
+      message: error.message 
+    });
+  }
+});
+
 export default router;
