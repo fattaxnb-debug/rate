@@ -34,8 +34,8 @@ export default function ClientsPage() {
   const [clientToDelete, setClientToDelete] = useState(null);
   const [clientToView, setClientToView] = useState(null);
 
-  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
-const isTecnico = currentUser?.role === 'Técnico';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
+const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
 const canCreate = isGerente || isTecnico;
 
   const toggleCard = (clientId) => {
@@ -245,7 +245,7 @@ const canCreate = isGerente || isTecnico;
                       <TableCell className="font-semibold text-gray-900 max-w-[200px] truncate" title={client.name}>
                         {client.name}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap text-gray-700">{client.cnpj || client.cpf || '-'}</TableCell>
+                      <TableCell className="whitespace-nowrap text-gray-700">{client.cnpj_cpf || '-'}</TableCell>
                       <TableCell className="whitespace-nowrap text-gray-700">{client.phone || client.mobile}</TableCell>
                       <TableCell className="max-w-[200px] truncate text-gray-700" title={client.email}>{client.email}</TableCell>
                       <TableCell className="whitespace-nowrap text-gray-700">{client.city}</TableCell>
@@ -341,7 +341,7 @@ const canCreate = isGerente || isTecnico;
                         <div className="text-sm text-gray-600 mt-2 space-y-1">
                           <div className="flex items-center">
                             <span className="font-semibold text-blue-600 w-24">CNPJ/CPF:</span>
-                            <span className="text-gray-900">{client.cnpj || client.cpf || '-'}</span>
+                            <span className="text-gray-900">{client.cnpj_cpf || '-'}</span>
                           </div>
                           <div className="flex items-center">
                             <span className="font-semibold text-blue-600 w-24">Telefone:</span>
@@ -366,22 +366,26 @@ const canCreate = isGerente || isTecnico;
                       <div className="grid grid-cols-1 gap-3 text-sm">
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
                           <span className="font-semibold text-blue-600">Tipo:</span>
-                          <span className="text-gray-900 font-medium">{client.type === 'pessoa_juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</span>
+                          <span className="text-gray-900 font-medium">{client.type === 'juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</span>
                         </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Nome Fantasia:</span>
-                          <span className="text-gray-900">{client.fantasy_name || '-'}</span>
-                        </div>
-                        {client.type !== 'pessoa_juridica' && (
+                        {client.type === 'juridica' && (
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Nome Fantasia:</span>
+                            <span className="text-gray-900">{client.fantasy_name || '-'}</span>
+                          </div>
+                        )}
+                        {client.type === 'fisica' && (
                           <div className="flex justify-between items-center py-2 border-b border-gray-200">
                             <span className="font-semibold text-blue-600">RG:</span>
                             <span className="text-gray-900">{client.rg || '-'}</span>
                           </div>
                         )}
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Inscrição Estadual:</span>
-                          <span className="text-gray-900">{client.ie || '-'}</span>
-                        </div>
+                        {client.type === 'juridica' && (
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Inscrição Estadual:</span>
+                            <span className="text-gray-900">{client.ie || '-'}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
                           <span className="font-semibold text-blue-600">Endereço:</span>
                           <span className="text-gray-900">{client.address || '-'}</span>
@@ -539,30 +543,34 @@ const canCreate = isGerente || isTecnico;
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Tipo</label>
-                  <p className="text-sm">{clientToView.type === 'pessoa_juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</p>
+                  <p className="text-sm">{clientToView.type === 'juridica' ? 'Pessoa Jurídica' : 'Pessoa Física'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Nome/Razão Social</label>
                   <p className="text-sm">{clientToView.name}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Nome Fantasia</label>
-                  <p className="text-sm">{clientToView.fantasy_name || '-'}</p>
-                </div>
+                {clientToView.type === 'juridica' && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Nome Fantasia</label>
+                    <p className="text-sm">{clientToView.fantasy_name || '-'}</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">CNPJ/CPF</label>
-                  <p className="text-sm">{clientToView.cnpj || clientToView.cpf || '-'}</p>
+                  <p className="text-sm">{clientToView.cnpj_cpf || '-'}</p>
                 </div>
-                {clientToView.type !== 'pessoa_juridica' && (
+                {clientToView.type === 'fisica' && (
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">RG</label>
                     <p className="text-sm">{clientToView.rg || '-'}</p>
                   </div>
                 )}
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Inscrição Estadual</label>
-                  <p className="text-sm">{clientToView.ie || '-'}</p>
-                </div>
+                {clientToView.type === 'juridica' && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Inscrição Estadual</label>
+                    <p className="text-sm">{clientToView.ie || '-'}</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Endereço</label>
                   <p className="text-sm">{clientToView.address || '-'}</p>

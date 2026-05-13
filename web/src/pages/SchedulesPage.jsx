@@ -33,8 +33,8 @@ export default function SchedulesPage() {
   const [scheduleToDelete, setScheduleToDelete] = useState(null);
   const [expandedCards, setExpandedCards] = useState({});
 
-  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
-  const isTecnico = currentUser?.role === 'Técnico';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
+  const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
 
   const toggleCard = (scheduleId) => {
     setExpandedCards(prev => ({

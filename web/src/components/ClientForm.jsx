@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 export default function ClientForm({ client, onSave, onCancel }) {
   const [formData, setFormData] = useState({
-    type: 'fisica',           // 'fisica' ou 'juridica'
+    type: 'juridica',          // 'fisica' ou 'juridica'
     name: '',
     fantasy_name: '',
     cnpj_cpf: '',
@@ -61,9 +61,17 @@ export default function ClientForm({ client, onSave, onCancel }) {
     const { name, value } = e.target;
     let formattedValue = value;
 
-    // Formatação automática de CNPJ/CPF
+    // Formatação automática de CNPJ/CPF e detecção automática do tipo
     if (name === 'cnpj_cpf') {
       const cleaned = value.replace(/[^\d]/g, '');
+      
+      // Detectar automaticamente se é CNPJ (14 dígitos) e mudar tipo
+      if (cleaned.length === 14 && formData.type !== 'juridica') {
+        setFormData(prev => ({ ...prev, type: 'juridica', rg: '' }));
+      } else if (cleaned.length === 11 && formData.type !== 'fisica') {
+        setFormData(prev => ({ ...prev, type: 'fisica', ie: '', fantasy_name: '' }));
+      }
+      
       if (formData.type === 'juridica') {
         formattedValue = cleaned.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5').slice(0, 18);
       } else {

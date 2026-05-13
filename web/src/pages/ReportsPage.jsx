@@ -31,7 +31,7 @@ export default function ReportsPage() {
   const [technicians, setTechnicians] = useState([]);
   const [expandedCards, setExpandedCards] = useState({});
 
-  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
 
   const toggleCard = (reportId) => {
     setExpandedCards(prev => ({
