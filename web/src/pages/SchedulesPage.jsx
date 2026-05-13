@@ -352,7 +352,7 @@ export default function SchedulesPage() {
                 <p className="text-sm">Tente ajustar os filtros de busca</p>
               </div>
             ) : (
-              (searchTerm ? filteredSchedules : filteredSchedules.slice(0, 10)).map((schedule) => {
+              (searchTerm ? filteredSchedules : filteredSchedules.slice(0, 5)).map((schedule) => {
                 const temporalClass = getTemporalRowClass(schedule);
                 return (
                   <div key={schedule.id} className={`rounded-xl border-2 shadow-xl overflow-hidden ${temporalClass}`}>

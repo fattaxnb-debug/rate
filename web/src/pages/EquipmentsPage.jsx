@@ -258,7 +258,7 @@ const canCreate = isGerente || isTecnico;
                 <p className="text-sm">Tente ajustar os filtros de busca</p>
               </div>
             ) : (
-              (searchTerm ? filteredEquipments : filteredEquipments.slice(0, 10)).map((equipment) => (
+              (searchTerm ? filteredEquipments : filteredEquipments.slice(0, 5)).map((equipment) => (
                 <div key={equipment.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
                   <div 
                     className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors relative overflow-hidden"
