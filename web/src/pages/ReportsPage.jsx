@@ -332,6 +332,8 @@ export default function ReportsPage() {
                 </Link>
               )}
             </div>
+            
+            {/* Mostrar apenas 10 itens recentes quando não há pesquisa, ou todos filtrados quando há pesquisa */}
             {filteredReports.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <div className="text-6xl mb-4">📄</div>
@@ -339,7 +341,7 @@ export default function ReportsPage() {
                 <p className="text-sm">Tente ajustar os filtros de busca</p>
               </div>
             ) : (
-              filteredReports.map((report) => {
+              (searchTerm ? filteredReports : filteredReports.slice(0, 10)).map((report) => {
                 const isResponsible = isUserResponsible(report);
                 return (
                   <div key={report.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">

@@ -343,6 +343,8 @@ export default function SchedulesPage() {
                 </Button>
               )}
             </div>
+            
+            {/* Mostrar apenas 10 itens recentes quando não há pesquisa, ou todos filtrados quando há pesquisa */}
             {filteredSchedules.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <div className="text-6xl mb-4">📅</div>
@@ -350,7 +352,7 @@ export default function SchedulesPage() {
                 <p className="text-sm">Tente ajustar os filtros de busca</p>
               </div>
             ) : (
-              filteredSchedules.map((schedule) => {
+              (searchTerm ? filteredSchedules : filteredSchedules.slice(0, 10)).map((schedule) => {
                 const temporalClass = getTemporalRowClass(schedule);
                 return (
                   <div key={schedule.id} className={`rounded-xl border-2 shadow-xl overflow-hidden ${temporalClass}`}>
