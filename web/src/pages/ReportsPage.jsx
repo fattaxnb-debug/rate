@@ -154,7 +154,7 @@ export default function ReportsPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8">
           <Skeleton className="h-8 w-48 mb-6" />
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map(i => (
@@ -176,7 +176,7 @@ export default function ReportsPage() {
       <div className="min-h-screen flex flex-col">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-3xl font-bold mb-2" style={{ letterSpacing: '-0.02em' }}>Relatórios</h1>

@@ -174,7 +174,7 @@ export default function SettingsPage() {
       <div className="min-h-screen flex flex-col">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 py-8 max-w-3xl">
+        <main className="flex-1 container mx-auto px-4 py-8 max-w-3xl pb-20 md:pb-8">
           <h1 className="text-3xl font-bold mb-8" style={{ letterSpacing: '-0.02em' }}>Configurações</h1>
 
           <div className="space-y-8">
