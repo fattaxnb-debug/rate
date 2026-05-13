@@ -12,18 +12,14 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Usar o diretório uploads na raiz do projeto, independente de onde o backend é executado
     const uploadDir = path.join(process.cwd().includes('src') ? path.dirname(process.cwd()) : process.cwd(), 'uploads');
-    console.log('[MULTER DEBUG] Upload directory:', uploadDir);
-    console.log('[MULTER DEBUG] Directory exists:', fs.existsSync(uploadDir));
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
-      console.log('[MULTER DEBUG] Directory created');
     }
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
-    console.log('[MULTER DEBUG] Saving file:', filename);
     cb(null, filename);
   }
 });
@@ -52,7 +48,6 @@ router.get('/user/:userId', async (req, res) => {
         signature_tito_livio: userSettings[0]?.signature_tito_livio || globalSettings[0].signature_tito_livio,
         cover_pdf: userSettings[0]?.cover_pdf || globalSettings[0].cover_pdf
       };
-      console.log('[SETTINGS BACKEND DEBUG] Using global settings for user:', req.params.userId);
       return res.json({ data: result });
     }
     
@@ -74,15 +69,10 @@ router.post('/', upload.fields([
   { name: 'signature_tito_livio' },
   { name: 'cover_pdf' }
 ]), async (req, res) => {
-  console.log('[SETTINGS BACKEND DEBUG] POST /settings called');
   try {
-    console.log('[SETTINGS BACKEND DEBUG] Request body:', req.body);
-    console.log('[SETTINGS BACKEND DEBUG] Request files:', req.files);
-    
     const { user_id } = req.body;
     
     if (!user_id) {
-      console.error('[SETTINGS BACKEND DEBUG] user_id is missing from request body');
       return res.status(400).json({ error: 'user_id is required' });
     }
     
@@ -100,38 +90,25 @@ router.post('/', upload.fields([
       ? req.files.cover_pdf[0].filename 
       : '';
     
-    console.log('[SETTINGS BACKEND DEBUG] Saving settings for user_id:', user_id);
-    console.log('[SETTINGS BACKEND DEBUG] company_logo length:', company_logo.length);
-    console.log('[SETTINGS BACKEND DEBUG] signature_tiago_viana length:', signature_tiago_viana.length);
-    console.log('[SETTINGS BACKEND DEBUG] signature_tito_livio length:', signature_tito_livio.length);
-    console.log('[SETTINGS BACKEND DEBUG] cover_pdf length:', cover_pdf.length);
-    
-    console.log('[SETTINGS BACKEND DEBUG] Checking for existing settings...');
     // Verificar se já existe configuração para o usuário
     const [existing] = await db.query(
       'SELECT id FROM company_settings WHERE user_id = ?',
       [user_id]
     );
     
-    console.log('[SETTINGS BACKEND DEBUG] Existing settings:', existing.length);
-    
     if (existing.length > 0) {
-      console.log('[SETTINGS BACKEND DEBUG] Updating existing settings...');
       // Atualizar
       await db.query(
         'UPDATE company_settings SET company_logo = ?, signature_tiago_viana = ?, signature_tito_livio = ?, cover_pdf = ? WHERE user_id = ?',
         [company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf, user_id]
       );
-      console.log('[SETTINGS BACKEND DEBUG] Settings updated successfully');
     } else {
-      console.log('[SETTINGS BACKEND DEBUG] Inserting new settings...');
-      const id = uuidv4();
       // Inserir
+      const id = uuidv4();
       await db.query(
         'INSERT INTO company_settings (id, user_id, company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf) VALUES (?, ?, ?, ?, ?, ?)',
         [id, user_id, company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf]
       );
-      console.log('[SETTINGS BACKEND DEBUG] Settings inserted successfully');
     }
     
     res.json({ data: { id: existing[0]?.id || id, user_id, company_logo, signature_tiago_viana, signature_tito_livio, cover_pdf } });
@@ -142,19 +119,12 @@ router.post('/', upload.fields([
 });
 
 // PUT /settings/:id - Atualizar configurações por ID
-router.put('/:id', (req, res, next) => {
-  console.log('[SETTINGS BACKEND DEBUG] PUT /settings/:id - BEFORE MULTER');
-  next();
-}, upload.fields([
+router.put('/:id', upload.fields([
   { name: 'company_logo' },
   { name: 'signature_tiago_viana' },
   { name: 'signature_tito_livio' },
   { name: 'cover_pdf' }
 ]), async (req, res) => {
-  console.log('[SETTINGS BACKEND DEBUG] PUT /settings/:id called');
-  console.log('[SETTINGS BACKEND DEBUG] Request body:', req.body);
-  console.log('[SETTINGS BACKEND DEBUG] Request files:', req.files);
-  console.log('[SETTINGS BACKEND DEBUG] company_logo file:', req.files?.company_logo?.[0]);
   try {
     const settingsId = req.params.id;
     
