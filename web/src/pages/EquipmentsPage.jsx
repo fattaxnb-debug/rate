@@ -27,18 +27,10 @@ export default function EquipmentsPage() {
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [viewingEquipment, setViewingEquipment] = useState(null);
   const [equipmentToDelete, setEquipmentToDelete] = useState(null);
-  const [expandedCards, setExpandedCards] = useState({});
 
   const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
 const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
 const canCreate = isGerente || isTecnico;
-
-  const toggleCard = (equipmentId) => {
-    setExpandedCards(prev => ({
-      ...prev,
-      [equipmentId]: !prev[equipmentId]
-    }));
-  };
 
   const { searchTerm, setSearchTerm, filteredItems: filteredEquipments } = useSearch(equipments, [
     'brand', 'model', 'serial_number'
@@ -250,7 +242,6 @@ const canCreate = isGerente || isTecnico;
               )}
             </div>
             
-            {/* Mostrar apenas 10 itens recentes quando não há pesquisa, ou todos filtrados quando há pesquisa */}
             {filteredEquipments.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <div className="text-6xl mb-4">🔍</div>
@@ -260,85 +251,26 @@ const canCreate = isGerente || isTecnico;
             ) : (
               (searchTerm ? filteredEquipments : filteredEquipments.slice(0, 5)).map((equipment) => (
                 <div key={equipment.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
-                  <div 
-                    className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors relative overflow-hidden"
-                    onClick={() => toggleCard(equipment.id)}
-                  >
-                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-500"></div>
-                    <div className="flex items-center justify-between pl-2">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-gray-900 truncate text-base">{equipment.brand} - {equipment.model}</h3>
                         <div className="text-sm text-gray-600 mt-2 space-y-1">
                           <div className="flex items-center">
-                            <span className="font-semibold text-blue-600 w-24">Tipo:</span>
+                            <span className="font-semibold text-blue-600 w-20">Tipo:</span>
                             <span className="text-gray-900">{equipment.type ? equipment.type.toUpperCase() : '-'}</span>
                           </div>
                           <div className="flex items-center">
-                            <span className="font-semibold text-blue-600 w-24">Série:</span>
+                            <span className="font-semibold text-blue-600 w-20">Série:</span>
                             <span className="text-gray-900">{equipment.serial_number || '-'}</span>
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 ml-4">
-                        <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-2 shadow-md">
-                          {expandedCards[equipment.id] ? (
-                            <ChevronUp className="h-4 w-4 text-white" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-white" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {expandedCards[equipment.id] && (
-                    <div className="px-4 pb-4 border-t border-blue-500/20 pt-4 bg-gradient-to-b from-blue-500/5 to-transparent">
-                      <div className="grid grid-cols-1 gap-3 text-sm">
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Marca:</span>
-                          <span className="text-gray-900 font-medium">{equipment.brand || '-'}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Modelo:</span>
-                          <span className="text-gray-900">{equipment.model || '-'}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Número de Série:</span>
-                          <span className="text-gray-900">{equipment.serial_number || '-'}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Potência:</span>
-                          <span className="text-gray-900">{equipment.power_va ? `${equipment.power_va} VA` : '-'}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Cliente:</span>
-                          <span className="text-gray-900">{equipment.client_name ? equipment.client_name.replace(/\d+/g, '').trim().split(' ').slice(0, 3).join(' ') : '-'}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Data Instalação:</span>
-                          <span className="text-gray-900">{equipment.installation_date ? format(new Date(equipment.installation_date), 'dd/MM/yyyy') : '-'}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Tensão Entrada:</span>
-                          <span className="text-gray-900">{equipment.voltage_in || '-'}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                          <span className="font-semibold text-blue-600">Tensão Saída:</span>
-                          <span className="text-gray-900">{equipment.voltage_out || '-'}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2">
-                          <span className="font-semibold text-blue-600">Observações:</span>
-                          <span className="text-gray-900">{equipment.notes || '-'}</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-blue-500/20">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleView(equipment);
-                          }}
+                          onClick={() => { setViewingEquipment(equipment); setViewDialogOpen(true); }}
                           title="Visualizar"
                           className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                         >
@@ -349,11 +281,7 @@ const canCreate = isGerente || isTecnico;
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedEquipment(equipment);
-                                setDialogOpen(true);
-                              }}
+                              onClick={() => { setSelectedEquipment(equipment); setDialogOpen(true); }}
                               title="Editar"
                               className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
@@ -362,11 +290,7 @@ const canCreate = isGerente || isTecnico;
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEquipmentToDelete(equipment);
-                                setDeleteDialogOpen(true);
-                              }}
+                              onClick={() => { setEquipmentToDelete(equipment); setDeleteDialogOpen(true); }}
                               title="Excluir"
                               className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                             >
@@ -376,7 +300,7 @@ const canCreate = isGerente || isTecnico;
                         )}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               ))
             )}
