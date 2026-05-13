@@ -144,8 +144,23 @@ export default function Header() {
                       <Menu className="h-5 w-5" />
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right">
-                    <nav className="flex flex-col space-y-2 mt-8">
+                  <SheetContent side="right" className="w-80 bg-gradient-to-br from-slate-50 to-slate-100">
+                    <nav className="flex flex-col space-y-3 mt-8">
+                      <div className="mb-6 p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                            <User className="h-6 w-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-white font-semibold text-sm">{currentUser?.name}</p>
+                            <p className="text-white/70 text-xs">{currentUser?.email}</p>
+                          </div>
+                        </div>
+                        <div className="bg-white/20 rounded-lg px-3 py-1.5">
+                          <p className="text-white text-xs font-medium">{currentUser?.role}</p>
+                        </div>
+                      </div>
+
                       {navLinks.map((link) => {
                         const Icon = link.icon;
                         return (
@@ -153,29 +168,31 @@ export default function Header() {
                             key={link.path}
                             to={link.path}
                             onClick={() => setMobileOpen(false)}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border-2 ${
                               isActive(link.path)
-                                ? 'bg-primary text-primary-foreground shadow-md'
-                                : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white border-transparent shadow-lg'
+                                : 'bg-white text-foreground/80 border-slate-200 hover:border-blue-300 hover:shadow-md hover:text-foreground'
                             }`}
                           >
-                            <Icon className="h-5 w-5" />
+                            <Icon className={`h-5 w-5 ${isActive(link.path) ? 'text-white' : 'text-blue-500'}`} />
                             {link.label}
                           </Link>
                         );
                       })}
-                      <div className="pt-4 border-t mt-auto">
-                        <p className="text-sm font-medium mb-1">{currentUser?.name}</p>
-                        <p className="text-xs text-muted-foreground mb-1">{currentUser?.email}</p>
-                        <p className="text-xs text-primary font-semibold mb-4">{currentUser?.role}</p>
+
+                      <div className="pt-4 mt-auto space-y-2">
                         <Link to="/settings" onClick={() => setMobileOpen(false)}>
-                          <Button variant="outline" className="w-full mb-2">
-                            <Settings className="mr-2 h-4 w-4" />
+                          <Button variant="outline" className="w-full justify-start gap-2 bg-white border-slate-200 hover:border-blue-300 hover:shadow-md h-12">
+                            <Settings className="h-5 w-5 text-blue-500" />
                             Configurações
                           </Button>
                         </Link>
-                        <Button variant="outline" onClick={() => { setMobileOpen(false); setLogoutDialogOpen(true); }} className="w-full text-destructive hover:text-destructive">
-                          <LogOut className="mr-2 h-4 w-4" />
+                        <Button 
+                          variant="outline" 
+                          onClick={() => { setMobileOpen(false); setLogoutDialogOpen(true); }} 
+                          className="w-full justify-start gap-2 bg-white border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 h-12"
+                        >
+                          <LogOut className="h-5 w-5" />
                           Sair
                         </Button>
                       </div>
