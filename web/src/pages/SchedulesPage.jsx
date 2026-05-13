@@ -17,6 +17,7 @@ import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import ScheduleForm from '@/components/ScheduleForm.jsx';
 import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
 
 export default function SchedulesPage() {
   const { currentUser } = useAuth();
