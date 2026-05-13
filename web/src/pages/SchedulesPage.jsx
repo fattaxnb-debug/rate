@@ -313,6 +313,16 @@ export default function SchedulesPage() {
                               <Eye className="h-4 w-4" />
                             </Button>
 
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => { setSelectedSchedule(schedule); setDialogOpen(true); }}
+                              title="EDITAR"
+                              className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+
                             {isGerente && (
                               <Button
                                 variant="ghost"
@@ -448,21 +458,19 @@ export default function SchedulesPage() {
                             <Eye className="h-5 w-5" />
                           </Button>
 
-                          {(isGerente && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedSchedule(schedule);
-                                setDialogOpen(true);
-                              }}
-                              title="Editar"
-                              className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                            >
-                              <Pencil className="h-5 w-5" />
-                            </Button>
-                          ))}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSchedule(schedule);
+                              setDialogOpen(true);
+                            }}
+                            title="Editar"
+                            className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                          >
+                            <Pencil className="h-5 w-5" />
+                          </Button>
 
                           {isGerente && (
                             <Button

@@ -45,10 +45,16 @@ router.get('/', async (req, res) => {
       let scheduled_date = null;
       let scheduled_time = null;
       
-      console.log('Processing schedule:', schedule.id, 'scheduled_date raw:', schedule.scheduled_date);
+      console.log('Processing schedule:', schedule.id, 'scheduled_date raw:', schedule.scheduled_date, 'scheduled_time raw:', schedule.scheduled_time, 'type:', typeof schedule.scheduled_time);
+      
+      // Usar scheduled_time diretamente se estiver disponível
+      if (schedule.scheduled_time) {
+        scheduled_time = schedule.scheduled_time.substring(0, 5); // HH:MM
+        console.log('Using scheduled_time from DB:', scheduled_time);
+      }
       
       if (schedule.scheduled_date) {
-        // Converter datetime do MySQL (YYYY-MM-DD HH:mm:ss ou ISO string) para campos separados
+        // Converter datetime do MySQL (YYYY-MM-DD) para formato correto
         let dateStr = schedule.scheduled_date;
         
         if (dateStr instanceof Date) {
@@ -56,9 +62,6 @@ router.get('/', async (req, res) => {
           const month = String(dateStr.getMonth() + 1).padStart(2, '0');
           const day = String(dateStr.getDate()).padStart(2, '0');
           scheduled_date = `${year}-${month}-${day}`;
-          const hour = String(dateStr.getHours()).padStart(2, '0');
-          const minute = String(dateStr.getMinutes()).padStart(2, '0');
-          scheduled_time = `${hour}:${minute}`;
         } else if (typeof dateStr !== 'string') {
           dateStr = String(dateStr);
         }
@@ -67,22 +70,18 @@ router.get('/', async (req, res) => {
         if (typeof dateStr === 'string' && dateStr.includes(' ')) {
           const [datePart, timePart] = dateStr.split(' ');
           scheduled_date = datePart;
-          const [hour, minute] = timePart.split(':').slice(0, 2);
-          scheduled_time = `${hour}:${minute}`;
-        } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
-          // ISO string (YYYY-MM-DDTHH:mm:ss.sssZ ou YYYY-MM-DDTHH:mm:ss.sss)
-          // Remover o 'Z' no final se existir
-          let isoStr = dateStr.replace('Z', '');
-          const dateObj = new Date(isoStr);
-          const year = dateObj.getFullYear();
-          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-          const day = String(dateObj.getDate()).padStart(2, '0');
-          const hour = String(dateObj.getHours()).padStart(2, '0');
-          const minute = String(dateObj.getMinutes()).padStart(2, '0');
-          scheduled_date = `${year}-${month}-${day}`;
-          scheduled_time = `${hour}:${minute}`;
+          if (!scheduled_time && timePart) {
+            const [hour, minute] = timePart.split(':').slice(0, 2);
+            scheduled_time = `${hour}:${minute}`;
+            console.log('Extracted time from datetime:', scheduled_time);
+          }
+        } else if (typeof dateStr === 'string' && !dateStr.includes('T')) {
+          // Se for apenas data (YYYY-MM-DD)
+          scheduled_date = dateStr;
         }
       }
+      
+      console.log('Final scheduled_time:', scheduled_time);
       
       console.log('Processed schedule:', schedule.id, 'scheduled_date:', scheduled_date, 'scheduled_time:', scheduled_time, 'status:', schedule.status, 'technician_id:', schedule.technician_id);
       
@@ -148,10 +147,15 @@ router.get('/:id', async (req, res) => {
       let scheduled_date = null;
       let scheduled_time = null;
       
-      console.log('Processing schedule:', schedule.id, 'scheduled_date raw:', schedule.scheduled_date);
+      console.log('Processing schedule:', schedule.id, 'scheduled_date raw:', schedule.scheduled_date, 'scheduled_time raw:', schedule.scheduled_time);
+      
+      // Usar scheduled_time diretamente se estiver disponível
+      if (schedule.scheduled_time) {
+        scheduled_time = schedule.scheduled_time.substring(0, 5); // HH:MM
+      }
       
       if (schedule.scheduled_date) {
-        // Converter datetime do MySQL (YYYY-MM-DD HH:mm:ss ou ISO string) para campos separados
+        // Converter datetime do MySQL (YYYY-MM-DD) para formato correto
         let dateStr = schedule.scheduled_date;
         
         if (dateStr instanceof Date) {
@@ -159,9 +163,6 @@ router.get('/:id', async (req, res) => {
           const month = String(dateStr.getMonth() + 1).padStart(2, '0');
           const day = String(dateStr.getDate()).padStart(2, '0');
           scheduled_date = `${year}-${month}-${day}`;
-          const hour = String(dateStr.getHours()).padStart(2, '0');
-          const minute = String(dateStr.getMinutes()).padStart(2, '0');
-          scheduled_time = `${hour}:${minute}`;
         } else if (typeof dateStr !== 'string') {
           dateStr = String(dateStr);
         }
@@ -170,20 +171,13 @@ router.get('/:id', async (req, res) => {
         if (typeof dateStr === 'string' && dateStr.includes(' ')) {
           const [datePart, timePart] = dateStr.split(' ');
           scheduled_date = datePart;
-          const [hour, minute] = timePart.split(':').slice(0, 2);
-          scheduled_time = `${hour}:${minute}`;
-        } else if (typeof dateStr === 'string' && dateStr.includes('T')) {
-          // ISO string (YYYY-MM-DDTHH:mm:ss.sssZ ou YYYY-MM-DDTHH:mm:ss.sss)
-          // Remover o 'Z' no final se existir
-          let isoStr = dateStr.replace('Z', '');
-          const dateObj = new Date(isoStr);
-          const year = dateObj.getFullYear();
-          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-          const day = String(dateObj.getDate()).padStart(2, '0');
-          const hour = String(dateObj.getHours()).padStart(2, '0');
-          const minute = String(dateObj.getMinutes()).padStart(2, '0');
-          scheduled_date = `${year}-${month}-${day}`;
-          scheduled_time = `${hour}:${minute}`;
+          if (!scheduled_time && timePart) {
+            const [hour, minute] = timePart.split(':').slice(0, 2);
+            scheduled_time = `${hour}:${minute}`;
+          }
+        } else if (typeof dateStr === 'string' && !dateStr.includes('T')) {
+          // Se for apenas data (YYYY-MM-DD)
+          scheduled_date = dateStr;
         }
       }
       
@@ -225,11 +219,14 @@ router.post('/', async (req, res) => {
     
     const id = uuidv4();
     
+    // Formatar scheduled_time para incluir segundos se necessário
+    const formattedTime = scheduled_time && scheduled_time.length === 5 ? `${scheduled_time}:00` : scheduled_time;
+    
     const sql = `INSERT INTO schedules (id, client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     console.log('SQL:', sql);
-    console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status || 'pending', notes, address, city, contact_name, contact_phone]);
+    console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'pending', notes, address, city, contact_name, contact_phone]);
     
-    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status || 'pending', notes, address, city, contact_name, contact_phone]);
+    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'pending', notes, address, city, contact_name, contact_phone]);
 
     res.json({ data: { id, ...req.body } });
   } catch (error) {
@@ -244,10 +241,13 @@ router.put('/:id', async (req, res) => {
   try {
     const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone } = req.body;
     
+    // Formatar scheduled_time para incluir segundos se necessário
+    const formattedTime = scheduled_time && scheduled_time.length === 5 ? `${scheduled_time}:00` : scheduled_time;
+    
     await db.query(
       `UPDATE schedules SET client_id = ?, equipment_id = ?, technician_id = ?, scheduled_date = ?, scheduled_time = ?, service_type = ?, status = ?, notes = ?, address = ?, city = ?, contact_name = ?, contact_phone = ?
        WHERE id = ?`,
-      [client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, req.params.id]
+      [client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status, notes, address, city, contact_name, contact_phone, req.params.id]
     );
 
     res.json({ data: { id: req.params.id, ...req.body } });
