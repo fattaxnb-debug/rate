@@ -1,5 +1,7 @@
-// API Server Client - Configurado para rodar localmente
-const API_SERVER_URL = "http://localhost:3001";
+// API Server Client - Configurado para usar URL base dinâmica
+import { API_BASE_URL } from '../config/api.js';
+
+const API_SERVER_URL = API_BASE_URL;
 
 const apiServerClient = {
     fetch: async (url, options = {}) => {

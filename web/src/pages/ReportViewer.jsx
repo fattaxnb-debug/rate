@@ -74,7 +74,7 @@ export default function ReportViewer() {
           
           // 🔥 CORREÇÃO: Adicionar URL base do backend se não for base64 ou URL completa
           if (url && !url.startsWith('http') && !url.startsWith('data:')) {
-            url = `http://localhost:3001${url.startsWith('/') ? '' : '/'}${url}`;
+            url = `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
           }
           
           console.log('[PHOTO DEBUG] Photo ID:', p.id, 'Final URL:', url.substring(0, 100) + '...');
