@@ -116,4 +116,103 @@ router.post('/photo-urls', async (req, res) => {
   }
 });
 
+// POST /migrate/reports - Migrar tabela reports para adicionar colunas faltantes
+router.post('/reports', async (req, res) => {
+  try {
+    console.log('=== Starting reports table migration ===');
+
+    // Verificar quais colunas existem na tabela reports
+    const [existingColumns] = await db.query(`
+      SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'reports'
+    `);
+
+    console.log('Existing columns:', existingColumns.map(c => c.COLUMN_NAME));
+
+    const columnNames = existingColumns.map(c => c.COLUMN_NAME);
+    const migrations = [];
+
+    // Lista de colunas que devem existir no schema atual
+    const requiredColumns = [
+      { name: 'service_order_number', type: 'varchar(50) DEFAULT NULL' },
+      { name: 'report_number', type: 'varchar(50) DEFAULT NULL' },
+      { name: 'service_type', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'attendance_date_time', type: 'datetime DEFAULT NULL' },
+      { name: 'technician_edit_count', type: 'int(11) DEFAULT 0' },
+      { name: 'responsible_person', type: 'varchar(255) DEFAULT NULL' },
+      { name: 'installation_location', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'installation_location_explanation', type: 'text DEFAULT NULL' },
+      { name: 'local', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'inadequate_location_reason', type: 'text DEFAULT NULL' },
+      { name: 'equipment_type', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'manufacturer', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'model', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'serial_number', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'capacity', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'installation_date', type: 'date DEFAULT NULL' },
+      { name: 'installation_type', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'location_details', type: 'text DEFAULT NULL' },
+      { name: 'environment', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'access', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'power_supply_type', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'breaker', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'cable_entry_phase', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'cable_entry_neutral', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'cable_entry_ground', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'cable_exit_phase', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'cable_exit_neutral', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'external_battery_positive_cable', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'external_battery_negative_cable', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'external_battery_neutral_cable', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'external_battery_connection', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'external_battery_nobreak_connection', type: 'varchar(100) DEFAULT NULL' },
+      { name: 'electrical_measurements', type: 'text DEFAULT NULL' },
+      { name: 'battery_bank', type: 'text DEFAULT NULL' },
+      { name: 'cooled_environment', type: 'varchar(10) DEFAULT NULL' },
+      { name: 'external_inspection', type: 'text DEFAULT NULL' },
+      { name: 'internal_inspection', type: 'text DEFAULT NULL' },
+      { name: 'attendance_description', type: 'text DEFAULT NULL' },
+      { name: 'diagnosis', type: 'text DEFAULT NULL' },
+      { name: 'conclusion', type: 'text DEFAULT NULL' },
+      { name: 'reported_problems', type: 'text DEFAULT NULL' },
+      { name: 'identified_defects', type: 'text DEFAULT NULL' },
+      { name: 'procedures_performed', type: 'text DEFAULT NULL' },
+      { name: 'replaced_parts', type: 'text DEFAULT NULL' },
+      { name: 'parts_request', type: 'text DEFAULT NULL' },
+      { name: 'observations', type: 'text DEFAULT NULL' },
+      { name: 'problems_reported', type: 'text DEFAULT NULL' },
+      { name: 'technical_description', type: 'text DEFAULT NULL' },
+      { name: 'client_signature', type: 'text DEFAULT NULL' },
+      { name: 'technician_signature', type: 'text DEFAULT NULL' },
+      { name: 'photos', type: 'text DEFAULT NULL' }
+    ];
+
+    // Adicionar colunas faltantes
+    for (const column of requiredColumns) {
+      if (!columnNames.includes(column.name)) {
+        console.log(`Adding column: ${column.name}`);
+        await db.query(`ALTER TABLE reports ADD COLUMN ${column.name} ${column.type}`);
+        migrations.push(column.name);
+      }
+    }
+
+    console.log(`Added ${migrations.length} columns:`, migrations);
+
+    res.json({ 
+      success: true, 
+      message: 'Tabela reports migrada com sucesso',
+      addedColumns: migrations,
+      totalColumns: columnNames.length + migrations.length
+    });
+
+  } catch (error) {
+    console.error('Error during reports migration:', error);
+    res.status(500).json({ 
+      error: 'Erro durante migração de reports', 
+      message: error.message 
+    });
+  }
+});
+
 export default router;
