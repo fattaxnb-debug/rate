@@ -18,9 +18,15 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
-    cb(null, filename);
+    // Usar nome fixo para company_logo para evitar múltiplos arquivos
+    if (file.fieldname === 'company_logo') {
+      const filename = 'company_logo' + path.extname(file.originalname);
+      cb(null, filename);
+    } else {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+      cb(null, filename);
+    }
   }
 });
 
