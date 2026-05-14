@@ -181,7 +181,7 @@ const canCreate = isGerente || isTecnico;
               <h1 className="text-3xl font-bold mb-2" style={{ letterSpacing: '-0.02em' }}>Clientes</h1>
               <p className="text-muted-foreground">Gerenciamento de clientes</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="hidden md:flex flex-wrap items-center gap-2">
               <Button variant="outline" onClick={handleExportExcel}>
                 <Download className="mr-2 h-4 w-4" />
                 Exportar Excel

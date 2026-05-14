@@ -137,12 +137,14 @@ const canCreate = isGerente || isTecnico;
               <h1 className="text-3xl font-bold mb-2">Equipamentos</h1>
               <p className="text-muted-foreground">Gerenciamento de equipamentos</p>
             </div>
-            {canCreate && (
-              <Button onClick={() => { setSelectedEquipment(null); setDialogOpen(true); }}>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Equipamento
-              </Button>
-            )}
+            <div className="hidden md:block">
+              {canCreate && (
+                <Button onClick={() => { setSelectedEquipment(null); setDialogOpen(true); }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Equipamento
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

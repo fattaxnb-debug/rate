@@ -182,14 +182,16 @@ export default function ReportsPage() {
               <h1 className="text-3xl font-bold mb-2" style={{ letterSpacing: '-0.02em' }}>Relatórios</h1>
               <p className="text-muted-foreground">Gerenciamento de relatórios técnicos</p>
             </div>
-            {currentUser?.role !== 'Técnico' && (
-            <Link to="/reports/new">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Relatório
-              </Button>
-            </Link>
-            )}
+            <div className="hidden md:block">
+              {currentUser?.role !== 'Técnico' && (
+              <Link to="/reports/new">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Relatório
+                </Button>
+              </Link>
+              )}
+            </div>
           </div>
 
           <div className="mb-6">

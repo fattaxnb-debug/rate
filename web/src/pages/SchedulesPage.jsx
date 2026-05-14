@@ -225,12 +225,14 @@ export default function SchedulesPage() {
               <h1 className="text-3xl font-bold mb-2" style={{ letterSpacing: '-0.02em' }}>AGENDAMENTOS</h1>
               <p className="text-muted-foreground">GERENCIAMENTO DE VISITAS TÉCNICAS</p>
             </div>
-            {(isGerente || isTecnico) && (
-              <Button onClick={() => { setSelectedSchedule(null); setDialogOpen(true); }}>
-                <Plus className="mr-2 h-4 w-4" />
-                NOVO AGENDAMENTO
-              </Button>
-            )}
+            <div className="hidden md:block">
+              {(isGerente || isTecnico) && (
+                <Button onClick={() => { setSelectedSchedule(null); setDialogOpen(true); }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  NOVO AGENDAMENTO
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="mb-6">
