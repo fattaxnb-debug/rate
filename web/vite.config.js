@@ -638,9 +638,27 @@ export default defineConfig({
 
 				'@babel/types'
 
-			]
+			],
+
+			output: {
+
+				manualChunks: {
+
+					'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+
+					'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-alert-dialog', '@radix-ui/react-select'],
+
+					'vendor-utils': ['axios', 'date-fns', 'sonner'],
+
+					'vendor-icons': ['lucide-react'],
+
+				}
+
+			}
 
 		},
+
+		chunkSizeWarningLimit: 1000,
 
 		copyPublicDir: true
 

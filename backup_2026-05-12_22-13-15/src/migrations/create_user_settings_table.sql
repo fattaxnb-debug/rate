@@ -1,9 +1,0 @@
-CREATE TABLE IF NOT EXISTS user_settings (
-  id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-  user_id VARCHAR(36) NOT NULL,
-  company_logo TEXT,
-  technician_signature TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_user (user_id)
-);
