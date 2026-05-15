@@ -1253,7 +1253,7 @@ export default function ReportForm() {
         </div>
 
         {/* Mobile: Accordion */}
-        <div className="md:hidden">
+        <div className="md:hidden mobile-accordion">
           <Accordion type="single" value={activeAccordion} onValueChange={setActiveAccordion} className="w-full" collapsible>
             <AccordionItem value="equipment" className="border-b">
               <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
