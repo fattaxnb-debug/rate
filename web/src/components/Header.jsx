@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTheme } from '@/contexts/ThemeContext.jsx';
@@ -26,7 +26,7 @@ import {
 import { API_BASE_URL } from '@/config/api.js';
 import axios from 'axios';
 
-export default function Header() {
+function Header() {
   const { currentUser, logout, isAuthenticated } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
@@ -251,3 +251,5 @@ export default function Header() {
     </header>
   );
 }
+
+export default memo(Header);
