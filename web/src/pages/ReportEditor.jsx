@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -48,6 +49,7 @@ export default function ReportEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('equipment');
+  const [activeAccordion, setActiveAccordion] = useState('equipment');
   const [validationErrors, setValidationErrors] = useState([]);
   const [isReadOnly, setIsReadOnly] = useState(false);
   
@@ -304,6 +306,15 @@ export default function ReportEditor() {
     }
   };
 
+  const mobileTabsOrder = ['equipment', 'installation', 'electrical', ...(hasBattery ? ['battery'] : []), 'attendance', 'photos', 'signatures'];
+  const handleMobileNext = () => {
+    const currentIndex = mobileTabsOrder.indexOf(activeAccordion);
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < mobileTabsOrder.length) {
+      setActiveAccordion(mobileTabsOrder[nextIndex]);
+    }
+  };
+
   const redrawTechSignature = () => {
     updateField('technician_signature', '');
     setTimeout(() => {
@@ -493,6 +504,118 @@ export default function ReportEditor() {
     );
   };
 
+  const renderEquipmentContent = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+        <div className="space-y-2">
+          <Label className={labelClasses}>Cliente <span className="text-destructive">*</span></Label>
+          <Popover open={clientOpen} onOpenChange={(o) => { if(!isReadOnly) { setClientOpen(o); if (!o) setClientSearchTerm(''); } }} onInteractOutside={(e) => e.preventDefault()}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" role="combobox" aria-expanded={clientOpen} className={cn("w-full justify-between font-normal text-left", inputClasses, !formData.client_id && validationErrors.length > 0 && "border-destructive")}>
+                <span className="truncate">{formData.client_id ? clients.find(c => c.id === formData.client_id)?.name : "Selecione o cliente..."}</span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[400px] p-0 z-50" align="start">
+              <Command shouldFilter={false}>
+                <CommandInput placeholder="Buscar por nome ou CNPJ..." value={clientSearchTerm} onValueChange={setClientSearchTerm} />
+                <CommandList>
+                  {filteredClients.length === 0 ? <div className="p-4 text-center text-sm text-muted-foreground">Nenhum cliente.</div> : (
+                    <CommandGroup>
+                      {filteredClients.map(c => (
+                        <CommandItem key={c.id} value={c.id} onSelect={() => { handleClientChange(c.id); setClientOpen(false); }}>
+                          <Check className={cn("mr-2 h-4 w-4", formData.client_id === c.id ? "opacity-100" : "opacity-0")} />
+                          <div className="flex flex-col">
+                            <span>{c.name}</span>
+                            <span className="text-xs text-muted-foreground">{c.cnpj_cpf}</span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="space-y-2">
+          <Label className={labelClasses}>Técnico Responsável <span className="text-destructive">*</span></Label>
+          <Select value={formData.technician_id} onValueChange={handleTechChange} disabled={isReadOnly}>
+            <SelectTrigger className={cn(inputClasses, !formData.technician_id && validationErrors.length > 0 && "border-destructive")}>
+              <SelectValue placeholder="Selecione o técnico..." />
+            </SelectTrigger>
+            <SelectContent>
+              {technicians.map(t => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {formData.client_id && (
+        <div className="space-y-6">
+          {!selectedEquipmentData ? (
+            <div className="p-6 border rounded-xl bg-white flex flex-col items-center justify-center space-y-4">
+              <MonitorSmartphone className="h-10 w-10 text-muted-foreground opacity-50" />
+              <div className="text-center">
+                <p className="font-medium text-foreground mb-1">Nenhum equipamento selecionado</p>
+                <p className="text-sm text-muted-foreground mb-4">Selecione um equipamento deste cliente para começar.</p>
+              </div>
+              <Button onClick={() => setEquipmentModalOpen(true)} disabled={isReadOnly} className={cn(!formData.equipment_id && validationErrors.length > 0 && "ring-2 ring-destructive ring-offset-2")}>Selecionar Equipamento</Button>
+            </div>
+          ) : (
+            <Card className="border-border">
+              <div className={headerClasses}>
+                <div className="flex flex-row items-center justify-between">
+                  <span className="text-lg">Dados do Equipamento Selecionado</span>
+                  {!isReadOnly && <Button variant="outline" size="sm" onClick={() => setEquipmentModalOpen(true)} className="text-black border-black hover:bg-black/10">Trocar Equipamento</Button>}
+                </div>
+              </div>
+              <CardContent className="pt-6 bg-white">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
+                  {renderEquipmentField('Tipo', selectedEquipmentData.type)}
+                  {renderEquipmentField('Marca', selectedEquipmentData.brand)}
+                  {renderEquipmentField('Modelo', selectedEquipmentData.model)}
+                  {renderEquipmentField('Número de Série', selectedEquipmentData.serial_number)}
+                  {renderEquipmentField('Data de Instalação', formatDate(selectedEquipmentData.installation_date))}
+                  {renderEquipmentField('Tipo de Tensão', selectedEquipmentData.voltage_type)}
+                  {renderEquipmentField('Potência (VA)', selectedEquipmentData.power_va)}
+                  {renderEquipmentField('Tensão Entrada (V)', selectedEquipmentData.voltage_in)}
+                  {renderEquipmentField('Tensão Saída (V)', selectedEquipmentData.voltage_out)}
+                  {renderEquipmentField('Tensão Bateria (VDC)', selectedEquipmentData.voltage_battery)}
+                  {renderEquipmentField('Corrente Bateria', selectedEquipmentData.current_battery)}
+                  {renderEquipmentField('Tipo de Bateria', selectedEquipmentData.battery_type)}
+                  {renderEquipmentField('Quantidade de Baterias', selectedEquipmentData.battery_quantity)}
+                  {renderEquipmentField('Bateria Volts (VDC)', selectedEquipmentData.battery_volts)}
+                  {renderEquipmentField('Corrente Bateria (AH/W)', selectedEquipmentData.battery_current)}
+                  {renderEquipmentField('Conexão de Baterias', selectedEquipmentData.battery_connection)}
+                  {renderEquipmentField('Terminal de Baterias', selectedEquipmentData.battery_terminal)}
+                  {renderEquipmentField('Marca da Bateria', selectedEquipmentData.battery_brand)}
+                  {renderEquipmentField('Modelo da Bateria', selectedEquipmentData.battery_model)}
+                  {renderEquipmentField('Corrente Entrada (A)', selectedEquipmentData.current_in)}
+                  {renderEquipmentField('Corrente Saída (A)', selectedEquipmentData.current_out)}
+                  {renderEquipmentField('Certificação', selectedEquipmentData.certification)}
+                  {renderEquipmentField('Capacidade (AH/W)', selectedEquipmentData.capacity_ah)}
+                  {renderEquipmentField('Simétrico', selectedEquipmentData.symmetric)}
+                  {renderEquipmentField('Isolado', selectedEquipmentData.isolated)}
+                  {renderEquipmentField('Qtd. Sinalizadores', selectedEquipmentData.signalizers_quantity)}
+                  {renderEquipmentField('IHM', selectedEquipmentData.ihm)}
+                  {renderEquipmentField('Localizadores', selectedEquipmentData.localizadores)}
+                  {renderEquipmentField('Tipo de Cabo de Comunicação', selectedEquipmentData.communication_cable_type)}
+                  {renderEquipmentField('Fixação', selectedEquipmentData.fixation)}
+                  {renderEquipmentField('Quantidade', selectedEquipmentData.quantity)}
+                  {renderEquipmentField('Ambiente Refrigerado', selectedEquipmentData.cooled_environment)}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   if (loading) {
     return <div className="flex justify-center items-center py-24"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div></div>;
   }
@@ -546,7 +669,9 @@ export default function ReportEditor() {
       )}
 
       <fieldset disabled={isReadOnly} className="bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-[600px]">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
+        {/* Desktop: Tabs */}
+        <div className="hidden md:block">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
           <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto flex-nowrap shrink-0">
             <TabsTrigger value="equipment" className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:text-black border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Settings2 className="w-4 h-4 mr-2"/> Equipamento</TabsTrigger>
             <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-b-2 data-[state=active]:border-black data-[state=active]:text-black border-b-2 border-transparent rounded-none px-6 py-3 font-semibold"><Activity className="w-4 h-4 mr-2"/> Instalação</TabsTrigger>
@@ -559,113 +684,7 @@ export default function ReportEditor() {
 
           <div className="p-6 md:p-8 flex-1">
             <TabsContent value="equipment" className="mt-0 space-y-6 h-full">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
-                <div className="space-y-2">
-                  <Label className={labelClasses}>Cliente <span className="text-destructive">*</span></Label>
-                  <Popover open={clientOpen} onOpenChange={(o) => { if(!isReadOnly) { setClientOpen(o); if (!o) setClientSearchTerm(''); } }}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" role="combobox" aria-expanded={clientOpen} className={cn("w-full justify-between font-normal text-left", inputClasses, !formData.client_id && validationErrors.length > 0 && "border-destructive")}>
-                        <span className="truncate">{formData.client_id ? clients.find(c => c.id === formData.client_id)?.name : "Selecione o cliente..."}</span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0" align="start">
-                      <Command shouldFilter={false}>
-                        <CommandInput placeholder="Buscar por nome ou CNPJ..." value={clientSearchTerm} onValueChange={setClientSearchTerm} />
-                        <CommandList>
-                          {filteredClients.length === 0 ? <div className="p-4 text-center text-sm text-muted-foreground">Nenhum cliente.</div> : (
-                            <CommandGroup>
-                              {filteredClients.map(c => (
-                                <CommandItem key={c.id} value={c.id} onSelect={() => { handleClientChange(c.id); setClientOpen(false); }}>
-                                  <Check className={cn("mr-2 h-4 w-4", formData.client_id === c.id ? "opacity-100" : "opacity-0")} />
-                                  <div className="flex flex-col">
-                                    <span>{c.name}</span>
-                                    <span className="text-xs text-muted-foreground">{c.cnpj_cpf}</span>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          )}
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className={labelClasses}>Técnico Responsável <span className="text-destructive">*</span></Label>
-                  <Select value={formData.technician_id} onValueChange={handleTechChange} disabled={isReadOnly}>
-                    <SelectTrigger className={cn(inputClasses, !formData.technician_id && validationErrors.length > 0 && "border-destructive")}>
-                      <SelectValue placeholder="Selecione o técnico..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {technicians.map(t => (
-                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {formData.client_id && (
-                <div className="space-y-6">
-                  {!selectedEquipmentData ? (
-                    <div className="p-6 border rounded-xl bg-white flex flex-col items-center justify-center space-y-4">
-                      <MonitorSmartphone className="h-10 w-10 text-muted-foreground opacity-50" />
-                      <div className="text-center">
-                        <p className="font-medium text-foreground mb-1">Nenhum equipamento selecionado</p>
-                        <p className="text-sm text-muted-foreground mb-4">Selecione um equipamento deste cliente para começar.</p>
-                      </div>
-                      <Button onClick={() => setEquipmentModalOpen(true)} disabled={isReadOnly} className={cn(!formData.equipment_id && validationErrors.length > 0 && "ring-2 ring-destructive ring-offset-2")}>Selecionar Equipamento</Button>
-                    </div>
-                  ) : (
-                    <Card className="border-border">
-                      <div className={headerClasses}>
-                        <div className="flex flex-row items-center justify-between">
-                          <span className="text-lg">Dados do Equipamento Selecionado</span>
-                          {!isReadOnly && <Button variant="outline" size="sm" onClick={() => setEquipmentModalOpen(true)} className="text-black border-black hover:bg-black/10">Trocar Equipamento</Button>}
-                        </div>
-                      </div>
-                      <CardContent className="pt-6 bg-white">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
-                          {renderEquipmentField('Tipo', selectedEquipmentData.type)}
-                          {renderEquipmentField('Marca', selectedEquipmentData.brand)}
-                          {renderEquipmentField('Modelo', selectedEquipmentData.model)}
-                          {renderEquipmentField('Número de Série', selectedEquipmentData.serial_number)}
-                          {renderEquipmentField('Data de Instalação', formatDate(selectedEquipmentData.installation_date))}
-                          {renderEquipmentField('Tipo de Tensão', selectedEquipmentData.voltage_type)}
-                          {renderEquipmentField('Potência (VA)', selectedEquipmentData.power_va)}
-                          {renderEquipmentField('Tensão Entrada (V)', selectedEquipmentData.voltage_in)}
-                          {renderEquipmentField('Tensão Saída (V)', selectedEquipmentData.voltage_out)}
-                          {renderEquipmentField('Tensão Bateria (VDC)', selectedEquipmentData.voltage_battery)}
-                          {renderEquipmentField('Corrente Bateria', selectedEquipmentData.current_battery)}
-                          {renderEquipmentField('Tipo de Bateria', selectedEquipmentData.battery_type)}
-                          {renderEquipmentField('Quantidade de Baterias', selectedEquipmentData.battery_quantity)}
-                          {renderEquipmentField('Bateria Volts (VDC)', selectedEquipmentData.battery_volts)}
-                          {renderEquipmentField('Corrente Bateria (AH/W)', selectedEquipmentData.battery_current)}
-                          {renderEquipmentField('Conexão de Baterias', selectedEquipmentData.battery_connection)}
-                          {renderEquipmentField('Terminal de Baterias', selectedEquipmentData.battery_terminal)}
-                          {renderEquipmentField('Marca da Bateria', selectedEquipmentData.battery_brand)}
-                          {renderEquipmentField('Modelo da Bateria', selectedEquipmentData.battery_model)}
-                          {renderEquipmentField('Corrente Entrada (A)', selectedEquipmentData.current_in)}
-                          {renderEquipmentField('Corrente Saída (A)', selectedEquipmentData.current_out)}
-                          {renderEquipmentField('Certificação', selectedEquipmentData.certification)}
-                          {renderEquipmentField('Capacidade (AH/W)', selectedEquipmentData.capacity_ah)}
-                          {renderEquipmentField('Simétrico', selectedEquipmentData.symmetric)}
-                          {renderEquipmentField('Isolado', selectedEquipmentData.isolated)}
-                          {renderEquipmentField('Qtd. Sinalizadores', selectedEquipmentData.signalizers_quantity)}
-                          {renderEquipmentField('IHM', selectedEquipmentData.ihm)}
-                          {renderEquipmentField('Localizadores', selectedEquipmentData.localizadores)}
-                          {renderEquipmentField('Tipo de Cabo de Comunicação', selectedEquipmentData.communication_cable_type)}
-                          {renderEquipmentField('Fixação', selectedEquipmentData.fixation)}
-                          {renderEquipmentField('Quantidade', selectedEquipmentData.quantity)}
-                          {renderEquipmentField('Ambiente Refrigerado', selectedEquipmentData.cooled_environment)}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
+              {renderEquipmentContent()}
             </TabsContent>
 
             <TabsContent value="installation" className="mt-0 space-y-6">
@@ -1302,6 +1321,317 @@ export default function ReportEditor() {
             </div>
           </div>
         </Tabs>
+        </div>
+
+        {/* Mobile: Accordion - versão simplificada */}
+        <div className="md:hidden">
+          <Accordion type="single" value={activeAccordion} onValueChange={setActiveAccordion} className="w-full" collapsible>
+            <AccordionItem value="equipment" className="border-b">
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-4 h-4" />
+                  EQUIPAMENTO
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 overflow-visible">
+                {renderEquipmentContent()}
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full" disabled={!formData.equipment_id}>
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="installation" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  INSTALAÇÃO
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+              <div className="grid grid-cols-1 gap-4 max-w-4xl">
+                <div className="space-y-2">
+                  <Label className={labelClasses}>Tipo de Serviço <span className="text-destructive">*</span></Label>
+                  <Input 
+                    value={formData.service_type} 
+                    onChange={e => updateField('service_type', e.target.value.toUpperCase())} 
+                    placeholder="Ex: Manutenção Preventiva, Instalação..."
+                    className={cn(inputClasses, !formData.service_type && validationErrors.length > 0 && "border-destructive")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className={labelClasses}>Local da Instalação <span className="text-destructive">*</span></Label>
+                  <Select value={formData.installation_location} onValueChange={(v) => updateField('installation_location', v)}>
+                    <SelectTrigger className={cn(inputClasses, !formData.installation_location && validationErrors.length > 0 && "border-destructive")}>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INSTALLATION_LOCATION_OPTIONS.map(opt => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.installation_location === 'Inadequado' && (
+                  <div className="space-y-2">
+                    <Label className={labelClasses}>Motivo do Local Inadequado <span className="text-destructive">*</span></Label>
+                    <Textarea 
+                      value={formData.installation_location_explanation} 
+                      onChange={(e) => updateField('installation_location_explanation', e.target.value)}
+                      placeholder="Descreva o motivo..."
+                      className={cn(inputClasses, !formData.installation_location_explanation && validationErrors.length > 0 && "border-destructive")}
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label className={labelClasses}>Tipo de Alimentação <span className="text-destructive">*</span></Label>
+                  <Select value={formData.power_supply_type} onValueChange={(v) => updateField('power_supply_type', v)}>
+                    <SelectTrigger className={cn(inputClasses, !formData.power_supply_type && validationErrors.length > 0 && "border-destructive")}>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {POWER_SUPPLY_TYPES.map(opt => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={labelClasses}>Disjuntor</Label>
+                  <Input className={inputClasses} value={formData.breaker} onChange={(e) => updateField('breaker', e.target.value)} placeholder="Ex: 20A" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={labelClasses}>Cabos de Entrada - Fase (mm²)</Label>
+                  <Input className={inputClasses} type="number" value={formData.cable_entry_phase} onChange={(e) => updateField('cable_entry_phase', e.target.value)} placeholder="Ex: 2.5" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={labelClasses}>Cabos de Entrada - Neutro (mm²)</Label>
+                  <Input className={inputClasses} type="number" value={formData.cable_entry_neutral} onChange={(e) => updateField('cable_entry_neutral', e.target.value)} placeholder="Ex: 2.5" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={labelClasses}>Cabos de Entrada - Terra (mm²)</Label>
+                  <Input className={inputClasses} type="number" value={formData.cable_entry_ground} onChange={(e) => updateField('cable_entry_ground', e.target.value)} placeholder="Ex: 2.5" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={labelClasses}>Cabos de Saída - Fase (mm²)</Label>
+                  <Input className={inputClasses} type="number" value={formData.cable_exit_phase} onChange={(e) => updateField('cable_exit_phase', e.target.value)} placeholder="Ex: 2.5" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className={labelClasses}>Cabos de Saída - Neutro (mm²)</Label>
+                  <Input className={inputClasses} type="number" value={formData.cable_exit_neutral} onChange={(e) => updateField('cable_exit_neutral', e.target.value)} placeholder="Ex: 2.5" />
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <Button onClick={handleMobileNext} className="w-full">
+                  Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="electrical" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  ELÉTRICA
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Seção de medições elétricas disponível na versão desktop.
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {hasBattery && (
+            <AccordionItem value="battery" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Battery className="w-4 h-4" />
+                  BATERIAS
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Seção de baterias disponível na versão desktop.
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            )}
+
+            <AccordionItem value="attendance" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  DESCRIÇÃO
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className={labelClasses}>Realizado no Atendimento</Label>
+                    <Textarea 
+                      className={inputClasses}
+                      value={formData.attendance_description} 
+                      onChange={(e) => updateField('attendance_description', e.target.value)}
+                      placeholder="Descreva as atividades realizadas..."
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={labelClasses}>Diagnóstico</Label>
+                    <Textarea 
+                      className={inputClasses}
+                      value={formData.diagnosis} 
+                      onChange={(e) => updateField('diagnosis', e.target.value)}
+                      placeholder="Descreva o diagnóstico técnico..."
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={labelClasses}>Conclusão</Label>
+                    <Textarea 
+                      className={inputClasses}
+                      value={formData.conclusion} 
+                      onChange={(e) => updateField('conclusion', e.target.value)}
+                      placeholder="Conclusão do atendimento..."
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="photos" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4" />
+                  FOTOS
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                {!isReadOnly && (
+                  <div className="border-2 border-dashed rounded-xl p-6 text-center bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <Upload className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
+                    <Label htmlFor="photo-upload-mobile" className="cursor-pointer">
+                      <span className="text-primary font-semibold hover:underline text-sm">Clique para adicionar fotos</span>
+                    </Label>
+                    <Input id="photo-upload-mobile" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" disabled={isReadOnly} />
+                  </div>
+                )}
+                {photos.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    {photos.map((photo) => (
+                      <div key={photo.id} className="group relative border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col">
+                        <div className="aspect-video relative bg-muted shrink-0">
+                          <img src={photo.url} alt="Foto" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
+                        </div>
+                        <div className="p-2 space-y-2 flex-1 flex flex-col">
+                          <Textarea 
+                            placeholder="Comentário..." 
+                            className="text-xs resize-none flex-1 min-h-[50px]" 
+                            value={photo.comment} 
+                            onChange={e => updatePhoto(photo.id, 'comment', e.target.value)} 
+                            disabled={isReadOnly}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="signatures" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <PenTool className="w-4 h-4" />
+                  ASSINATURAS
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className={labelClasses}>Nome do Cliente <span className="text-destructive">*</span></Label>
+                    <Input value={formData.responsible_person} onChange={e => updateField('responsible_person', e.target.value)} className={cn(!formData.responsible_person && validationErrors.length > 0 && "border-destructive")} disabled={isReadOnly} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={labelClasses}>Assinatura Cliente <span className="text-destructive">*</span></Label>
+                    {hasClientSignature ? (
+                      <div className="border bg-white rounded-xl p-3 flex justify-center">
+                        <img src={formData.client_signature} alt="Assinatura do Cliente" className="max-w-full max-h-24 object-contain" />
+                      </div>
+                    ) : (
+                      <div className="border rounded-lg overflow-hidden bg-white ring-1 ring-border shadow-inner">
+                        <SignatureCanvas 
+                          ref={clientSigPad}
+                          penColor="#000000"
+                          backgroundColor="white"
+                          canvasProps={{ 
+                            className: 'w-full touch-none', 
+                            style: { minHeight: '150px', maxWidth: '100%', margin: '0 auto', display: 'block' } 
+                          }}
+                        />
+                      </div>
+                    )}
+                    {!hasClientSignature && !isReadOnly && (
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={clearClientSignature} className="flex-1">Limpar</Button>
+                        <Button size="sm" onClick={handleFinalSave} className="flex-1">Confirmar</Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  {!isReadOnly && (
+                    <Button 
+                      onClick={handleFinalSave} 
+                      disabled={saving || !formData.equipment_id}
+                      className="w-full"
+                    >
+                      {saving ? <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
+                      Salvar Alterações
+                    </Button>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <div className="bg-muted/50 border-t p-4 mt-4">
+            <Button variant="outline" onClick={() => navigate('/reports')} className="w-full border-black text-black hover:bg-black/10">Cancelar</Button>
+          </div>
+        </div>
       </fieldset>
 
       <Dialog open={!!zoomPhoto} onOpenChange={() => setZoomPhoto(null)}>

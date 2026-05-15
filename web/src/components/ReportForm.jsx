@@ -490,14 +490,14 @@ export default function ReportForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
         <div className="space-y-2">
           <Label className="font-bold uppercase">Cliente <span className="text-destructive">*</span></Label>
-          <Popover open={clientOpen} onOpenChange={(o) => { if(!isReadOnly) { setClientOpen(o); if (!o) setClientSearchTerm(''); } }}>
+          <Popover open={clientOpen} onOpenChange={(o) => { if(!isReadOnly) { setClientOpen(o); if (!o) setClientSearchTerm(''); } }} onInteractOutside={(e) => e.preventDefault()}>
             <PopoverTrigger asChild>
               <Button variant="outline" role="combobox" aria-expanded={clientOpen} className={cn("w-full justify-between font-normal text-left", !formData.client_id && validationErrors.length > 0 && "border-destructive")}>
                 <span className="truncate">{formData.client_id ? clients.find(c => c.id === formData.client_id)?.name : "Selecione o cliente..."}</span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[400px] p-0" align="start">
+            <PopoverContent className="w-[400px] p-0 z-50" align="start">
               <Command shouldFilter={false}>
                 <CommandInput placeholder="Buscar por nome ou CNPJ..." value={clientSearchTerm} onValueChange={setClientSearchTerm} />
                 <CommandList>
@@ -1262,7 +1262,7 @@ export default function ReportForm() {
                   EQUIPAMENTO
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
+              <AccordionContent className="px-4 pb-4 overflow-visible">
                 {renderEquipmentContent()}
                 <div className="mt-4 pt-4 border-t">
                   <Button onClick={handleMobileNext} className="w-full" disabled={!formData.equipment_id}>
