@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -39,6 +40,7 @@ export default function ReportForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('equipment');
+  const [activeAccordion, setActiveAccordion] = useState('equipment');
   const [validationErrors, setValidationErrors] = useState([]);
   
   const [clients, setClients] = useState([]);
@@ -483,6 +485,129 @@ export default function ReportForm() {
     }
   };
 
+  const renderEquipmentContent = () => (
+    <div className="mt-0 space-y-6 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+        <div className="space-y-2">
+          <Label className="font-bold uppercase">Cliente <span className="text-destructive">*</span></Label>
+          <Popover open={clientOpen} onOpenChange={(o) => { if(!isReadOnly) { setClientOpen(o); if (!o) setClientSearchTerm(''); } }}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" role="combobox" aria-expanded={clientOpen} className={cn("w-full justify-between font-normal text-left", !formData.client_id && validationErrors.length > 0 && "border-destructive")}>
+                <span className="truncate">{formData.client_id ? clients.find(c => c.id === formData.client_id)?.name : "Selecione o cliente..."}</span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[400px] p-0" align="start">
+              <Command shouldFilter={false}>
+                <CommandInput placeholder="Buscar por nome ou CNPJ..." value={clientSearchTerm} onValueChange={setClientSearchTerm} />
+                <CommandList>
+                  {filteredClients.length === 0 ? <div className="p-4 text-center text-sm text-muted-foreground">Nenhum cliente.</div> : (
+                    <CommandGroup>
+                      {filteredClients.map(c => (
+                        <CommandItem key={c.id} value={c.id} onSelect={() => { handleClientChange(c.id); setClientOpen(false); }}>
+                          <Check className={cn("mr-2 h-4 w-4", formData.client_id === c.id ? "opacity-100" : "opacity-0")} />
+                          <div className="flex flex-col">
+                            <span>{c.name}</span>
+                            <span className="text-xs text-muted-foreground">{c.cnpj_cpf}</span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  )}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="space-y-2">
+          <Label className="font-bold uppercase">Técnico Responsável <span className="text-destructive">*</span></Label>
+          <Select value={formData.technician_id} onValueChange={handleTechChange} disabled={isReadOnly}>
+            <SelectTrigger className={cn(!formData.technician_id && validationErrors.length > 0 && "border-destructive")}>
+              <SelectValue placeholder="Selecione o técnico..." />
+            </SelectTrigger>
+            <SelectContent>
+              {technicians.map(t => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {formData.client_id && (
+        <div className="space-y-6">
+          {!selectedEquipmentData ? (
+            <div className="p-6 border rounded-xl bg-muted/30 flex flex-col items-center justify-center space-y-4">
+              <MonitorSmartphone className="h-10 w-10 text-muted-foreground opacity-50" />
+              <div className="text-center">
+                <p className="font-medium text-foreground mb-1">Nenhum equipamento selecionado</p>
+                <p className="text-sm text-muted-foreground mb-4">Selecione um equipamento deste cliente para começar.</p>
+              </div>
+              <Button onClick={() => setEquipmentModalOpen(true)} disabled={isReadOnly} className={cn(!formData.equipment_id && validationErrors.length > 0 && "ring-2 ring-destructive ring-offset-2")}>Selecionar Equipamento</Button>
+            </div>
+          ) : (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-lg font-semibold">Dados do Equipamento Selecionado</CardTitle>
+                {!isReadOnly && <Button variant="outline" size="sm" onClick={() => setEquipmentModalOpen(true)}>Trocar Equipamento</Button>}
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
+                  {renderEquipmentField('Tipo', selectedEquipmentData.type)}
+                  {renderEquipmentField('Marca', selectedEquipmentData.brand)}
+                  {renderEquipmentField('Modelo', selectedEquipmentData.model)}
+                  {renderEquipmentField('Número de Série', selectedEquipmentData.serial_number)}
+                  {renderEquipmentField('Data de Instalação', formatDate(selectedEquipmentData.installation_date))}
+                  {renderEquipmentField('Tipo de Tensão', selectedEquipmentData.voltage_type)}
+                  {renderEquipmentField('Potência (VA)', selectedEquipmentData.power_va)}
+                  {renderEquipmentField('Tensão Entrada (V)', selectedEquipmentData.voltage_in)}
+                  {renderEquipmentField('Tensão Saída (V)', selectedEquipmentData.voltage_out)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Tensão Bateria (VDC)', selectedEquipmentData.voltage_battery)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Bateria', selectedEquipmentData.current_battery)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Tipo de Bateria', selectedEquipmentData.battery_type)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Quantidade de Baterias', selectedEquipmentData.battery_quantity)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Bateria Volts (VDC)', selectedEquipmentData.battery_volts)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Bateria (AH/W)', selectedEquipmentData.battery_current)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Conexão de Baterias', selectedEquipmentData.battery_connection)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Terminal de Baterias', selectedEquipmentData.battery_terminal)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Marca da Bateria', selectedEquipmentData.battery_brand)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Modelo da Bateria', selectedEquipmentData.battery_model)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Entrada (A)', selectedEquipmentData.current_in)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Saída (A)', selectedEquipmentData.current_out)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Certificação', selectedEquipmentData.certification)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Capacidade (AH/W)', selectedEquipmentData.capacity_ah)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Simétrico', selectedEquipmentData.symmetric)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Isolado', selectedEquipmentData.isolated)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Qtd. Sinalizadores', selectedEquipmentData.signalizers_quantity)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('IHM', selectedEquipmentData.ihm)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Localizadores', selectedEquipmentData.localizadores)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Tipo de Cabo de Comunicação', selectedEquipmentData.communication_cable_type)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Fixação', selectedEquipmentData.fixation)}
+                  {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Quantidade', selectedEquipmentData.quantity)}
+                  {renderEquipmentField('Ambiente Refrigerado', selectedEquipmentData.cooled_environment)}
+                </div>
+
+                {!isReadOnly && (
+                  <div className="flex justify-end mt-6 pt-6 border-t">
+                    <Button 
+                      onClick={handleQuickCreate} 
+                      disabled={saving || isReadOnly} 
+                      className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    >
+                      {saving ? <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" /> : <Clock className="mr-2 h-4 w-4" />}
+                      Criar Relatório Rápido
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   const shouldDisplayField = (value) => {
     if (value === null || value === undefined || value === '') return false;
     if (typeof value === 'number' && value === 0) return false;
@@ -563,137 +688,22 @@ export default function ReportForm() {
       )}
 
       <fieldset disabled={isReadOnly} className="bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-[600px] group">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
-          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto flex-nowrap shrink-0">
-            <TabsTrigger value="equipment" className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Settings2 className="w-4 h-4 mr-2"/> EQUIPAMENTO</TabsTrigger>
-            <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Activity className="w-4 h-4 mr-2"/> INSTALAÇÃO</TabsTrigger>
-            {!isBatteryMonitor && <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Zap className="w-4 h-4 mr-2"/> ELÉTRICA</TabsTrigger>}
-            {hasBattery && <TabsTrigger value="battery" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Battery className="w-4 h-4 mr-2"/> BATERIAS</TabsTrigger>}
-            <TabsTrigger value="attendance" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><FileText className="w-4 h-4 mr-2"/> DESCRIÇÃO</TabsTrigger>
-            <TabsTrigger value="photos" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><ImageIcon className="w-4 h-4 mr-2"/> FOTOS</TabsTrigger>
-            <TabsTrigger value="signatures" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><PenTool className="w-4 h-4 mr-2"/> ASSINATURAS</TabsTrigger>
-          </TabsList>
+        {/* Desktop: Tabs */}
+        <div className="hidden md:block">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto flex-nowrap shrink-0">
+              <TabsTrigger value="equipment" className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Settings2 className="w-4 h-4 mr-2"/> EQUIPAMENTO</TabsTrigger>
+              <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Activity className="w-4 h-4 mr-2"/> INSTALAÇÃO</TabsTrigger>
+              {!isBatteryMonitor && <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Zap className="w-4 h-4 mr-2"/> ELÉTRICA</TabsTrigger>}
+              {hasBattery && <TabsTrigger value="battery" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Battery className="w-4 h-4 mr-2"/> BATERIAS</TabsTrigger>}
+              <TabsTrigger value="attendance" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><FileText className="w-4 h-4 mr-2"/> DESCRIÇÃO</TabsTrigger>
+              <TabsTrigger value="photos" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><ImageIcon className="w-4 h-4 mr-2"/> FOTOS</TabsTrigger>
+              <TabsTrigger value="signatures" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><PenTool className="w-4 h-4 mr-2"/> ASSINATURAS</TabsTrigger>
+            </TabsList>
 
-          <div className="p-6 md:p-8 flex-1">
+            <div className="p-6 md:p-8 flex-1">
             <TabsContent value="equipment" className="mt-0 space-y-6 h-full">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
-                <div className="space-y-2">
-                  <Label className="font-bold uppercase">Cliente <span className="text-destructive">*</span></Label>
-                  <Popover open={clientOpen} onOpenChange={(o) => { if(!isReadOnly) { setClientOpen(o); if (!o) setClientSearchTerm(''); } }}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" role="combobox" aria-expanded={clientOpen} className={cn("w-full justify-between font-normal text-left", !formData.client_id && validationErrors.length > 0 && "border-destructive")}>
-                        <span className="truncate">{formData.client_id ? clients.find(c => c.id === formData.client_id)?.name : "Selecione o cliente..."}</span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0" align="start">
-                      <Command shouldFilter={false}>
-                        <CommandInput placeholder="Buscar por nome ou CNPJ..." value={clientSearchTerm} onValueChange={setClientSearchTerm} />
-                        <CommandList>
-                          {filteredClients.length === 0 ? <div className="p-4 text-center text-sm text-muted-foreground">Nenhum cliente.</div> : (
-                            <CommandGroup>
-                              {filteredClients.map(c => (
-                                <CommandItem key={c.id} value={c.id} onSelect={() => { handleClientChange(c.id); setClientOpen(false); }}>
-                                  <Check className={cn("mr-2 h-4 w-4", formData.client_id === c.id ? "opacity-100" : "opacity-0")} />
-                                  <div className="flex flex-col">
-                                    <span>{c.name}</span>
-                                    <span className="text-xs text-muted-foreground">{c.cnpj_cpf}</span>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          )}
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="font-bold uppercase">Técnico Responsável <span className="text-destructive">*</span></Label>
-                  <Select value={formData.technician_id} onValueChange={handleTechChange} disabled={isReadOnly}>
-                    <SelectTrigger className={cn(!formData.technician_id && validationErrors.length > 0 && "border-destructive")}>
-                      <SelectValue placeholder="Selecione o técnico..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {technicians.map(t => (
-                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {formData.client_id && (
-                <div className="space-y-6">
-                  {!selectedEquipmentData ? (
-                    <div className="p-6 border rounded-xl bg-muted/30 flex flex-col items-center justify-center space-y-4">
-                      <MonitorSmartphone className="h-10 w-10 text-muted-foreground opacity-50" />
-                      <div className="text-center">
-                        <p className="font-medium text-foreground mb-1">Nenhum equipamento selecionado</p>
-                        <p className="text-sm text-muted-foreground mb-4">Selecione um equipamento deste cliente para começar.</p>
-                      </div>
-                      <Button onClick={() => setEquipmentModalOpen(true)} disabled={isReadOnly} className={cn(!formData.equipment_id && validationErrors.length > 0 && "ring-2 ring-destructive ring-offset-2")}>Selecionar Equipamento</Button>
-                    </div>
-                  ) : (
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                        <CardTitle className="text-lg font-semibold">Dados do Equipamento Selecionado</CardTitle>
-                        {!isReadOnly && <Button variant="outline" size="sm" onClick={() => setEquipmentModalOpen(true)}>Trocar Equipamento</Button>}
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
-                          {renderEquipmentField('Tipo', selectedEquipmentData.type)}
-                          {renderEquipmentField('Marca', selectedEquipmentData.brand)}
-                          {renderEquipmentField('Modelo', selectedEquipmentData.model)}
-                          {renderEquipmentField('Número de Série', selectedEquipmentData.serial_number)}
-                          {renderEquipmentField('Data de Instalação', formatDate(selectedEquipmentData.installation_date))}
-                          {renderEquipmentField('Tipo de Tensão', selectedEquipmentData.voltage_type)}
-                          {renderEquipmentField('Potência (VA)', selectedEquipmentData.power_va)}
-                          {renderEquipmentField('Tensão Entrada (V)', selectedEquipmentData.voltage_in)}
-                          {renderEquipmentField('Tensão Saída (V)', selectedEquipmentData.voltage_out)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Tensão Bateria (VDC)', selectedEquipmentData.voltage_battery)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Bateria', selectedEquipmentData.current_battery)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Tipo de Bateria', selectedEquipmentData.battery_type)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Quantidade de Baterias', selectedEquipmentData.battery_quantity)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Bateria Volts (VDC)', selectedEquipmentData.battery_volts)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Bateria (AH/W)', selectedEquipmentData.battery_current)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Conexão de Baterias', selectedEquipmentData.battery_connection)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Terminal de Baterias', selectedEquipmentData.battery_terminal)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Marca da Bateria', selectedEquipmentData.battery_brand)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Modelo da Bateria', selectedEquipmentData.battery_model)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Entrada (A)', selectedEquipmentData.current_in)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Corrente Saída (A)', selectedEquipmentData.current_out)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Certificação', selectedEquipmentData.certification)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Capacidade (AH/W)', selectedEquipmentData.capacity_ah)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Simétrico', selectedEquipmentData.symmetric)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Isolado', selectedEquipmentData.isolated)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Qtd. Sinalizadores', selectedEquipmentData.signalizers_quantity)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('IHM', selectedEquipmentData.ihm)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Localizadores', selectedEquipmentData.localizadores)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Tipo de Cabo de Comunicação', selectedEquipmentData.communication_cable_type)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Fixação', selectedEquipmentData.fixation)}
-                          {selectedEquipmentData.type === 'Nobreak' && renderEquipmentField('Quantidade', selectedEquipmentData.quantity)}
-                          {renderEquipmentField('Ambiente Refrigerado', selectedEquipmentData.cooled_environment)}
-                        </div>
-
-                        {!isReadOnly && (
-                          <div className="flex justify-end mt-6 pt-6 border-t">
-                            <Button 
-                              onClick={handleQuickCreate} 
-                              disabled={saving || isReadOnly} 
-                              className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                            >
-                              {saving ? <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" /> : <Clock className="mr-2 h-4 w-4" />}
-                              Criar Relatório Rápido
-                            </Button>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
+              {renderEquipmentContent()}
             </TabsContent>
 
             <TabsContent value="installation" className="mt-0 space-y-8">
@@ -1231,6 +1241,217 @@ export default function ReportForm() {
             </div>
           </div>
         </Tabs>
+        </div>
+
+        {/* Mobile: Accordion */}
+        <div className="md:hidden">
+          <Accordion type="multiple" className="w-full">
+            <AccordionItem value="equipment" className="border-b">
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-4 h-4" />
+                  EQUIPAMENTO
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                {renderEquipmentContent()}
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="installation" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  INSTALAÇÃO
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Seção de instalação disponível na versão desktop.
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="electrical" className="border-b" disabled={!formData.equipment_id || isBatteryMonitor}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  ELÉTRICA
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                {!vType && (
+                  <div className="p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-lg font-medium text-center">
+                    O tipo de tensão não está definido no cadastro deste equipamento. Configure o tipo de tensão no cadastro de equipamentos.
+                  </div>
+                )}
+                <div className="text-sm text-muted-foreground mb-4">
+                  Seção de medições elétricas disponível na versão desktop.
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="battery" className="border-b" disabled={!formData.equipment_id || !hasBattery}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Battery className="w-4 h-4" />
+                  BATERIAS
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Seção de baterias disponível na versão desktop.
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="attendance" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  DESCRIÇÃO
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 space-y-4">
+                <div className="space-y-2"><Label className="font-bold uppercase">PROBLEMAS REPORTADOS</Label><Textarea rows={3} value={formData.reported_problems || ''} onChange={e => updateField('reported_problems', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">INSPEÇÃO EXTERNA</Label><Textarea rows={3} value={formData.external_inspection} onChange={e => updateField('external_inspection', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">INSPEÇÃO INTERNA</Label><Textarea rows={3} value={formData.internal_inspection} onChange={e => updateField('internal_inspection', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">REALIZADO NO ATENDIMENTO</Label><Textarea rows={3} value={formData.attendance_description} onChange={e => updateField('attendance_description', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">DIAGNÓSTICO / NECESSÁRIO</Label><Textarea rows={3} value={formData.diagnosis} onChange={e => updateField('diagnosis', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+                <div className="space-y-2"><Label className="font-bold uppercase">CONCLUSÃO / RESULTADO</Label><Textarea rows={3} value={formData.conclusion} onChange={e => updateField('conclusion', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="photos" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4" />
+                  FOTOS
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 space-y-4">
+                {!isReadOnly && (
+                  <div className="border-2 border-dashed rounded-xl p-6 text-center bg-muted/20 hover:bg-muted/40 transition-colors">
+                    <Upload className="mx-auto h-8 w-8 text-muted-foreground/50 mb-2" />
+                    <Label htmlFor="photo-upload-mobile" className="cursor-pointer">
+                      <span className="text-primary font-semibold hover:underline text-sm">Clique para adicionar fotos</span>
+                    </Label>
+                    <Input id="photo-upload-mobile" type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" disabled={isReadOnly} />
+                  </div>
+                )}
+                
+                {photos.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {photos.map((photo) => (
+                      <div key={photo.id} className="group relative border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col">
+                        <div className="aspect-video relative bg-muted shrink-0">
+                          <img src={photo.url} alt="Foto" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
+                        </div>
+                        <div className="p-2 space-y-2 flex-1 flex flex-col">
+                          <Textarea 
+                            placeholder="Comentário..." 
+                            className="text-xs resize-none flex-1 min-h-[50px]" 
+                            value={photo.comment} 
+                            onChange={e => updatePhoto(photo.id, 'comment', e.target.value.toUpperCase())} 
+                            disabled={isReadOnly}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="signatures" className="border-b" disabled={!formData.equipment_id}>
+              <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <PenTool className="w-4 h-4" />
+                  ASSINATURAS
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">Nome do Técnico</Label>
+                    <Input value={selectedTech?.name || ''} readOnly className="bg-muted text-muted-foreground" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">Assinatura Técnica <span className="text-destructive">*</span></Label>
+                    {formData.technician_signature ? (
+                      <div className="border bg-white rounded-xl p-3 flex justify-center">
+                        <img src={formData.technician_signature} alt="Assinatura do Técnico" className="max-w-full max-h-24 object-contain" />
+                      </div>
+                    ) : (
+                      <div className="border rounded-lg overflow-hidden bg-white ring-1 ring-border shadow-inner">
+                        <SignatureCanvas 
+                          ref={techSigPad}
+                          penColor="#3B82F6"
+                          backgroundColor="white"
+                          canvasProps={{ 
+                            className: 'w-full touch-none', 
+                            style: { minHeight: '150px', maxWidth: '100%', margin: '0 auto', display: 'block' } 
+                          }}
+                        />
+                      </div>
+                    )}
+                    {!formData.technician_signature && !isReadOnly && (
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={clearTechSignature} className="flex-1">Limpar</Button>
+                        <Button size="sm" onClick={handleConfirmTechSignature} className="flex-1">Confirmar</Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">Nome do Cliente <span className="text-destructive">*</span></Label>
+                    <Input value={formData.responsible_person} onChange={e => updateField('responsible_person', e.target.value.toUpperCase())} className={cn(!formData.responsible_person && validationErrors.length > 0 && "border-destructive")} disabled={isReadOnly} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">Assinatura Cliente <span className="text-destructive">*</span></Label>
+                    {formData.client_signature ? (
+                      <div className="border bg-white rounded-xl p-3 flex justify-center">
+                        <img src={formData.client_signature} alt="Assinatura do Cliente" className="max-w-full max-h-24 object-contain" />
+                      </div>
+                    ) : (
+                      <div className="border rounded-lg overflow-hidden bg-white ring-1 ring-border shadow-inner">
+                        <SignatureCanvas 
+                          ref={clientSigPad}
+                          penColor="#3B82F6"
+                          backgroundColor="white"
+                          canvasProps={{ 
+                            className: 'w-full touch-none', 
+                            style: { minHeight: '150px', maxWidth: '100%', margin: '0 auto', display: 'block' } 
+                          }}
+                        />
+                      </div>
+                    )}
+                    {!formData.client_signature && !isReadOnly && (
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={clearClientSignature} className="flex-1">Limpar</Button>
+                        <Button size="sm" onClick={handleConfirmSignature} className="flex-1">Confirmar</Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <div className="bg-muted/50 border-t p-4 flex flex-col gap-3 mt-4">
+            <Button variant="outline" onClick={handleCancel} className="w-full">Cancelar / Voltar</Button>
+            <Button 
+              onClick={handleCreateDraft} 
+              disabled={saving || !formData.equipment_id}
+              className="w-full"
+            >
+              {saving ? <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
+              Criar Relatório
+            </Button>
+          </div>
+        </div>
       </fieldset>
 
       <Dialog open={!!zoomPhoto} onOpenChange={() => setZoomPhoto(null)}>
