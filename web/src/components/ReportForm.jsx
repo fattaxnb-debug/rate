@@ -629,6 +629,15 @@ export default function ReportForm() {
     navigate('/reports');
   };
 
+  const mobileTabsOrder = ['equipment', 'installation', 'electrical', 'battery', 'attendance', 'photos', 'signatures'];
+  const handleMobileNext = () => {
+    const currentIndex = mobileTabsOrder.indexOf(activeAccordion);
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < mobileTabsOrder.length) {
+      setActiveAccordion(mobileTabsOrder[nextIndex]);
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center py-24"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div></div>;
   }
@@ -1245,7 +1254,7 @@ export default function ReportForm() {
 
         {/* Mobile: Accordion */}
         <div className="md:hidden">
-          <Accordion type="multiple" className="w-full">
+          <Accordion type="single" value={activeAccordion} onValueChange={setActiveAccordion} className="w-full" collapsible>
             <AccordionItem value="equipment" className="border-b">
               <AccordionTrigger className="px-4 py-3 font-bold uppercase text-sm hover:no-underline">
                 <div className="flex items-center gap-2">
@@ -1255,6 +1264,11 @@ export default function ReportForm() {
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
                 {renderEquipmentContent()}
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full" disabled={!formData.equipment_id}>
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -1268,6 +1282,11 @@ export default function ReportForm() {
               <AccordionContent className="px-4 pb-4">
                 <div className="text-sm text-muted-foreground mb-4">
                   Seção de instalação disponível na versão desktop.
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -1288,6 +1307,11 @@ export default function ReportForm() {
                 <div className="text-sm text-muted-foreground mb-4">
                   Seção de medições elétricas disponível na versão desktop.
                 </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -1301,6 +1325,11 @@ export default function ReportForm() {
               <AccordionContent className="px-4 pb-4">
                 <div className="text-sm text-muted-foreground mb-4">
                   Seção de baterias disponível na versão desktop.
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -1319,6 +1348,11 @@ export default function ReportForm() {
                 <div className="space-y-2"><Label className="font-bold uppercase">REALIZADO NO ATENDIMENTO</Label><Textarea rows={3} value={formData.attendance_description} onChange={e => updateField('attendance_description', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
                 <div className="space-y-2"><Label className="font-bold uppercase">DIAGNÓSTICO / NECESSÁRIO</Label><Textarea rows={3} value={formData.diagnosis} onChange={e => updateField('diagnosis', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
                 <div className="space-y-2"><Label className="font-bold uppercase">CONCLUSÃO / RESULTADO</Label><Textarea rows={3} value={formData.conclusion} onChange={e => updateField('conclusion', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -1360,6 +1394,11 @@ export default function ReportForm() {
                     ))}
                   </div>
                 )}
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleMobileNext} className="w-full">
+                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -1436,20 +1475,22 @@ export default function ReportForm() {
                     )}
                   </div>
                 </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button 
+                    onClick={handleCreateDraft} 
+                    disabled={saving || !formData.equipment_id}
+                    className="w-full"
+                  >
+                    {saving ? <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
+                    Criar Relatório
+                  </Button>
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
 
-          <div className="bg-muted/50 border-t p-4 flex flex-col gap-3 mt-4">
+          <div className="bg-muted/50 border-t p-4 mt-4">
             <Button variant="outline" onClick={handleCancel} className="w-full">Cancelar / Voltar</Button>
-            <Button 
-              onClick={handleCreateDraft} 
-              disabled={saving || !formData.equipment_id}
-              className="w-full"
-            >
-              {saving ? <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-              Criar Relatório
-            </Button>
           </div>
         </div>
       </fieldset>

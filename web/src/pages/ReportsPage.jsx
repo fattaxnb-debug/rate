@@ -342,7 +342,7 @@ export default function ReportsPage() {
                 <p className="text-sm">Tente ajustar os filtros de busca</p>
               </div>
             ) : (
-              (searchTerm ? filteredReports : filteredReports.slice(0, 5)).map((report) => {
+              filteredReports.map((report) => {
                 const isResponsible = isUserResponsible(report);
                 return (
                   <div key={report.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
