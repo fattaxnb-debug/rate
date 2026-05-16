@@ -218,7 +218,11 @@ export default function ReportViewer() {
   };
 
   const renderField = (label, value, unit = '') => {
-    const displayValue = (value !== null && value !== undefined && value !== '' && value !== 0) ? (unit ? `${value}${unit}` : value) : '';
+    // Só renderiza se houver valor
+    if (value === null || value === undefined || value === '' || value === false) return null;
+    if (typeof value === 'number' && (isNaN(value) || value === 0)) return null;
+    
+    const displayValue = unit ? `${value}${unit}` : value;
     const labelColor = colorMode === 'color' ? '#E31E24' : '#000000';
     return (
       <div className="field-group">
@@ -343,8 +347,8 @@ export default function ReportViewer() {
   const sectionTitleColor = colorMode === 'color' ? '#000000' : '#000000';
   const sectionBgColor = colorMode === 'color' ? '#FFD700' : '#f5f5f5';
   
-  // Can Edit Logic: Only creator can edit OR manager.
-  const canEdit = isGerente || (isTech && report.technician_id === currentUser.id && report.status !== 'submitted');
+  // Can Edit Logic: Only creator can edit OR manager, but not when status is submitted
+  const canEdit = isGerente && report.status !== 'submitted' || (isTech && report.technician_id === currentUser.id && report.status !== 'submitted');
 
   return (
     <>
@@ -442,7 +446,7 @@ export default function ReportViewer() {
               <div className="space-y-8">
                 <section className="border border-border rounded-lg overflow-hidden">
                   <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Dados do Cliente</h2>
-                  <div className="grid grid-cols-2 gap-4 p-5 text-sm bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 text-sm bg-white">
                     {renderField('Razão Social', client.name)}
                     {renderField('Nome Fantasia', client.fantasy_name)}
                     {renderField('CPF/CNPJ', client.cnpj_cpf)}
@@ -463,16 +467,16 @@ export default function ReportViewer() {
                 </section>
                 <section className="border border-border rounded-lg overflow-hidden">
                   <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Equipamento</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-5 text-sm bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4 text-sm bg-white">
                     {renderField('Tipo', eqData.type)}
                     {renderField('Marca', eqData.brand)}
                     {renderField('Modelo', eqData.model)}
                     {renderField('Número de Série', eqData.serial_number)}
                     {eqData.installation_date && renderField('Data de Instalação', format(new Date(eqData.installation_date), 'dd/MM/yyyy'))}
-                    {renderField('Tipo de Tensão', eqData.voltage_type)}
-                    {renderField('Potência (VA)', eqData.power_va)}
-                    {renderField('Tensão Entrada (V)', eqData.voltage_in)}
-                    {renderField('Tensão Saída (V)', eqData.voltage_out)}
+                    {['Nobreak', 'Estabilizador', 'Transformador', 'IT Médico'].includes(eqData.type) && renderField('Tipo de Tensão', eqData.voltage_type)}
+                    {['Nobreak', 'Estabilizador', 'Transformador', 'IT Médico'].includes(eqData.type) && renderField('Potência (VA)', eqData.power_va)}
+                    {['Nobreak', 'Estabilizador', 'Transformador', 'IT Médico'].includes(eqData.type) && renderField('Tensão Entrada (V)', eqData.voltage_in)}
+                    {['Nobreak', 'Estabilizador', 'Transformador', 'IT Médico'].includes(eqData.type) && renderField('Tensão Saída (V)', eqData.voltage_out)}
                     {eqData.type === 'Nobreak' && renderField('Tensão Bateria (VDC)', eqData.voltage_battery)}
                     {eqData.type === 'Nobreak' && renderField('Corrente Bateria', eqData.current_battery)}
                     {eqData.type === 'Nobreak' && renderField('Tipo de Bateria', eqData.battery_type)}
@@ -505,7 +509,7 @@ export default function ReportViewer() {
               <div className="space-y-8">
                 <section className="border border-border rounded-lg overflow-hidden">
                   <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Infra-Instalação</h2>
-                  <div className="grid grid-cols-3 gap-4 p-5 text-sm bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 text-sm bg-white">
                     {renderField('Tipo de Serviço', report.service_type)}
                     {renderField('Ambiente Refrigerado', report.cooled_environment)}
                     {renderField('Local', report.installation_location)}
@@ -513,7 +517,7 @@ export default function ReportViewer() {
                     {!isBatteryMonitor && renderField('DISJUNTOR', report.breaker)}
                   </div>
                   {!isBatteryMonitor && (
-                  <div className="grid grid-cols-3 gap-4 p-5 pt-0 text-sm bg-white border-t border-gray-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 pt-0 text-sm bg-white border-t border-gray-100">
                     {renderField('CABO ENTRADA FASE (MM²)', report.cable_entry_phase)}
                     {renderField('CABO ENTRADA NEUTRO (MM²)', report.cable_entry_neutral)}
                     {renderField('CABO ENTRADA TERRA (MM²)', report.cable_entry_ground)}
@@ -522,7 +526,7 @@ export default function ReportViewer() {
                   </div>
                   )}
                   {hasValue(report.external_battery_positive_cable) && (
-                    <div className="grid grid-cols-3 gap-4 p-5 pt-0 text-sm bg-white border-t border-gray-100">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 pt-0 text-sm bg-white border-t border-gray-100">
                       <h3 className="font-bold uppercase col-span-3" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Banco Externo</h3>
                       {renderField('Cabo Positivo (mm²)', report.external_battery_positive_cable)}
                       {renderField('Cabo Negativo (mm²)', report.external_battery_negative_cable)}
@@ -537,7 +541,7 @@ export default function ReportViewer() {
                 <section className="border border-border rounded-lg overflow-hidden">
                   <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Medições Elétricas</h2>
                   <div className="p-5 space-y-6 bg-white">
-                    <div className="grid grid-cols-2 gap-6 text-sm">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 text-sm">
                       {renderElecBlock('entrada', 'Entrada')}
                       {renderElecBlock('saida', 'Saída')}
                     </div>
@@ -548,7 +552,7 @@ export default function ReportViewer() {
                 {hasBattery && bat && hasValue(bat.type) && (
                 <section className="border border-border rounded-lg overflow-hidden">
                   <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Banco de Baterias</h2>
-                  <div className="grid grid-cols-3 gap-4 text-sm p-5 bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 text-sm bg-white">
                     {!isBatteryMonitor && renderField('Banco de Baterias', bat.type)}
                     {renderField('QUANTIDADE BATERIAS', bat.quantity)}
                     {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
@@ -656,7 +660,7 @@ export default function ReportViewer() {
                   <h2 className="border-b p-2 text-sm font-bold uppercase tracking-wide bg-[#FFD700] border-black text-black">Fotos</h2>
                   <div className="p-2 bg-white">
                     {photos.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {photos.map((p, i) => (
                           <div key={p.id || i} className="border border-gray-300 p-3 rounded-md bg-white flex flex-col shadow-sm items-center">
                             {/* 🔥 DEBUG TEMPORÁRIO - Mostrar URL */}
@@ -771,7 +775,7 @@ export default function ReportViewer() {
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
                   }}>Dados do Cliente</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 text-sm bg-white">
+                  <div className="grid grid-cols-1 gap-3 p-4 text-sm bg-white">
                     {renderField('Razão Social', client.name)}
                     {renderField('Nome Fantasia', client.fantasy_name)}
                     {renderField('CPF/CNPJ', client.cnpj_cpf)}
@@ -797,15 +801,15 @@ export default function ReportViewer() {
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
                   }}>Equipamento</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 text-sm bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4 text-sm bg-white">
                     {renderField('Tipo', eqData.type)}
                     {renderField('Marca', eqData.brand)}
                     {renderField('Modelo', eqData.model)}
                     {renderField('Nº Série', eqData.serial_number)}
-                    {renderField('Tensão', eqData.voltage_type)}
-                    {renderField('Potência', eqData.power_va, ' VA')}
-                    {renderField('Tensão In', eqData.voltage_in, 'V')}
-                    {renderField('Tensão Out', eqData.voltage_out, 'V')}
+                    {['Nobreak', 'Estabilizador', 'Transformador', 'IT Médico'].includes(eqData.type) && renderField('Tensão', eqData.voltage_type)}
+                    {['Nobreak', 'Estabilizador', 'Transformador', 'IT Médico'].includes(eqData.type) && renderField('Potência', eqData.power_va, ' VA')}
+                    {['Nobreak', 'Estabilizador', 'Transformador', 'IT Médico'].includes(eqData.type) && renderField('Tensão In', eqData.voltage_in, 'V')}
+                    {['Nobreak', 'Estabilizador', 'Transformador', 'IT Médico'].includes(eqData.type) && renderField('Tensão Out', eqData.voltage_out, 'V')}
                     {eqData.type === 'Nobreak' && renderField('Tensão Bat', eqData.voltage_battery, 'V')}
                     {eqData.type === 'Nobreak' && renderField('Corrente Bat', eqData.current_battery, 'A')}
                     {eqData.type === 'Nobreak' && renderField('Tipo Bat', eqData.battery_type)}
@@ -890,7 +894,7 @@ export default function ReportViewer() {
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
                   }}>Banco de Baterias</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm p-5 bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4 text-sm bg-white">
                     {!isBatteryMonitor && renderField('Banco de Baterias', bat.type)}
                     {renderField('QUANTIDADE BATERIAS', bat.quantity)}
                     {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
@@ -957,7 +961,7 @@ export default function ReportViewer() {
                             {photos.length > 15 && (
                               <h3 className="text-xs font-bold uppercase mb-4 text-gray-500">Parte {chunkIdx + 1}</h3>
                             )}
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                               {chunk.map((p, i) => (
                                 <div key={p.id || i} className="border border-gray-200 p-3 rounded-lg bg-white flex flex-col shadow-sm photo-item items-center">
                                   <div className="relative aspect-[4/3] bg-gray-50 rounded overflow-hidden w-full">

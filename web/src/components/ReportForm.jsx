@@ -25,8 +25,8 @@ import EquipmentSelectionModal from '@/components/EquipmentSelectionModal.jsx';
 import { format } from 'date-fns';
 import { API_BASE_URL } from '@/config/api.js';
 
-const INSTALLATION_LOCATION_OPTIONS = ['Adequado', 'Inadequado'];
-const POWER_SUPPLY_TYPES = ['Circuito', 'Tomada', 'Tomada Industrial'];
+const INSTALLATION_LOCATION_OPTIONS = ['ADEQUADO', 'INADEQUADO'];
+const POWER_SUPPLY_TYPES = ['CIRCUITO', 'TOMADA', 'TOMADA INDUSTRIAL Industrial'];
 const BATTERY_TYPES = ['Interno', 'Externo'];
 const COOLED_ENV_OPTIONS = ['SIM', 'NÃO'];
 const EXTERNAL_BATTERY_CONNECTION_OPTIONS = ['DISJUNTOR', 'BORNE', 'DIRETO'];
@@ -386,7 +386,7 @@ export default function ReportForm() {
       await processPhotos(record.data.data.id);
       
       toast.success('Relatório salvo com sucesso!');
-      navigate('/reports');
+      navigate(`/reports/${record.data.data.id}`);
     } catch (error) {
       toast.error('Erro ao criar relatório: ' + error.message);
     } finally {
@@ -1255,7 +1255,7 @@ export default function ReportForm() {
                   className="w-full sm:w-auto min-w-[160px]"
                 >
                   {saving ? <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-                  Criar Relatório
+                  Salvar Relatório
                 </Button>
               )}
             </div>
@@ -1805,7 +1805,7 @@ export default function ReportForm() {
                     className="w-full"
                   >
                     {saving ? <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-                    Criar Relatório
+                    Salvar Relatório
                   </Button>
                 </div>
               </AccordionContent>

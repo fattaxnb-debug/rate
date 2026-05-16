@@ -56,9 +56,13 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   const captureAndAddPage = async (ref, addPage = true, isFirstPage = false, isClientEquip = false) => {
     if (!ref.current) return;
     
-    // Backup original paddings
+    // Backup original styles
     const originalPaddingTop = ref.current.style.paddingTop;
     const originalPaddingBottom = ref.current.style.paddingBottom;
+    const originalClassName = ref.current.className;
+    
+    // Force desktop layout for PDF generation
+    ref.current.classList.add('pdf-desktop-layout');
     
     // Enforce safe zones for the new native header and footer
     if (!isFirstPage) {
@@ -82,6 +86,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
     // Restore original styles immediately
     ref.current.style.paddingTop = originalPaddingTop;
     ref.current.style.paddingBottom = originalPaddingBottom;
+    ref.current.classList.remove('pdf-desktop-layout');
     if (existingHeader) {
       existingHeader.style.display = originalHeaderDisplay;
     }

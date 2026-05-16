@@ -25,9 +25,9 @@ import EquipmentSelectionModal from '@/components/EquipmentSelectionModal.jsx';
 import { format } from 'date-fns';
 import { API_BASE_URL } from '@/config/api.js';
 
-const INSTALLATION_LOCATION_OPTIONS = ['Adequado', 'Inadequado'];
-const POWER_SUPPLY_TYPES = ['Circuito', 'Tomada', 'Tomada Industrial'];
-const BATTERY_TYPES = ['Interno', 'Externo'];
+const INSTALLATION_LOCATION_OPTIONS = ['ADEQUADO', 'INADEQUADO'];
+const POWER_SUPPLY_TYPES = ['CIRCUITO', 'TOMADA', 'TOMADA INDUSTRIAL Industrial'];
+const BATTERY_TYPES = ['INTERNO', 'EXTERNO'];
 const COOLED_ENV_OPTIONS = ['SIM', 'NÃO'];
 const EXTERNAL_BATTERY_CONNECTION_OPTIONS = ['DISJUNTOR', 'BORNE', 'DIRETO'];
 const YES_NO_OPTIONS = ['SIM', 'NÃO'];
@@ -140,6 +140,24 @@ export default function ReportFormEditor() {
       const report = reportRes.data.data;
       setFormData(report);
       setCreatedDate(report.created_at ? new Date(report.created_at) : new Date());
+      
+      // Carregar fotos do relatório
+      if (report.photos && report.photos.length > 0) {
+        const loadedPhotos = report.photos.map(p => {
+          let url = p.photo_url || '';
+          if (url && !url.startsWith('http') && !url.startsWith('data:')) {
+            url = `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+          }
+          return {
+            id: p.id,
+            url,
+            comment: p.comment || '',
+            photo_type: p.photo_type || '',
+            sequence: p.sequence
+          };
+        });
+        setPhotos(loadedPhotos);
+      }
       
       if (report.client_id) {
         await fetchClientEquipments(report.client_id, report.equipment_id);
@@ -377,6 +395,76 @@ export default function ReportFormEditor() {
       navigate('/reports');
     } catch (error) {
       toast.error('Erro ao atualizar relatório: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleFinalSave = async () => {
+    if (!validateForm()) return;
+    setSaving(true);
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const existingReportRes = await axios.get(`${API_BASE_URL}/reports/${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const existingReport = existingReportRes.data.data;
+      const finalStatus = 'submitted';
+      
+      let editCount = existingReport.technician_edit_count || 0;
+      if (currentUser?.role === 'Técnico' && editCount === 0) editCount = 1;
+      
+      let techSignatureToSave = existingReport.technician_signature || '';
+      if (techSigPad.current && !techSigPad.current.isEmpty()) {
+        techSignatureToSave = techSigPad.current.toDataURL('image/png');
+      } else if (formData.technician_signature) {
+        techSignatureToSave = formData.technician_signature;
+      }
+
+      let clientSignatureToSave = existingReport.client_signature || formData.client_signature || '';
+      if (clientSigPad.current && !clientSigPad.current.isEmpty()) {
+        clientSignatureToSave = clientSigPad.current.getTrimmedCanvas().toDataURL('image/png');
+      }
+      
+      const payload = {
+        ...existingReport,
+        ...formData,
+        status: finalStatus,
+        technician_edit_count: editCount,
+        technician_signature: techSignatureToSave,
+        client_signature: clientSignatureToSave
+      };
+
+      await axios.put(`${API_BASE_URL}/reports/${id}`, payload, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      // Salvar fotos na tabela report_photos
+      for (const photo of photos) {
+        if (photo.file && photo.id.startsWith('temp_')) {
+          const formDataObj = new FormData();
+          formDataObj.append('report_id', id);
+          formDataObj.append('photo_url', photo.file);
+          formDataObj.append('comment', photo.comment || '');
+          if (photo.sequence) formDataObj.append('sequence', photo.sequence);
+          if (photo.photo_type) formDataObj.append('photo_type', photo.photo_type);
+          await axios.post(`${API_BASE_URL}/report-photos`, formDataObj, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          });
+        } else if (photo.id && !photo.id.startsWith('temp_')) {
+          await axios.put(`${API_BASE_URL}/report-photos/${photo.id}`, {
+            comment: photo.comment || ''
+          }, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+        }
+      }
+
+      toast.success('Relatório salvo e finalizado com sucesso');
+      navigate(`/reports/${id}`);
+    } catch (error) {
+      toast.error('Erro ao salvar');
     } finally {
       setSaving(false);
     }
@@ -1238,12 +1326,12 @@ export default function ReportFormEditor() {
                 </Button>
               ) : (
                 <Button 
-                  onClick={handleCreateDraft} 
+                  onClick={handleFinalSave} 
                   disabled={saving || !formData.equipment_id}
                   className="w-full sm:w-auto min-w-[160px]"
                 >
                   {saving ? <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-                  Criar Relatório
+                  Salvar Relatório
                 </Button>
               )}
             </div>
@@ -1788,12 +1876,12 @@ export default function ReportFormEditor() {
                 </div>
                 <div className="mt-4 pt-4 border-t">
                   <Button 
-                    onClick={handleCreateDraft} 
+                    onClick={handleFinalSave} 
                     disabled={saving || !formData.equipment_id}
                     className="w-full"
                   >
                     {saving ? <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-                    Criar Relatório
+                    Salvar Relatório
                   </Button>
                 </div>
               </AccordionContent>
