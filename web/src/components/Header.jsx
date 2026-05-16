@@ -74,20 +74,11 @@ function Header() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            {settings?.company_logo ? (
-              <img 
-                src={`${API_BASE_URL}/uploads/${settings.company_logo}`} 
-                alt="Logo" 
-                className="h-10 w-auto object-contain"
-                onError={(e) => {
-                  console.error('Error loading logo');
-                  e.target.style.display = 'none';
-                  const textSpan = e.target.parentElement.querySelector('span');
-                  if (textSpan) textSpan.style.display = 'block';
-                }}
-              />
-            ) : null}
-            <span className="text-2xl font-bold text-primary" style={{ letterSpacing: '-0.02em', display: settings?.company_logo ? 'none' : 'block' }}>FATTAX</span>
+            <img 
+              src="/logo-fattax.png" 
+              alt="FATTAX" 
+              className="h-10 w-auto object-contain"
+            />
           </Link>
 
           {isAuthenticated && (

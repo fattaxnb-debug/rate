@@ -44,8 +44,8 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   // Pre-fetch the logo to use natively in the PDF headers with robust error handling
   let cachedLogo = null;
   try {
-    // Using the exact URL requested to ensure technicians have access
-    const logoUrl = 'https://06b32d79-4c9d-4696-be9b-0a75f4a78a09.app-preview.com/hcgi/platform/api/files/pbc_4786306446/j1fofmushvdnx8d/fattax_perfil_47g1rp50ob.jpg';
+    // Usando logo local do projeto
+    const logoUrl = '/logo-fattax.png';
     cachedLogo = await fetchImageAsBase64(logoUrl);
   } catch (error) {
     console.error('Error extracting or caching logo URL:', error);
