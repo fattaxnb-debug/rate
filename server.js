@@ -9,6 +9,7 @@ import { errorMiddleware } from './src/middleware/error.js';
 import { globalRateLimit } from './src/middleware/global-rate-limit.js';
 import logger from './src/utils/logger.js';
 import { BodyLimit } from './src/constants/common.js';
+import { startNotificationScheduler } from './src/utils/notificationScheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -119,6 +120,9 @@ async function runMigrations() {
 
 // Iniciar servidor após migrações
 runMigrations().then(() => {
+  // Iniciar scheduler de notificações
+  startNotificationScheduler();
+  
   app.listen(port, '0.0.0.0', () => {
     logger.info(`🚀 Server running on http://0.0.0.0:${port}`);
   });

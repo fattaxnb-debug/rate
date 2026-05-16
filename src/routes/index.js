@@ -9,6 +9,7 @@ import settingsRouter from './settings.js';
 import reportPhotosRouter from './report-photos.js';
 import statsRouter from './stats.js';
 import migrateRouter from './migrate.js';
+import pushSubscriptionsRouter from './push-subscriptions.js';
 import db from '../config/database.js';
 
 const router = Router();
@@ -56,6 +57,8 @@ export default () => {
     router.use('/stats', statsRouter);
     console.log('Registering /migrate route...');
     router.use('/migrate', migrateRouter);
+    console.log('Registering /push-subscriptions route...');
+    router.use('/push-subscriptions', pushSubscriptionsRouter);
     console.log('All routes registered');
 
     return router;

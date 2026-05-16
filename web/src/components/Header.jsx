@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTheme } from '@/contexts/ThemeContext.jsx';
-import { Menu, X, LogOut, User, Settings, LayoutDashboard, Users, Wrench, Calendar, FileText, Moon, Sun } from 'lucide-react';
+import { Menu, X, LogOut, User, Settings, LayoutDashboard, Users, Wrench, Calendar, FileText, Moon, Sun, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { API_BASE_URL } from '@/config/api.js';
 import axios from 'axios';
+import { usePushNotifications } from '@/hooks/usePushNotifications.js';
 
 function Header() {
   const { currentUser, logout, isAuthenticated } = useAuth();
@@ -33,6 +34,7 @@ function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [settings, setSettings] = useState(null);
+  const { permission, loading, requestPermission } = usePushNotifications();
 
   useEffect(() => {
     if (isAuthenticated && currentUser?.id) {
@@ -111,6 +113,20 @@ function Header() {
               </nav>
 
               <div className="flex items-center space-x-4">
+                {/* Botão de notificações para técnicos */}
+                {currentUser?.role === 'Técnico' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={requestPermission}
+                    disabled={loading || permission === 'granted'}
+                    className="hidden md:flex"
+                    title={permission === 'granted' ? 'Notificações ativadas' : 'Ativar notificações'}
+                  >
+                    <Bell className={`h-5 w-5 ${permission === 'granted' ? 'text-green-500' : ''}`} />
+                  </Button>
+                )}
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="hidden md:flex">
