@@ -20,6 +20,7 @@ const ScheduleViewPage = lazy(() => import('@/pages/ScheduleViewPage.jsx'));
 const ReportsPage = lazy(() => import('@/pages/ReportsPage.jsx'));
 const ReportViewer = lazy(() => import('@/pages/ReportViewer.jsx'));
 const ReportForm = lazy(() => import('@/components/ReportForm.jsx'));
+const ReportFormEditor = lazy(() => import('@/components/ReportFormEditor.jsx'));
 const ReportEditor = lazy(() => import('@/components/ReportEditor.jsx'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage.jsx'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage.jsx'));
@@ -29,7 +30,7 @@ const ReportFormWrapper = ({ isEdit }) => (
     <Header />
     <main className="flex-1 container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
-        {isEdit ? <ReportEditor /> : <ReportForm />}
+        {isEdit ? <ReportFormEditor /> : <ReportForm />}
       </div>
     </main>
     <Footer />

@@ -32,8 +32,8 @@ const COOLED_ENV_OPTIONS = ['SIM', 'NÃO'];
 const EXTERNAL_BATTERY_CONNECTION_OPTIONS = ['DISJUNTOR', 'BORNE', 'DIRETO'];
 const YES_NO_OPTIONS = ['SIM', 'NÃO'];
 
-export default function ReportForm() {
-  const { clientId, scheduleId } = useParams();
+export default function ReportFormEditor() {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   
@@ -52,14 +52,15 @@ export default function ReportForm() {
   const [equipmentModalOpen, setEquipmentModalOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [createdDate, setCreatedDate] = useState(new Date());
+  const [photos, setPhotos] = useState([]);
   
   const { searchTerm: clientSearchTerm, setSearchTerm: setClientSearchTerm, filteredItems: filteredClients } = useSearch(clients, ['name', 'cnpj_cpf']);
   
   const [formData, setFormData] = useState({
-    client_id: clientId || '',
+    client_id: '',
     equipment_id: '',
-    technician_id: currentUser?.role === 'Técnico' ? currentUser.id : '',
-    schedule_id: scheduleId || '',
+    technician_id: '',
+    schedule_id: '',
     service_order_number: '',
     service_type: '',
     responsible_person: '',
@@ -105,7 +106,6 @@ export default function ReportForm() {
   });
 
   const [selectedEquipmentData, setSelectedEquipmentData] = useState(null);
-  const [photos, setPhotos] = useState([]);
   const [zoomPhoto, setZoomPhoto] = useState(null);
   const clientSigPad = useRef(null);
   const techSigPad = useRef(null);
@@ -123,49 +123,35 @@ export default function ReportForm() {
 
   useEffect(() => {
     initForm();
-  }, [clientId, scheduleId]);
+  }, [id]);
 
   const initForm = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      console.log('[REPORT FORM DEBUG] API_BASE_URL:', API_BASE_URL);
-      console.log('[REPORT FORM DEBUG] Token:', token ? 'Present' : 'Missing');
-      console.log('[REPORT FORM DEBUG] Fetching clients from:', `${API_BASE_URL}/clients`);
-      console.log('[REPORT FORM DEBUG] Fetching technicians from:', `${API_BASE_URL}/schedules/technicians`);
-      const [clientsRes, techRes] = await Promise.all([
+      const [clientsRes, techRes, reportRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/clients`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(`${API_BASE_URL}/schedules/technicians`, { headers: { 'Authorization': `Bearer ${token}` } })
+        axios.get(`${API_BASE_URL}/users?role=Técnico`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        axios.get(`${API_BASE_URL}/reports/${id}`, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
-      console.log('[REPORT FORM DEBUG] Clients response:', clientsRes.data);
-      console.log('[REPORT FORM DEBUG] Technicians response:', techRes.data);
       
       setClients(clientsRes.data.data || []);
       setTechnicians(techRes.data.data || []);
       
-      if (clientId) {
-        await fetchClientEquipments(clientId);
+      const report = reportRes.data.data;
+      setFormData(report);
+      setCreatedDate(report.created_at ? new Date(report.created_at) : new Date());
+      
+      if (report.client_id) {
+        await fetchClientEquipments(report.client_id, report.equipment_id);
       }
       
-      if (scheduleId) {
-        const scheduleRes = await axios.get(`${API_BASE_URL}/schedules/${scheduleId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const schedule = scheduleRes.data.data;
-        if (!formData.client_id) {
-          setFormData(prev => ({ ...prev, client_id: schedule.client_id }));
-          await fetchClientEquipments(schedule.client_id);
-        }
-      }
-      
-      await generateNextOsNumber();
-      
-      if (formData.technician_id || currentUser?.id) {
-        await handleTechnicianSignature(formData.technician_id || currentUser.id);
+      if (report.technician_id) {
+        await handleTechnicianSignature(report.technician_id);
       }
       
       setLoading(false);
     } catch (error) {
-      toast.error('Erro ao carregar dados do formulário');
+      toast.error('Erro ao carregar relatório');
       setLoading(false);
     }
   };
@@ -188,13 +174,20 @@ export default function ReportForm() {
     } catch (e) {}
   };
 
-  const fetchClientEquipments = async (cId) => {
+  const fetchClientEquipments = async (cId, equipmentId = null) => {
     try {
       const token = localStorage.getItem('auth_token');
       const eqsRes = await axios.get(`${API_BASE_URL}/equipments?client_id=${cId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setClientEquipments(eqsRes.data.data || []);
+      const equipments = eqsRes.data.data || [];
+      setClientEquipments(equipments);
+      
+      // Selecionar o equipamento se o ID foi fornecido
+      if (equipmentId) {
+        const eq = equipments.find(e => e.id === equipmentId);
+        if (eq) setSelectedEquipmentData(eq);
+      }
     } catch (e) {
       toast.error('Erro ao carregar equipamentos do cliente');
     }
@@ -355,9 +348,6 @@ export default function ReportForm() {
     if (!validateForm()) return;
     setSaving(true);
     
-    const isTecnico = currentUser?.role === 'Técnico';
-    
-    // Formatar data local sem conversão para UTC
     const formatDateLocal = (date) => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -374,21 +364,19 @@ export default function ReportForm() {
       external_battery_neutral_cable: formData.external_battery_neutral_cable || null,
       external_battery_connection: formData.external_battery_connection || null,
       external_battery_nobreak_connection: formData.external_battery_nobreak_connection || null,
-      technician_edit_count: 0,
-      status: isTecnico ? 'finalizado' : 'draft'
     };
     
     try {
       const token = localStorage.getItem('auth_token');
-      const record = await axios.post(`${API_BASE_URL}/reports`, payload, {
+      await axios.put(`${API_BASE_URL}/reports/${id}`, payload, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      await processPhotos(record.data.data.id);
+      await processPhotos(id);
       
-      toast.success('Relatório salvo com sucesso!');
+      toast.success('Relatório atualizado com sucesso!');
       navigate('/reports');
     } catch (error) {
-      toast.error('Erro ao criar relatório: ' + error.message);
+      toast.error('Erro ao atualizar relatório: ' + error.message);
     } finally {
       setSaving(false);
     }

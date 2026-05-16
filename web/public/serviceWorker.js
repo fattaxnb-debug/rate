@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rate-pwa-v2';
+const CACHE_NAME = 'rate-pwa-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -35,6 +35,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request).catch(() => caches.match(request))
     );
+    return;
+  }
+
+  // Network-first for JS/JSX modules (Vite dev server)
+  if (request.url.includes('/src/') || request.url.includes('.jsx') || request.url.includes('.js?v=')) {
+    event.respondWith(fetch(request));
     return;
   }
 

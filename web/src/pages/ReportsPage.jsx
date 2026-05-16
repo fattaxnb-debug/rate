@@ -61,6 +61,8 @@ export default function ReportsPage() {
       });
       console.log('[REPORTS FRONTEND DEBUG] Response:', response.data);
       const records = response.data.data || [];
+      console.log('[EQ DEBUG] Total relatórios recebidos:', records.length);
+      records.forEach(r => console.log('[EQ DEBUG] Relatório:', r.service_order_number, '| equipment_id:', r.equipment_id, '| client_id:', r.client_id));
       
       // Buscar clientes, equipamentos e técnicos separadamente (sem filtro de role)
       const [clientsRes, equipmentsRes, techniciansRes] = await Promise.all([
@@ -72,18 +74,24 @@ export default function ReportsPage() {
       setClients(clientsRes.data.data || []);
       setEquipments(equipmentsRes.data.data || []);
       setTechnicians(techniciansRes.data.data || []);
+      console.log('[EQ DEBUG] Equipamentos disponíveis:', equipmentsRes.data.data?.map(e => ({ id: e.id, brand: e.brand, model: e.model, type: e.type })));
       
       // Enriquecer relatórios com dados de cliente, equipamento e técnico
-      const enrichedReports = records.map(report => ({
+      const enrichedReports = records.map(report => {
+        const eq = equipmentsRes.data.data?.find(e => e.id === report.equipment_id);
+        console.log('[EQ DEBUG] Relatório', report.service_order_number, '| equipment_id:', report.equipment_id, '| match encontrado:', eq ? `${eq.brand} ${eq.model}` : 'NENHUM');
+        return {
         ...report,
-        client_name: clientsRes.data.data?.find(c => c.id === report.client_id)?.name || 'Cliente Inválido',
-        equipment_brand: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.brand || '',
-        equipment_model: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.model || '',
-        equipment_power: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.power || '',
-        equipment_voltage: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.voltage_type || '',
-        equipment_serial: equipmentsRes.data.data?.find(e => e.id === report.equipment_id)?.serial_number || '',
-        technician_name: techniciansRes.data.data?.find(t => t.id === report.technician_id)?.name || '-'
-      }));
+          client_name: clientsRes.data.data?.find(c => c.id === report.client_id)?.name || 'Cliente Inválido',
+          equipment_type: eq?.type || '',
+          equipment_brand: eq?.brand || '',
+          equipment_model: eq?.model || '',
+          equipment_power: eq?.power_va || '',
+          equipment_voltage: eq?.voltage_type || '',
+          equipment_serial: eq?.serial_number || '',
+          technician_name: techniciansRes.data.data?.find(t => t.id === report.technician_id)?.name || '-'
+        };
+      });
       
       // Ordenar por data de criação (mais recente primeiro)
       const sortedReports = enrichedReports.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -398,7 +406,12 @@ export default function ReportsPage() {
                           </div>
                           <div className="flex justify-between items-center py-2 border-b border-gray-200">
                             <span className="font-semibold text-blue-600">Equipamento:</span>
-                            <span className="text-gray-900 font-medium">{report.equipment_type || '-'}</span>
+                            <span className="text-gray-900 font-medium text-right">
+                              {report.equipment_brand || report.equipment_model || report.equipment_type
+                                ? [report.equipment_type, report.equipment_brand, report.equipment_model].filter(Boolean).join(' ')
+                                : '-'}
+                              {report.equipment_serial ? <span className="block text-xs text-muted-foreground">S/N: {report.equipment_serial}</span> : null}
+                            </span>
                           </div>
                           <div className="flex justify-between items-center py-2 border-b border-gray-200">
                             <span className="font-semibold text-blue-600">Técnico:</span>
