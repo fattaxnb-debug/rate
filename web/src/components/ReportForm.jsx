@@ -27,7 +27,7 @@ import { API_BASE_URL } from '@/config/api.js';
 
 const INSTALLATION_LOCATION_OPTIONS = ['ADEQUADO', 'INADEQUADO'];
 const POWER_SUPPLY_TYPES = ['CIRCUITO', 'TOMADA', 'TOMADA INDUSTRIAL Industrial'];
-const BATTERY_TYPES = ['Interno', 'Externo'];
+const BATTERY_TYPES = ['INTERNO', 'EXTERNO'];
 const COOLED_ENV_OPTIONS = ['SIM', 'NÃO'];
 const EXTERNAL_BATTERY_CONNECTION_OPTIONS = ['DISJUNTOR', 'BORNE', 'DIRETO'];
 const YES_NO_OPTIONS = ['SIM', 'NÃO'];
@@ -639,12 +639,21 @@ export default function ReportForm() {
     navigate('/reports');
   };
 
-  const mobileTabsOrder = ['equipment', 'installation', 'electrical', 'battery', 'attendance', 'photos', 'signatures'];
-  const handleMobileNext = () => {
-    const currentIndex = mobileTabsOrder.indexOf(activeAccordion);
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < mobileTabsOrder.length) {
-      setActiveAccordion(mobileTabsOrder[nextIndex]);
+  const handleAccordionChange = (value) => {
+    setActiveAccordion(value);
+    // Scroll suave para mostrar o topo do card aberto (mobile)
+    if (isMobile && value) {
+      setTimeout(() => {
+        try {
+          const accordionElement = document.getElementById(`accordion-${value}`);
+          if (accordionElement) {
+            const top = accordionElement.getBoundingClientRect().top + window.scrollY - 70;
+            window.scrollTo({ top, behavior: 'smooth' });
+          }
+        } catch (error) {
+          console.error('Erro ao fazer scroll:', error);
+        }
+      }, 350);
     }
   };
 
@@ -1267,8 +1276,8 @@ export default function ReportForm() {
         {/* Mobile: Accordion */}
         {isMobile && (
         <div key="mobile-accordion" className="space-y-3 px-2">
-          <Accordion type="single" value={activeAccordion} onValueChange={setActiveAccordion} className="w-full" collapsible>
-            <AccordionItem value="equipment" className="border-0">
+          <Accordion type="single" value={activeAccordion} onValueChange={handleAccordionChange} className="w-full" collapsible>
+            <AccordionItem id="accordion-equipment" value="equipment" className="border-0">
               <AccordionTrigger className="px-5 py-4 font-bold uppercase text-sm hover:no-underline bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl border border-blue-100 dark:border-blue-900/30 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-500 rounded-lg shadow-sm">
@@ -1279,15 +1288,10 @@ export default function ReportForm() {
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4 overflow-visible">
                 {renderEquipmentContent()}
-                <div className="mt-4 pt-4 border-t">
-                  <Button onClick={handleMobileNext} className="w-full" disabled={!formData.equipment_id}>
-                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="installation" className="border-0" disabled={!formData.equipment_id}>
+            <AccordionItem id="accordion-installation" value="installation" className="border-0" disabled={!formData.equipment_id}>
               <AccordionTrigger className="px-5 py-4 font-bold uppercase text-sm hover:no-underline bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-emerald-500 rounded-lg shadow-sm">
@@ -1427,15 +1431,10 @@ export default function ReportForm() {
                     </div>
                   )}
                 </div>
-                <div className="mt-4 pt-4 border-t">
-                  <Button onClick={handleMobileNext} className="w-full">
-                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="electrical" className="border-0" disabled={!formData.equipment_id || isBatteryMonitor}>
+            <AccordionItem id="accordion-electrical" value="electrical" className="border-0" disabled={!formData.equipment_id || isBatteryMonitor}>
               <AccordionTrigger className="px-5 py-4 font-bold uppercase text-sm hover:no-underline bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-xl border border-amber-100 dark:border-amber-900/30 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-amber-500 rounded-lg shadow-sm">
@@ -1520,15 +1519,10 @@ export default function ReportForm() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t">
-                  <Button onClick={handleMobileNext} className="w-full">
-                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="battery" className="border-0" disabled={!formData.equipment_id || !hasBattery}>
+            <AccordionItem id="accordion-battery" value="battery" className="border-0" disabled={!formData.equipment_id || !hasBattery}>
               <AccordionTrigger className="px-5 py-4 font-bold uppercase text-sm hover:no-underline bg-gradient-to-r from-green-50 to-lime-50 dark:from-green-950/20 dark:to-lime-950/20 rounded-xl border border-green-100 dark:border-green-900/30 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-500 rounded-lg shadow-sm">
@@ -1643,15 +1637,10 @@ export default function ReportForm() {
                     </div>
                   )}
                 </div>
-                <div className="mt-4 pt-4 border-t">
-                  <Button onClick={handleMobileNext} className="w-full">
-                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="attendance" className="border-0" disabled={!formData.equipment_id}>
+            <AccordionItem id="accordion-attendance" value="attendance" className="border-0" disabled={!formData.equipment_id}>
               <AccordionTrigger className="px-5 py-4 font-bold uppercase text-sm hover:no-underline bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl border border-purple-100 dark:border-purple-900/30 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-500 rounded-lg shadow-sm">
@@ -1667,15 +1656,10 @@ export default function ReportForm() {
                 <div className="space-y-2"><Label className="font-bold uppercase">REALIZADO NO ATENDIMENTO</Label><Textarea rows={3} value={formData.attendance_description} onChange={e => updateField('attendance_description', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
                 <div className="space-y-2"><Label className="font-bold uppercase">DIAGNÓSTICO / NECESSÁRIO</Label><Textarea rows={3} value={formData.diagnosis} onChange={e => updateField('diagnosis', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
                 <div className="space-y-2"><Label className="font-bold uppercase">CONCLUSÃO / RESULTADO</Label><Textarea rows={3} value={formData.conclusion} onChange={e => updateField('conclusion', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
-                <div className="mt-4 pt-4 border-t">
-                  <Button onClick={handleMobileNext} className="w-full">
-                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="photos" className="border-0" disabled={!formData.equipment_id}>
+            <AccordionItem id="accordion-photos" value="photos" className="border-0" disabled={!formData.equipment_id}>
               <AccordionTrigger className="px-5 py-4 font-bold uppercase text-sm hover:no-underline bg-gradient-to-r from-cyan-50 to-sky-50 dark:from-cyan-950/20 dark:to-sky-950/20 rounded-xl border border-cyan-100 dark:border-cyan-900/30 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-cyan-500 rounded-lg shadow-sm">
@@ -1715,15 +1699,10 @@ export default function ReportForm() {
                     ))}
                   </div>
                 )}
-                <div className="mt-4 pt-4 border-t">
-                  <Button onClick={handleMobileNext} className="w-full">
-                    Próximo <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="signatures" className="border-0" disabled={!formData.equipment_id}>
+            <AccordionItem id="accordion-signatures" value="signatures" className="border-0" disabled={!formData.equipment_id}>
               <AccordionTrigger className="px-5 py-4 font-bold uppercase text-sm hover:no-underline bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-950/20 dark:to-red-950/20 rounded-xl border border-rose-100 dark:border-rose-900/30 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-rose-500 rounded-lg shadow-sm">
