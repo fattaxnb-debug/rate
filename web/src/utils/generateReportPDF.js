@@ -4,7 +4,23 @@ import html2canvas from 'html2canvas';
 
 const fetchImageAsBase64 = async (url) => {
   try {
-    // Append the auth token to ensure there are no permission blocks if accessed across roles
+    // Se for uma URL local, não precisa de autenticação
+    if (url.startsWith('/')) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.warn(`Failed to fetch local image: ${response.status} ${response.statusText}`);
+        return null;
+      }
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+    
+    // Para URLs externas, usa autenticação
     const token = localStorage.getItem('auth_token');
     const urlWithToken = token ? `${url}${url.includes('?') ? '&' : '?'}token=${token}` : url;
     
@@ -44,8 +60,8 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   // Pre-fetch the logo to use natively in the PDF headers with robust error handling
   let cachedLogo = null;
   try {
-    // Usando logo local do projeto
-    const logoUrl = '/logo-fattax.png';
+    // Usando logo FATTAX-PERFIL para a capa do PDF
+    const logoUrl = '/fattax-perfil.jpg';
     cachedLogo = await fetchImageAsBase64(logoUrl);
   } catch (error) {
     console.error('Error extracting or caching logo URL:', error);
