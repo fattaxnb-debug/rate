@@ -60,7 +60,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   // Pre-fetch the logo to use natively in the PDF headers with robust error handling
   let cachedLogo = null;
   try {
-    // Usando logo FATTAX-PERFIL para a capa do PDF
+    // Usando logo FATTAX-PERFIL para a capa do PDF (corrigido para PNG)
     const logoUrl = '/fattax-perfil.png';
     cachedLogo = await fetchImageAsBase64(logoUrl);
   } catch (error) {
