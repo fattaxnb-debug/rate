@@ -45,7 +45,8 @@ export default function ReportViewer() {
   
   const coverRef = useRef(null);
   const clientEquipRef = useRef(null);
-  const infraElecBatRef = useRef(null);
+  const infraBatRef = useRef(null);
+  const elecRef = useRef(null);
   const descRef = useRef(null);
   const photosAndSignaturesRef = useRef(null);
   const photosRef = useRef(null);
@@ -175,7 +176,8 @@ export default function ReportViewer() {
       await generateReportPDF(report, companySettings, {
         coverRef,
         clientEquipRef,
-        infraElecBatRef,
+        infraBatRef,
+        elecRef,
         descRef,
         photosAndSignaturesRef,
         photosRef,
@@ -347,8 +349,8 @@ export default function ReportViewer() {
   const sectionTitleColor = colorMode === 'color' ? '#000000' : '#000000';
   const sectionBgColor = colorMode === 'color' ? '#FFD700' : '#f5f5f5';
   
-  // Can Edit Logic: Only creator can edit OR manager, but not when status is submitted
-  const canEdit = isGerente && report.status !== 'submitted' || (isTech && report.technician_id === currentUser.id && report.status !== 'submitted');
+  // Can Edit Logic: Only creator can edit OR manager, but not when status is submitted or finalized
+  const canEdit = isGerente && report.status !== 'submitted' && report.status !== 'finalizado' || (isTech && report.technician_id === currentUser.id && report.status !== 'submitted' && report.status !== 'finalizado');
 
   return (
     <>
@@ -446,7 +448,7 @@ export default function ReportViewer() {
               <div className="space-y-8">
                 <section className="border border-border rounded-lg overflow-hidden">
                   <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Dados do Cliente</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 text-sm bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4 text-sm bg-white">
                     {renderField('Razão Social', client.name)}
                     {renderField('Nome Fantasia', client.fantasy_name)}
                     {renderField('CPF/CNPJ', client.cnpj_cpf)}
@@ -504,8 +506,8 @@ export default function ReportViewer() {
               </div>
             </div>
 
-            {/* PAGE 3: Infra + Elec + Battery */}
-            <div ref={infraElecBatRef} className="w-[210mm] min-h-[297mm] bg-white p-12 text-black">
+            {/* PAGE 3: Infra-Instalação + Banco de Baterias */}
+            <div ref={infraBatRef} className="w-[210mm] bg-white p-12 text-black">
               <div className="space-y-8">
                 <section className="border border-border rounded-lg overflow-hidden">
                   <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Infra-Instalação</h2>
@@ -537,17 +539,6 @@ export default function ReportViewer() {
                   )}
                   {report.installation_location === 'Inadequado' && renderField('Motivo Local Inadequado', report.installation_location_explanation)}
                 </section>
-                {!isBatteryMonitor && (
-                <section className="border border-border rounded-lg overflow-hidden">
-                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Medições Elétricas</h2>
-                  <div className="p-5 space-y-6 bg-white">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 text-sm">
-                      {renderElecBlock('entrada', 'Entrada')}
-                      {renderElecBlock('saida', 'Saída')}
-                    </div>
-                  </div>
-                </section>
-                )}
 
                 {hasBattery && bat && hasValue(bat.type) && (
                 <section className="border border-border rounded-lg overflow-hidden">
@@ -558,22 +549,39 @@ export default function ReportViewer() {
                     {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
                     {renderField('CORRENTE BATERIA (AH/W)', bat.battery_current)}
                     {renderField('TENSÃO DO BANCO +/- (VDC)', bat.voltage)}
-                    {!isBatteryMonitor && bat.voltage_positive_neutral && renderField('Tensão Positivo/Neutro (VDC)', bat.voltage_positive_neutral)}
-                    {!isBatteryMonitor && bat.voltage_neutral_negative && renderField('Tensão Neutro/Negativo (VDC)', bat.voltage_neutral_negative)}
+                    {!isBatteryMonitor && isSymmetric && renderField('Tensão Positivo/Neutro (VDC)', bat.voltage_positive_neutral)}
+                    {!isBatteryMonitor && isSymmetric && renderField('Tensão Neutro/Negativo (VDC)', bat.voltage_neutral_negative)}
                     {renderField('TENSÃO DO CARREGADOR (VDC)', bat.charger_voltage)}
                     {renderField('MARCA', bat.brand)}
                     {renderField('MODELO', bat.model)}
                     {renderField('TROCOU BATERIAS', bat.trocou_baterias)}
-                    {!isBatteryMonitor && bat.trocou_baterias === 'Sim' && bat.last_change && renderField('Última Troca', bat.last_change)}
-                    {!isBatteryMonitor && bat.trocou_baterias === 'Não' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
+                    {!isBatteryMonitor && bat.trocou_baterias?.toUpperCase() === 'SIM' && bat.last_change && renderField('Última Troca', bat.last_change)}
+                    {!isBatteryMonitor && bat.trocou_baterias?.toUpperCase() === 'NÃO' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
                   </div>
                 </section>
                 )}
               </div>
             </div>
 
-            {/* PAGE 4: Description */}
-            <div ref={descRef} className="w-[210mm] min-h-[297mm] bg-white p-12 text-black">
+            {/* PAGE 4: Medições Elétricas */}
+            {!isBatteryMonitor && (
+            <div ref={elecRef} className="w-[210mm] bg-white p-12 text-black">
+              <div className="space-y-8">
+                <section className="border border-border rounded-lg overflow-hidden">
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Medições Elétricas</h2>
+                  <div className="p-5 space-y-6 bg-white">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 text-sm">
+                      {renderElecBlock('entrada', 'Entrada')}
+                      {renderElecBlock('saida', 'Saída')}
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+            )}
+
+            {/* PAGE 5: Description */}
+            <div ref={descRef} className="w-[210mm] bg-white p-12 text-black">
               <section className="border border-border rounded-lg overflow-hidden">
                 <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Descrição Técnica</h2>
                 <div className="p-5 space-y-6 text-sm bg-white">
@@ -906,8 +914,8 @@ export default function ReportViewer() {
                     {renderField('MARCA', bat.brand)}
                     {renderField('MODELO', bat.model)}
                     {renderField('TROCOU BATERIAS', bat.trocou_baterias)}
-                    {!isBatteryMonitor && bat.trocou_baterias === 'Sim' && bat.last_change && renderField('Última Troca', bat.last_change)}
-                    {!isBatteryMonitor && bat.trocou_baterias === 'Não' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
+                    {!isBatteryMonitor && bat.trocou_baterias?.toUpperCase() === 'SIM' && bat.last_change && renderField('Última Troca', bat.last_change)}
+                    {!isBatteryMonitor && bat.trocou_baterias?.toUpperCase() === 'NÃO' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
                   </div>
                 </section>
                 )}

@@ -167,14 +167,12 @@ export default function SchedulesPage() {
     const diffMinutes = diffMs / (1000 * 60);
     const diffHours = diffMs / (1000 * 60 * 60);
     
-    // Um minuto após a data e hora do agendamento: vermelha
-    if (diffMs < -60000) return 'atrasado';
-    // Até duas horas da data e hora do agendamento: verde
-    if (diffMs >= 0 && diffHours <= 2) return 'verde';
-    // Menos de duas horas (entre 2h e 0): amarelo
-    if (diffMs < 0 && diffMs >= -60000) return 'amarelo';
-    // Mais de duas horas: sem destaque
-    return 'normal';
+    // Atrasado (passou da hora): vermelho
+    if (diffMs < 0) return 'atrasado';
+    // Na hora (menos de 2 horas): amarelo
+    if (diffMs >= 0 && diffHours < 2) return 'amarelo';
+    // Faltando 2 horas ou mais: verde
+    return 'verde';
   };
 
   const getTemporalRowClass = (schedule) => {
@@ -363,7 +361,7 @@ export default function SchedulesPage() {
                 <p className="text-sm">Tente ajustar os filtros de busca</p>
               </div>
             ) : (
-              (searchTerm ? filteredSchedules : filteredSchedules.slice(0, 5)).map((schedule) => {
+              filteredSchedules.map((schedule) => {
                 const temporalClass = getTemporalRowClass(schedule);
                 return (
                   <div key={schedule.id} className={`rounded-xl border-2 shadow-xl overflow-hidden ${temporalClass}`}>
@@ -375,9 +373,21 @@ export default function SchedulesPage() {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-gray-900 truncate text-base">
                             {(() => {
-                              const date = schedule.data_hora_agendamento ? new Date(schedule.data_hora_agendamento) : new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`);
-                              return format(date, 'dd/MM/yyyy');
-                            })()} - {format(new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`), 'HH:mm')}
+                              let date;
+                              try {
+                                date = schedule.data_hora_agendamento ? new Date(schedule.data_hora_agendamento) : (schedule.scheduled_date ? new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`) : null);
+                                return date && !isNaN(date.getTime()) ? format(date, 'dd/MM/yyyy') : 'Data inválida';
+                              } catch {
+                                return 'Data inválida';
+                              }
+                            })()} - {(() => {
+                              try {
+                                const timeDate = schedule.scheduled_date ? new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`) : null;
+                                return timeDate && !isNaN(timeDate.getTime()) ? format(timeDate, 'HH:mm') : '--:--';
+                              } catch {
+                                return '--:--';
+                              }
+                            })()}
                           </h3>
                           <div className="text-sm text-gray-600 mt-2 space-y-1">
                             <div className="flex items-center">

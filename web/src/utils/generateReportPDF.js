@@ -52,7 +52,7 @@ const fetchImageAsBase64 = async (url) => {
 
 export const generateReportPDF = async (report, companySettings, refs) => {
   // We use our own dynamic pagination for photos, so we ignore photosAndSignaturesRef & photosRef
-  const { coverRef, clientEquipRef, infraElecBatRef, descRef, signaturesRef } = refs;
+  const { coverRef, clientEquipRef, infraBatRef, elecRef, descRef, signaturesRef } = refs;
   
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pdfWidth = 210;
@@ -61,7 +61,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   let cachedLogo = null;
   try {
     // Usando logo FATTAX-PERFIL para a capa do PDF
-    const logoUrl = '/fattax-perfil.jpg';
+    const logoUrl = '/fattax-perfil.png';
     cachedLogo = await fetchImageAsBase64(logoUrl);
   } catch (error) {
     console.error('Error extracting or caching logo URL:', error);
@@ -97,7 +97,15 @@ export const generateReportPDF = async (report, companySettings, refs) => {
       }
     }
 
-    const canvas = await html2canvas(ref.current, { scale: 2, useCORS: true, logging: false });
+    const canvas = await html2canvas(ref.current, { 
+      scale: 2, 
+      useCORS: true, 
+      logging: false,
+      allowTaint: true,
+      useCORS: true,
+      windowHeight: ref.current.scrollHeight + 100,
+      windowWidth: ref.current.scrollWidth + 100
+    });
     
     // Restore original styles immediately
     ref.current.style.paddingTop = originalPaddingTop;
@@ -117,9 +125,18 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   // PAGE 1: Cover Page
   await captureAndAddPage(coverRef, false, true, false);
 
-  // PAGES 2, 3, 4
+  // PAGE 2: Client + Equipment
   await captureAndAddPage(clientEquipRef, true, false, true);
-  await captureAndAddPage(infraElecBatRef, true, false, false);
+
+  // PAGE 3: Infra-Instalação + Banco de Baterias
+  await captureAndAddPage(infraBatRef, true, false, false);
+
+  // PAGE 4: Medições Elétricas (only if ref exists and has content)
+  if (elecRef?.current) {
+    await captureAndAddPage(elecRef, true, false, false);
+  }
+
+  // PAGE 5: Descrição Técnica
   await captureAndAddPage(descRef, true, false, false);
 
   // DYNAMIC PAGES: Photo Pagination Logic (CRITICAL)

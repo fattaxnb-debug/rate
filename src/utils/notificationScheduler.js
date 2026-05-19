@@ -48,13 +48,14 @@ export async function checkAndSendNotifications() {
       FROM schedules s
       LEFT JOIN users u ON s.technician_id = u.id
       LEFT JOIN push_subscriptions ps ON u.id = ps.user_id
-      WHERE s.status IN ('agendado', 'confirmado')
+      WHERE s.status IN ('Aberto', 'Em Andamento')
+        AND s.scheduled_date IS NOT NULL
         AND s.scheduled_time IS NOT NULL
         AND (
-          (ABS(TIMESTAMPDIFF(MINUTE, s.scheduled_time, ?)) = 120) OR -- 2 horas antes
-          (ABS(TIMESTAMPDIFF(MINUTE, s.scheduled_time, ?)) = 60) OR  -- 1 hora antes
-          (ABS(TIMESTAMPDIFF(MINUTE, s.scheduled_time, ?)) = 0) OR    -- no horário
-          (s.scheduled_time < ? AND s.status = 'agendado')            -- passou o horário e não iniciou
+          (ABS(TIMESTAMPDIFF(MINUTE, CONCAT(s.scheduled_date, ' ', s.scheduled_time), ?)) = 120) OR -- 2 horas antes
+          (ABS(TIMESTAMPDIFF(MINUTE, CONCAT(s.scheduled_date, ' ', s.scheduled_time), ?)) = 60) OR  -- 1 hora antes
+          (ABS(TIMESTAMPDIFF(MINUTE, CONCAT(s.scheduled_date, ' ', s.scheduled_time), ?)) = 0) OR    -- no horário
+          (CONCAT(s.scheduled_date, ' ', s.scheduled_time) < ? AND s.status = 'Aberto')            -- passou o horário e não iniciou
         )
     `, [twoHoursLater, oneHourLater, now, now]);
 
@@ -69,7 +70,8 @@ export async function checkAndSendNotifications() {
         }
       };
 
-      const timeDiff = Math.abs(new Date(schedule.scheduled_time) - now) / (1000 * 60); // diferença em minutos
+      const scheduledDateTime = new Date(`${schedule.scheduled_date}T${schedule.scheduled_time}`);
+      const timeDiff = Math.abs(scheduledDateTime - now) / (1000 * 60); // diferença em minutos
 
       let title = '';
       let body = '';
@@ -77,23 +79,23 @@ export async function checkAndSendNotifications() {
       if (timeDiff >= 118 && timeDiff <= 122) {
         // 2 horas antes
         title = 'Lembrete de Agendamento';
-        body = `Você tem um agendamento em 2 horas: ${schedule.client_name} - ${schedule.address}`;
+        body = `Você tem um agendamento em 2 horas: ${schedule.client_name}`;
       } else if (timeDiff >= 58 && timeDiff <= 62) {
         // 1 hora antes
         title = 'Agendamento em 1 hora';
-        body = `Você tem um agendamento em 1 hora: ${schedule.client_name} - ${schedule.address}`;
+        body = `Você tem um agendamento em 1 hora: ${schedule.client_name}`;
       } else if (timeDiff >= -2 && timeDiff <= 2) {
         // No horário
         title = 'É hora do agendamento';
-        body = `Seu agendamento começou agora: ${schedule.client_name} - ${schedule.address}. Altere o status para "Em andamento".`;
-      } else if (new Date(schedule.scheduled_time) < now && schedule.status === 'agendado') {
+        body = `Seu agendamento começou agora: ${schedule.client_name}. Altere o status para "Em Andamento".`;
+      } else if (scheduledDateTime < now && schedule.status === 'Aberto') {
         // Passou o horário e não iniciou - notificar a cada 10 minutos
-        const minutesSinceStart = Math.abs(new Date(schedule.scheduled_time) - now) / (1000 * 60);
+        const minutesSinceStart = Math.abs(scheduledDateTime - now) / (1000 * 60);
         
         // Só notificar se for múltiplo de 10 minutos
         if (minutesSinceStart % 10 < 1) {
           title = 'Atenção: Agendamento não iniciado';
-          body = `O agendamento ${schedule.id} já passou do horário. Altere o status para "Em andamento".`;
+          body = `O agendamento já passou do horário. Altere o status para "Em Andamento".`;
         } else {
           continue; // Pular se não for múltiplo de 10 minutos
         }

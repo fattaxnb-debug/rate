@@ -230,7 +230,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
       };
 
       if (isTecnico && isEditingOwnSchedule) {
-        await onSave({ status: formData.status });
+        await onSave(formattedData);
       } else {
         await onSave(formattedData);
       }
@@ -243,9 +243,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
 
   const canEditField = (field) => {
     if (isGerente) return true;
-    if (isTecnico && isEditingOwnSchedule) {
-      return field === 'status';
-    }
+    if (isTecnico && field === 'status') return true;
     return false;
   };
 

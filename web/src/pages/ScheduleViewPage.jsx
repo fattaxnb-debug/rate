@@ -45,7 +45,7 @@ export default function ScheduleViewPage() {
     if (!schedule) return 'bg-gray-500';
 
     const now = new Date();
-    const scheduledTime = new Date(schedule.data_hora_agendamento);
+    const scheduledTime = schedule.data_hora_agendamento ? new Date(schedule.data_hora_agendamento) : new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`);
     const minutesDiff = differenceInMinutes(scheduledTime, now);
     const hoursDiff = differenceInHours(scheduledTime, now);
 
@@ -84,7 +84,8 @@ export default function ScheduleViewPage() {
       await axios.put(`${API_BASE_URL}/schedules/${id}`, { status: newStatus }, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setSchedule(prev => ({ ...prev, status: newStatus }));
+      // Recarregar dados do backend para garantir consistência
+      await fetchSchedule();
       toast.success('STATUS ATUALIZADO COM SUCESSO');
     } catch (error) {
       toast.error('ERRO AO ATUALIZAR STATUS');
@@ -163,7 +164,10 @@ export default function ScheduleViewPage() {
                   AGENDAMENTO #{id.slice(-6).toUpperCase()}
                 </h1>
                 <p className="text-muted-foreground">
-                  {schedule.data_hora_agendamento ? format(new Date(schedule.data_hora_agendamento), 'dd/MM/yyyy HH:mm') : '-'}
+                  {(() => {
+                    const date = schedule.data_hora_agendamento ? new Date(schedule.data_hora_agendamento) : (schedule.scheduled_date ? new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`) : null);
+                    return date ? format(date, 'dd/MM/yyyy HH:mm') : '-';
+                  })()}
                 </p>
               </div>
               <Badge className={`${getStatusColor(schedule)} text-white text-lg px-4 py-2`}>
@@ -411,7 +415,10 @@ export default function ScheduleViewPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">DATA/HORA</p>
                   <p className="font-medium">
-                    {format(new Date(schedule.data_hora_agendamento), 'dd/MM/yyyy HH:mm')}
+                    {(() => {
+                      const date = schedule.data_hora_agendamento ? new Date(schedule.data_hora_agendamento) : (schedule.scheduled_date ? new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`) : null);
+                      return date ? format(date, 'dd/MM/yyyy HH:mm') : '-';
+                    })()}
                   </p>
                 </div>
                 <div>

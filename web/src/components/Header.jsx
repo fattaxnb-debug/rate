@@ -75,7 +75,7 @@ function Header() {
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="/logo-fattax.png" 
+              src="/fattax-perfil.png" 
               alt="FATTAX" 
               className="h-14 w-auto object-contain"
             />

@@ -355,10 +355,16 @@ export default function ReportForm() {
   };
 
   const handleCreateDraft = async () => {
-    if (!validateForm()) return;
+    console.log('[DEBUG] Iniciando handleCreateDraft');
+    if (!validateForm()) {
+      console.log('[DEBUG] Validação falhou');
+      return;
+    }
+    console.log('[DEBUG] Validação passou');
     setSaving(true);
     
     const isTecnico = currentUser?.role === 'Técnico';
+    console.log('[DEBUG] isTecnico:', isTecnico);
     
     // Formatar data local sem conversão para UTC
     const formatDateLocal = (date) => {
@@ -381,18 +387,26 @@ export default function ReportForm() {
       status: isTecnico ? 'finalizado' : 'draft'
     };
     
+    console.log('[DEBUG] Payload preparado:', payload);
+    
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('[DEBUG] Token obtido, enviando para API...');
       const record = await axios.post(`${API_BASE_URL}/reports`, payload, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      console.log('[DEBUG] Resposta da API:', record.data);
       await processPhotos(record.data.data.id);
+      console.log('[DEBUG] Fotos processadas');
       
       toast.success('Relatório salvo com sucesso!');
       navigate(`/reports/${record.data.data.id}`);
     } catch (error) {
+      console.error('[DEBUG] Erro ao criar relatório:', error);
+      console.error('[DEBUG] Detalhes do erro:', error.response?.data);
       toast.error('Erro ao criar relatório: ' + error.message);
     } finally {
+      console.log('[DEBUG] Finalizando handleCreateDraft');
       setSaving(false);
     }
   };
@@ -643,8 +657,10 @@ export default function ReportForm() {
   };
 
   const handleGeneratePDF = async () => {
+    console.log('[PDF DEBUG] handleGeneratePDF chamado');
     if (!validateForm()) return;
-    
+
+    console.log('[PDF DEBUG] Validação passou, iniciando geração');
     setGeneratingPDF(true);
     setPdfProgress('Iniciando geração do PDF...');
     
@@ -653,14 +669,28 @@ export default function ReportForm() {
       const { generateReportPDF } = await import('@/utils/generateReportPDF.js');
       
       setPdfProgress('Preparando dados do relatório...');
-      
+
       // Criar referências temporárias para o PDF
+      const coverEl = document.querySelector('[data-pdf-cover]');
+      const clientEquipEl = document.querySelector('[data-pdf-client-equip]');
+      const infraElecBatEl = document.querySelector('[data-pdf-infra-elec-bat]');
+      const descEl = document.querySelector('[data-pdf-desc]');
+      const signaturesEl = document.querySelector('[data-pdf-signatures]');
+
+      console.log('[PDF DEBUG] Elementos encontrados:', {
+        cover: !!coverEl,
+        clientEquip: !!clientEquipEl,
+        infraElecBat: !!infraElecBatEl,
+        desc: !!descEl,
+        signatures: !!signaturesEl
+      });
+
       const refs = {
-        coverRef: { current: document.querySelector('[data-pdf-cover]') },
-        clientEquipRef: { current: document.querySelector('[data-pdf-client-equip]') },
-        infraElecBatRef: { current: document.querySelector('[data-pdf-infra-elec-bat]') },
-        descRef: { current: document.querySelector('[data-pdf-desc]') },
-        signaturesRef: { current: document.querySelector('[data-pdf-signatures]') }
+        coverRef: { current: coverEl },
+        clientEquipRef: { current: clientEquipEl },
+        infraElecBatRef: { current: infraElecBatEl },
+        descRef: { current: descEl },
+        signaturesRef: { current: signaturesEl }
       };
       
       setPdfProgress('Capturando conteúdo das páginas...');
@@ -740,6 +770,20 @@ export default function ReportForm() {
 
   return (
     <div className="bg-background">
+      {/* Capa do PDF - escondida na tela */}
+      <div data-pdf-cover className="hidden">
+        <div className="p-8 bg-white">
+          <h1 className="text-2xl font-bold text-center mb-4">RELATÓRIO DE ATENDIMENTO TÉCNICO</h1>
+          <p className="text-center text-lg">OS: {formData.service_order_number || '-'}</p>
+          <p className="text-center">Data: {createdDate.toLocaleDateString('pt-BR')}</p>
+          {selectedEquipmentData && (
+            <p className="text-center mt-2">
+              {selectedEquipmentData.type} - {selectedEquipmentData.brand} {selectedEquipmentData.model}
+            </p>
+          )}
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
@@ -769,7 +813,6 @@ export default function ReportForm() {
             </div>
           </div>
         )}
-      </div>
         <div className="space-y-2">
           <Label className="font-bold uppercase">Data do Relatório</Label>
           <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
@@ -814,14 +857,14 @@ export default function ReportForm() {
             <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto flex-nowrap shrink-0">
               <TabsTrigger value="equipment" className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Settings2 className="w-4 h-4 mr-2"/> EQUIPAMENTO</TabsTrigger>
               <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Activity className="w-4 h-4 mr-2"/> INSTALAÇÃO</TabsTrigger>
-              {!isBatteryMonitor && <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Zap className="w-4 h-4 mr-2"/> ELÉTRICA</TabsTrigger>}
               {hasBattery && <TabsTrigger value="battery" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Battery className="w-4 h-4 mr-2"/> BATERIAS</TabsTrigger>}
+              {!isBatteryMonitor && <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Zap className="w-4 h-4 mr-2"/> ELÉTRICA</TabsTrigger>}
               <TabsTrigger value="attendance" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><FileText className="w-4 h-4 mr-2"/> DESCRIÇÃO</TabsTrigger>
               <TabsTrigger value="photos" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><ImageIcon className="w-4 h-4 mr-2"/> FOTOS</TabsTrigger>
               <TabsTrigger value="signatures" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><PenTool className="w-4 h-4 mr-2"/> ASSINATURAS</TabsTrigger>
             </TabsList>
 
-            <div className="p-6 md:p-8 flex-1">
+            <div className="p-6 md:p-8 flex-1" data-pdf-client-equip>
             <TabsContent value="equipment" className="mt-0 space-y-6 h-full">
               {renderEquipmentContent()}
             </TabsContent>
@@ -1036,7 +1079,7 @@ export default function ReportForm() {
             </TabsContent>
 
             {hasBattery && (
-              <TabsContent value="battery" className="mt-0 space-y-6">
+              <TabsContent value="battery" className="mt-0 space-y-6" data-pdf-infra-elec-bat>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {!isBatteryMonitor && (
                   <div className="space-y-2">
@@ -1069,17 +1112,17 @@ export default function ReportForm() {
                   </div>
                   
                   {!isBatteryMonitor && isSymmetric && (
-                    <>
-                      <div className="space-y-2">
-                        <Label className="font-bold uppercase">Tensão do Banco +/N (VDC)</Label>
-                        <Input type="number" value={formData.battery_bank.voltage_positive_neutral} onChange={e => updateBattery('voltage_positive_neutral', e.target.value)} disabled={isReadOnly} />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label className="font-bold uppercase">Tensão do Banco N/- (VDC)</Label>
-                        <Input type="number" value={formData.battery_bank.voltage_neutral_negative} onChange={e => updateBattery('voltage_neutral_negative', e.target.value)} disabled={isReadOnly} />
-                      </div>
-                    </>
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">TENSÃO POSITIVO/NEUTRO (VDC)</Label>
+                    <Input type="number" value={formData.battery_bank.voltage_positive_neutral} onChange={e => updateBattery('voltage_positive_neutral', e.target.value)} disabled={isReadOnly} />
+                  </div>
+                  )}
+                  
+                  {!isBatteryMonitor && isSymmetric && (
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">TENSÃO NEUTRO/NEGATIVO (VDC)</Label>
+                    <Input type="number" value={formData.battery_bank.voltage_neutral_negative} onChange={e => updateBattery('voltage_neutral_negative', e.target.value)} disabled={isReadOnly} />
+                  </div>
                   )}
                   
                   <div className="space-y-2">
@@ -1108,25 +1151,12 @@ export default function ReportForm() {
                   {!isBatteryMonitor && trocouBaterias === 'SIM' && (
                     <div className="space-y-2">
                       <Label className="font-bold uppercase">Última Troca</Label>
-                      <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.battery_bank.last_change && "text-muted-foreground")} disabled={isReadOnly}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.battery_bank.last_change ? formatDateForDisplay(formData.battery_bank.last_change) : "Selecione a data"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={formData.battery_bank.last_change ? new Date(formData.battery_bank.last_change) : undefined}
-                            onSelect={(date) => {
-                              updateBattery('last_change', date ? date.toISOString().split('T')[0] : '');
-                              setDatePickerOpen(false);
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <Input 
+                        type="date" 
+                        value={formData.battery_bank.last_change || ''} 
+                        onChange={e => updateBattery('last_change', e.target.value)} 
+                        disabled={isReadOnly} 
+                      />
                     </div>
                   )}
                   
@@ -1145,7 +1175,7 @@ export default function ReportForm() {
               </TabsContent>
             )}
 
-            <TabsContent value="attendance" className="mt-0 space-y-6">
+            <TabsContent value="attendance" className="mt-0 space-y-6" data-pdf-desc>
               <div className="space-y-2"><Label className="font-bold uppercase">PROBLEMAS REPORTADOS</Label><Textarea rows={4} value={formData.reported_problems || ''} onChange={e => updateField('reported_problems', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2"><Label className="font-bold uppercase">INSPEÇÃO EXTERNA</Label><Textarea rows={4} value={formData.external_inspection} onChange={e => updateField('external_inspection', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
@@ -1196,7 +1226,7 @@ export default function ReportForm() {
               )}
             </TabsContent>
 
-            <TabsContent value="signatures" className="mt-0 space-y-8">
+            <TabsContent value="signatures" className="mt-0 space-y-8" data-pdf-signatures>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <div className="space-y-4 border p-6 rounded-xl bg-card shadow-sm">
                   <h4 className="font-semibold text-lg flex items-center border-b pb-2"><PenTool className="mr-2 w-5 h-5"/> Assinatura Técnica</h4>
@@ -1349,14 +1379,25 @@ export default function ReportForm() {
                   Próxima <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button 
-                  onClick={handleCreateDraft} 
-                  disabled={saving || !formData.equipment_id}
-                  className="w-full sm:w-auto min-w-[160px]"
-                >
-                  {saving ? <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-                  Salvar Relatório
-                </Button>
+                <>
+                  <Button 
+                    onClick={handleGeneratePDF} 
+                    disabled={generatingPDF || saving || !formData.equipment_id}
+                    className="w-full sm:w-auto min-w-[140px]"
+                    variant="secondary"
+                  >
+                    {generatingPDF ? <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" /> : <FileText className="mr-2 h-4 w-4" />}
+                    {generatingPDF ? 'Gerando...' : 'Gerar PDF'}
+                  </Button>
+                  <Button 
+                    onClick={handleCreateDraft} 
+                    disabled={saving || !formData.equipment_id}
+                    className="w-full sm:w-auto min-w-[160px]"
+                  >
+                    {saving ? <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" /> : <Save className="mr-2 h-4 w-4" />}
+                    Salvar Relatório
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -1694,25 +1735,12 @@ export default function ReportForm() {
                   {!isBatteryMonitor && trocouBaterias === 'SIM' && (
                     <div className="space-y-2">
                       <Label className="font-bold uppercase">Última Troca</Label>
-                      <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.battery_bank.last_change && "text-muted-foreground")} disabled={isReadOnly}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.battery_bank.last_change ? formatDateForDisplay(formData.battery_bank.last_change) : "Selecione a data"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={formData.battery_bank.last_change ? new Date(formData.battery_bank.last_change) : undefined}
-                            onSelect={(date) => {
-                              updateBattery('last_change', date ? date.toISOString().split('T')[0] : '');
-                              setDatePickerOpen(false);
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <Input 
+                        type="date" 
+                        value={formData.battery_bank.last_change || ''} 
+                        onChange={e => updateBattery('last_change', e.target.value)} 
+                        disabled={isReadOnly} 
+                      />
                     </div>
                   )}
                   

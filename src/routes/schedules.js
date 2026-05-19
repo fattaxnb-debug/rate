@@ -85,14 +85,18 @@ router.get('/', async (req, res) => {
       
       console.log('Processed schedule:', schedule.id, 'scheduled_date:', scheduled_date, 'scheduled_time:', scheduled_time, 'status:', schedule.status, 'technician_id:', schedule.technician_id);
       
-      // Garantir que status tenha um valor padrão
-      const status = schedule.status || 'pending';
+      // Normalizar status: converter valores antigos para novos
+      let normalizedStatus = (schedule.status || '').trim();
+      if (!normalizedStatus || normalizedStatus === 'pending') normalizedStatus = 'Aberto';
+      else if (normalizedStatus === 'confirmed') normalizedStatus = 'Em Andamento';
+      else if (normalizedStatus === 'completed') normalizedStatus = 'Realizado';
+      else if (normalizedStatus === 'cancelled') normalizedStatus = 'Finalizado';
       
       return {
         ...schedule,
         scheduled_date,
         scheduled_time,
-        status
+        status: normalizedStatus
       };
     });
     
@@ -183,14 +187,18 @@ router.get('/:id', async (req, res) => {
       
       console.log('Processed schedule:', schedule.id, 'scheduled_date:', scheduled_date, 'scheduled_time:', scheduled_time, 'status:', schedule.status, 'technician_id:', schedule.technician_id);
       
-      // Garantir que status tenha um valor padrão
-      const status = schedule.status || 'pending';
+      // Normalizar status: converter valores antigos para novos
+      let normalizedStatus = (schedule.status || '').trim();
+      if (!normalizedStatus || normalizedStatus === 'pending') normalizedStatus = 'Aberto';
+      else if (normalizedStatus === 'confirmed') normalizedStatus = 'Em Andamento';
+      else if (normalizedStatus === 'completed') normalizedStatus = 'Realizado';
+      else if (normalizedStatus === 'cancelled') normalizedStatus = 'Finalizado';
       
       return {
         ...schedule,
         scheduled_date,
         scheduled_time,
-        status
+        status: normalizedStatus
       };
     });
     
@@ -226,7 +234,7 @@ router.post('/', async (req, res) => {
     console.log('SQL:', sql);
     console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'pending', notes, address, city, contact_name, contact_phone]);
     
-    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'pending', notes, address, city, contact_name, contact_phone]);
+    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone]);
 
     res.json({ data: { id, ...req.body } });
   } catch (error) {
@@ -241,13 +249,35 @@ router.put('/:id', async (req, res) => {
   try {
     const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone } = req.body;
     
-    // Formatar scheduled_time para incluir segundos se necessário
-    const formattedTime = scheduled_time && scheduled_time.length === 5 ? `${scheduled_time}:00` : scheduled_time;
+    // Construir query dinâmica para atualização parcial
+    const updates = [];
+    const values = [];
+    
+    if (client_id !== undefined) { updates.push('client_id = ?'); values.push(client_id); }
+    if (equipment_id !== undefined) { updates.push('equipment_id = ?'); values.push(equipment_id); }
+    if (technician_id !== undefined) { updates.push('technician_id = ?'); values.push(technician_id); }
+    if (scheduled_date !== undefined) { updates.push('scheduled_date = ?'); values.push(scheduled_date); }
+    if (scheduled_time !== undefined) { 
+      const formattedTime = scheduled_time && scheduled_time.length === 5 ? `${scheduled_time}:00` : scheduled_time;
+      updates.push('scheduled_time = ?'); values.push(formattedTime); 
+    }
+    if (service_type !== undefined) { updates.push('service_type = ?'); values.push(service_type); }
+    if (status !== undefined) { updates.push('status = ?'); values.push(status); }
+    if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
+    if (address !== undefined) { updates.push('address = ?'); values.push(address); }
+    if (city !== undefined) { updates.push('city = ?'); values.push(city); }
+    if (contact_name !== undefined) { updates.push('contact_name = ?'); values.push(contact_name); }
+    if (contact_phone !== undefined) { updates.push('contact_phone = ?'); values.push(contact_phone); }
+    
+    if (updates.length === 0) {
+      return res.json({ data: { id: req.params.id } });
+    }
+    
+    values.push(req.params.id);
     
     await db.query(
-      `UPDATE schedules SET client_id = ?, equipment_id = ?, technician_id = ?, scheduled_date = ?, scheduled_time = ?, service_type = ?, status = ?, notes = ?, address = ?, city = ?, contact_name = ?, contact_phone = ?
-       WHERE id = ?`,
-      [client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status, notes, address, city, contact_name, contact_phone, req.params.id]
+      `UPDATE schedules SET ${updates.join(', ')} WHERE id = ?`,
+      values
     );
 
     res.json({ data: { id: req.params.id, ...req.body } });

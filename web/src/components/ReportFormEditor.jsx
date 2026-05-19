@@ -363,7 +363,12 @@ export default function ReportFormEditor() {
   };
 
   const handleCreateDraft = async () => {
-    if (!validateForm()) return;
+    console.log('[DEBUG] Iniciando handleCreateDraft (Editor)');
+    if (!validateForm()) {
+      console.log('[DEBUG] Validação falhou (Editor)');
+      return;
+    }
+    console.log('[DEBUG] Validação passou (Editor)');
     setSaving(true);
     
     const formatDateLocal = (date) => {
@@ -384,18 +389,26 @@ export default function ReportFormEditor() {
       external_battery_nobreak_connection: formData.external_battery_nobreak_connection || null,
     };
     
+    console.log('[DEBUG] Payload preparado (Editor):', payload);
+    
     try {
       const token = localStorage.getItem('auth_token');
+      console.log('[DEBUG] Token obtido, enviando para API (Editor)...');
       await axios.put(`${API_BASE_URL}/reports/${id}`, payload, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      console.log('[DEBUG] Relatório atualizado na API (Editor)');
       await processPhotos(id);
+      console.log('[DEBUG] Fotos processadas (Editor)');
       
       toast.success('Relatório atualizado com sucesso!');
       navigate('/reports');
     } catch (error) {
+      console.error('[DEBUG] Erro ao atualizar relatório (Editor):', error);
+      console.error('[DEBUG] Detalhes do erro (Editor):', error.response?.data);
       toast.error('Erro ao atualizar relatório: ' + error.message);
     } finally {
+      console.log('[DEBUG] Finalizando handleCreateDraft (Editor)');
       setSaving(false);
     }
   };
@@ -743,6 +756,20 @@ export default function ReportFormEditor() {
 
   return (
     <div className="bg-background">
+      {/* Capa do PDF - escondida na tela */}
+      <div data-pdf-cover className="hidden">
+        <div className="p-8 bg-white">
+          <h1 className="text-2xl font-bold text-center mb-4">RELATÓRIO DE ATENDIMENTO TÉCNICO</h1>
+          <p className="text-center text-lg">OS: {formData.service_order_number || '-'}</p>
+          <p className="text-center">Data: {createdDate.toLocaleDateString('pt-BR')}</p>
+          {selectedEquipmentData && (
+            <p className="text-center mt-2">
+              {selectedEquipmentData.type} - {selectedEquipmentData.brand} {selectedEquipmentData.model}
+            </p>
+          )}
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
@@ -799,14 +826,14 @@ export default function ReportFormEditor() {
             <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto flex-nowrap shrink-0">
               <TabsTrigger value="equipment" className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Settings2 className="w-4 h-4 mr-2"/> EQUIPAMENTO</TabsTrigger>
               <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Activity className="w-4 h-4 mr-2"/> INSTALAÇÃO</TabsTrigger>
-              {!isBatteryMonitor && <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Zap className="w-4 h-4 mr-2"/> ELÉTRICA</TabsTrigger>}
               {hasBattery && <TabsTrigger value="battery" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Battery className="w-4 h-4 mr-2"/> BATERIAS</TabsTrigger>}
+              {!isBatteryMonitor && <TabsTrigger value="electrical" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Zap className="w-4 h-4 mr-2"/> ELÉTRICA</TabsTrigger>}
               <TabsTrigger value="attendance" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><FileText className="w-4 h-4 mr-2"/> DESCRIÇÃO</TabsTrigger>
               <TabsTrigger value="photos" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><ImageIcon className="w-4 h-4 mr-2"/> FOTOS</TabsTrigger>
               <TabsTrigger value="signatures" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><PenTool className="w-4 h-4 mr-2"/> ASSINATURAS</TabsTrigger>
             </TabsList>
 
-            <div className="p-6 md:p-8 flex-1">
+            <div className="p-6 md:p-8 flex-1" data-pdf-client-equip>
             <TabsContent value="equipment" className="mt-0 space-y-6 h-full">
               {renderEquipmentContent()}
             </TabsContent>
@@ -944,6 +971,103 @@ export default function ReportFormEditor() {
               )}
             </TabsContent>
 
+            {hasBattery && (
+              <TabsContent value="battery" className="mt-0 space-y-6" data-pdf-infra-elec-bat>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {!isBatteryMonitor && (
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">Banco de Baterias</Label>
+                    <Select value={formData.battery_bank.type} onValueChange={v => updateBattery('type', v)} disabled={isReadOnly}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>{BATTERY_TYPES.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">QUANTIDADE BATERIAS</Label>
+                    <Input type="number" value={formData.battery_bank.quantity} onChange={e => updateBattery('quantity', e.target.value)} disabled={isReadOnly} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">BATERIA VOLTS (VDC)</Label>
+                    <Input type="number" value={formData.battery_bank.battery_volts} onChange={e => updateBattery('battery_volts', e.target.value)} disabled={isReadOnly} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">CORRENTE BATERIA (AH/W)</Label>
+                    <Input value={formData.battery_bank.battery_current} onChange={e => updateBattery('battery_current', e.target.value.toUpperCase())} disabled={isReadOnly} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">TENSÃO DO BANCO +/- (VDC)</Label>
+                    <Input type="number" value={formData.battery_bank.voltage} onChange={e => updateBattery('voltage', e.target.value)} disabled={isReadOnly} />
+                  </div>
+                  
+                  {!isBatteryMonitor && isSymmetric && (
+                    <>
+                      <div className="space-y-2">
+                        <Label className="font-bold uppercase">Tensão do Banco +/N (VDC)</Label>
+                        <Input type="number" value={formData.battery_bank.voltage_positive_neutral} onChange={e => updateBattery('voltage_positive_neutral', e.target.value)} disabled={isReadOnly} />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label className="font-bold uppercase">Tensão do Banco N/- (VDC)</Label>
+                        <Input type="number" value={formData.battery_bank.voltage_neutral_negative} onChange={e => updateBattery('voltage_neutral_negative', e.target.value)} disabled={isReadOnly} />
+                      </div>
+                    </>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">TENSÃO CARREGADOR (VDC)</Label>
+                    <Input type="number" value={formData.battery_bank.charger_voltage} onChange={e => updateBattery('charger_voltage', e.target.value)} disabled={isReadOnly} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">MARCA</Label>
+                    <Input value={formData.battery_bank.brand} onChange={e => updateBattery('brand', e.target.value.toUpperCase())} disabled={isReadOnly} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">MODELO</Label>
+                    <Input value={formData.battery_bank.model} onChange={e => updateBattery('model', e.target.value.toUpperCase())} disabled={isReadOnly} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="font-bold uppercase">TROCOU BATERIAS</Label>
+                    <Select value={formData.battery_bank.trocou_baterias} onValueChange={v => updateBattery('trocou_baterias', v)} disabled={isReadOnly}>
+                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                      <SelectContent>{YES_NO_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {!isBatteryMonitor && trocouBaterias === 'SIM' && (
+                    <div className="space-y-2">
+                      <Label className="font-bold uppercase">Última Troca</Label>
+                      <Input 
+                        type="date" 
+                        value={formData.battery_bank.last_change || ''} 
+                        onChange={e => updateBattery('last_change', e.target.value)} 
+                        disabled={isReadOnly} 
+                      />
+                    </div>
+                  )}
+                  
+                  {!isBatteryMonitor && trocouBaterias === 'NÃO' && (
+                    <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+                      <Label className="font-bold uppercase">Motivo</Label>
+                      <Textarea 
+                        value={formData.battery_bank.motivo_nao_troca} 
+                        onChange={e => updateBattery('motivo_nao_troca', e.target.value.toUpperCase())} 
+                        rows={2}
+                        disabled={isReadOnly}
+                      />
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            )}
+
             <TabsContent value="electrical" className="mt-0 space-y-10">
               {!vType && (
                 <div className="p-4 bg-destructive/10 text-destructive border border-destructive/20 rounded-lg font-medium text-center">
@@ -1020,117 +1144,7 @@ export default function ReportFormEditor() {
               </div>
             </TabsContent>
 
-            {hasBattery && (
-              <TabsContent value="battery" className="mt-0 space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {!isBatteryMonitor && (
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase">Banco de Baterias</Label>
-                    <Select value={formData.battery_bank.type} onValueChange={v => updateBattery('type', v)} disabled={isReadOnly}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>{BATTERY_TYPES.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  )}
-                  
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase">QUANTIDADE BATERIAS</Label>
-                    <Input type="number" value={formData.battery_bank.quantity} onChange={e => updateBattery('quantity', e.target.value)} disabled={isReadOnly} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase">BATERIA VOLTS (VDC)</Label>
-                    <Input type="number" value={formData.battery_bank.battery_volts} onChange={e => updateBattery('battery_volts', e.target.value)} disabled={isReadOnly} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase">CORRENTE BATERIA (AH/W)</Label>
-                    <Input value={formData.battery_bank.battery_current} onChange={e => updateBattery('battery_current', e.target.value.toUpperCase())} disabled={isReadOnly} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase">TENSÃO DO BANCO +/- (VDC)</Label>
-                    <Input type="number" value={formData.battery_bank.voltage} onChange={e => updateBattery('voltage', e.target.value)} disabled={isReadOnly} />
-                  </div>
-                  
-                  {!isBatteryMonitor && isSymmetric && (
-                    <>
-                      <div className="space-y-2">
-                        <Label className="font-bold uppercase">Tensão do Banco +/N (VDC)</Label>
-                        <Input type="number" value={formData.battery_bank.voltage_positive_neutral} onChange={e => updateBattery('voltage_positive_neutral', e.target.value)} disabled={isReadOnly} />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label className="font-bold uppercase">Tensão do Banco N/- (VDC)</Label>
-                        <Input type="number" value={formData.battery_bank.voltage_neutral_negative} onChange={e => updateBattery('voltage_neutral_negative', e.target.value)} disabled={isReadOnly} />
-                      </div>
-                    </>
-                  )}
-                  
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase">TENSÃO CARREGADOR (VDC)</Label>
-                    <Input type="number" value={formData.battery_bank.charger_voltage} onChange={e => updateBattery('charger_voltage', e.target.value)} disabled={isReadOnly} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase">MARCA</Label>
-                    <Input value={formData.battery_bank.brand} onChange={e => updateBattery('brand', e.target.value.toUpperCase())} disabled={isReadOnly} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase">MODELO</Label>
-                    <Input value={formData.battery_bank.model} onChange={e => updateBattery('model', e.target.value.toUpperCase())} disabled={isReadOnly} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="font-bold uppercase">TROCOU BATERIAS</Label>
-                    <Select value={formData.battery_bank.trocou_baterias} onValueChange={v => updateBattery('trocou_baterias', v)} disabled={isReadOnly}>
-                      <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                      <SelectContent>{YES_NO_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {!isBatteryMonitor && trocouBaterias === 'SIM' && (
-                    <div className="space-y-2">
-                      <Label className="font-bold uppercase">Última Troca</Label>
-                      <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.battery_bank.last_change && "text-muted-foreground")} disabled={isReadOnly}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.battery_bank.last_change ? formatDateForDisplay(formData.battery_bank.last_change) : "Selecione a data"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={formData.battery_bank.last_change ? new Date(formData.battery_bank.last_change) : undefined}
-                            onSelect={(date) => {
-                              updateBattery('last_change', date ? date.toISOString().split('T')[0] : '');
-                              setDatePickerOpen(false);
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  )}
-                  
-                  {!isBatteryMonitor && trocouBaterias === 'NÃO' && (
-                    <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-                      <Label className="font-bold uppercase">Motivo</Label>
-                      <Textarea 
-                        value={formData.battery_bank.motivo_nao_troca} 
-                        onChange={e => updateBattery('motivo_nao_troca', e.target.value.toUpperCase())} 
-                        rows={2}
-                        disabled={isReadOnly}
-                      />
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-            )}
-
-            <TabsContent value="attendance" className="mt-0 space-y-6">
+            <TabsContent value="attendance" className="mt-0 space-y-6" data-pdf-desc>
               <div className="space-y-2"><Label className="font-bold uppercase">PROBLEMAS REPORTADOS</Label><Textarea rows={4} value={formData.reported_problems || ''} onChange={e => updateField('reported_problems', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2"><Label className="font-bold uppercase">INSPEÇÃO EXTERNA</Label><Textarea rows={4} value={formData.external_inspection} onChange={e => updateField('external_inspection', e.target.value.toUpperCase())} disabled={isReadOnly} /></div>
@@ -1181,7 +1195,7 @@ export default function ReportFormEditor() {
               )}
             </TabsContent>
 
-            <TabsContent value="signatures" className="mt-0 space-y-8">
+            <TabsContent value="signatures" className="mt-0 space-y-8" data-pdf-signatures>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <div className="space-y-4 border p-6 rounded-xl bg-card shadow-sm">
                   <h4 className="font-semibold text-lg flex items-center border-b pb-2"><PenTool className="mr-2 w-5 h-5"/> Assinatura Técnica</h4>
@@ -1679,25 +1693,12 @@ export default function ReportFormEditor() {
                   {!isBatteryMonitor && trocouBaterias === 'SIM' && (
                     <div className="space-y-2">
                       <Label className="font-bold uppercase">Última Troca</Label>
-                      <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.battery_bank.last_change && "text-muted-foreground")} disabled={isReadOnly}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.battery_bank.last_change ? formatDateForDisplay(formData.battery_bank.last_change) : "Selecione a data"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={formData.battery_bank.last_change ? new Date(formData.battery_bank.last_change) : undefined}
-                            onSelect={(date) => {
-                              updateBattery('last_change', date ? date.toISOString().split('T')[0] : '');
-                              setDatePickerOpen(false);
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <Input 
+                        type="date" 
+                        value={formData.battery_bank.last_change || ''} 
+                        onChange={e => updateBattery('last_change', e.target.value)} 
+                        disabled={isReadOnly} 
+                      />
                     </div>
                   )}
                   
