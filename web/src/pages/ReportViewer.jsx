@@ -783,7 +783,7 @@ export default function ReportViewer() {
                     borderColor: colorMode === 'color' ? '#E31E24' : '#000000',
                     color: sectionTitleColor
                   }}>Dados do Cliente</h2>
-                  <div className="grid grid-cols-1 gap-3 p-4 text-sm bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4 text-sm bg-white">
                     {renderField('Razão Social', client.name)}
                     {renderField('Nome Fantasia', client.fantasy_name)}
                     {renderField('CPF/CNPJ', client.cnpj_cpf)}
