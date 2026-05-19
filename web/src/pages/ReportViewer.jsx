@@ -415,7 +415,7 @@ export default function ReportViewer() {
             {/* PAGE 1: Cover */}
             <div ref={coverRef} className="w-[210mm] h-[297mm] bg-white flex flex-col items-center justify-center p-12 text-center">
               <div className="h-[60px] mb-4"></div>
-              {companySettings?.company_logo && <img src={companySettings.company_logo} crossOrigin="anonymous" alt="Logo" className="h-96 object-contain mb-8" />}
+              <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" className="h-96 object-contain mb-8" />
               <h2 className="text-3xl font-semibold mb-8 uppercase" style={{
                 color: '#000000'
               }}>RELATÓRIO TÉCNICO</h2>
@@ -433,7 +433,7 @@ export default function ReportViewer() {
             <div ref={clientEquipRef} className="w-[210mm] min-h-[297mm] bg-white p-12 text-black">
               <div className="flex justify-between items-start pb-6 mb-8" style={{ borderBottom: `2px solid ${colorMode === 'color' ? '#E31E24' : '#000000'}` }}>
                 <div className="flex items-center gap-4">
-                  {companySettings?.company_logo && <img src={companySettings.company_logo} crossOrigin="anonymous" alt="Logo" className="h-16 object-contain" />}
+                  <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" className="h-16 object-contain" />
                   <div>
                     <h1 className="text-2xl font-bold tracking-tighter uppercase" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>{companySettings?.company_name || 'RELATÓRIO TÉCNICO'}</h1>
                     <p className="text-sm mt-1 uppercase font-medium">{report.service_type || 'Manutenção de Equipamentos'}</p>
