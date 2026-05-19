@@ -413,9 +413,9 @@ export default function ReportViewer() {
           {/* Hidden PDF Generation Areas */}
           <div className="absolute left-[-9999px] top-[-9999px] print:hidden">
             {/* PAGE 1: Cover */}
-            <div ref={coverRef} className="w-[210mm] h-[297mm] bg-white flex flex-col items-center justify-center p-12 text-center">
-              <div className="h-[60px] mb-4"></div>
-              <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" className="h-96 object-contain mb-8" />
+            <div ref={coverRef} className="w-[210mm] h-[297mm] bg-white flex flex-col items-center justify-center p-12 text-center" data-pdf-cover>
+              <div className="h-[40px] mb-2"></div>
+              <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" className="h-80 max-w-[300px] object-contain mb-6" id="pdf-cover-logo" />
               <h2 className="text-3xl font-semibold mb-8 uppercase" style={{
                 color: '#000000'
               }}>RELATÓRIO TÉCNICO</h2>
