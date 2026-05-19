@@ -62,9 +62,11 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   try {
     // Usando logo FATTAX-PERFIL para a capa do PDF (corrigido para PNG)
     const logoUrl = '/fattax-perfil.png';
+    console.log('[PDF] Carregando logo:', logoUrl);
     cachedLogo = await fetchImageAsBase64(logoUrl);
+    console.log('[PDF] Logo carregada:', cachedLogo ? 'SUCESSO' : 'FALHA', cachedLogo ? cachedLogo.substring(0, 50) + '...' : '');
   } catch (error) {
-    console.error('Error extracting or caching logo URL:', error);
+    console.error('[PDF] Erro ao carregar logo:', error);
     cachedLogo = null; // Ensure fallback path triggers
   }
 
@@ -344,7 +346,10 @@ export const generateReportPDF = async (report, companySettings, refs) => {
       pdf.rect(0, 0, 210, 34, 'F'); // Wipe clean top to assure strict identical header
       
       if (cachedLogo) {
+        console.log('[PDF] Adicionando logo ao cabeçalho da página');
         pdf.addImage(cachedLogo, 'PNG', 12, 8, 30, 20, undefined, 'FAST');
+      } else {
+        console.warn('[PDF] Logo não disponível para cabeçalho');
       }
       
       pdf.setTextColor(0, 0, 0);
