@@ -2,14 +2,6 @@
 	RewriteEngine On
 	RewriteBase /
 
-	# Proxy uploads to backend (mantém prefixo /api/uploads)
-	RewriteCond %{REQUEST_URI} ^/api/uploads
-	RewriteRule ^api/uploads/(.*)$ https://backend.fattax.srv.br/api/uploads/$1 [P,L]
-
-	# Proxy other API requests to backend
-	RewriteCond %{REQUEST_URI} ^/api
-	RewriteRule ^api/(.*)$ https://backend.fattax.srv.br/$1 [P,L]
-
 	# Handle preflight OPTIONS requests
 	RewriteCond %{REQUEST_METHOD} OPTIONS
 	RewriteRule ^(.*)$ $1 [R=204,L]
