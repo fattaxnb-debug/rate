@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
@@ -13,6 +14,17 @@ import { startNotificationScheduler } from './src/utils/notificationScheduler.js
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Garantir que a pasta uploads existe
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('[UPLOADS] Pasta uploads criada:', uploadsDir);
+} else {
+  console.log('[UPLOADS] Pasta uploads existe:', uploadsDir);
+  const files = fs.readdirSync(uploadsDir);
+  console.log('[UPLOADS] Total de arquivos:', files.length);
+}
 
 const app = express();
 
@@ -57,15 +69,29 @@ app.use(express.urlencoded({
 	limit: BodyLimit,
 }));
 
-app.use('/api', routes());
+// Endpoint de diagnóstico de uploads
+app.get('/api/uploads-debug', (req, res) => {
+  const dir = path.join(__dirname, 'uploads');
+  try {
+    const exists = fs.existsSync(dir);
+    const files = exists ? fs.readdirSync(dir) : [];
+    res.json({ dir, exists, fileCount: files.length, files: files.slice(0, 20) });
+  } catch (e) {
+    res.json({ error: e.message, dir });
+  }
+});
 
-// Servir arquivos estáticos de uploads com CORS
+// Servir arquivos estáticos de uploads com CORS (ANTES das rotas de API)
 app.use('/api/uploads', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const filePath = path.join(__dirname, 'uploads', req.path);
+  console.log('[UPLOADS] Requested:', req.path, '| Full path:', filePath, '| Exists:', fs.existsSync(filePath));
   next();
 }, express.static(path.join(__dirname, 'uploads')));
+
+app.use('/api', routes());
 
 // Servir arquivos PWA com MIME type correto
 app.use('/serviceWorker.js', (req, res) => {
