@@ -243,7 +243,10 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
 
   const canEditField = (field) => {
     if (isGerente) return true;
-    if (isTecnico && field === 'status') return true;
+    if (isTecnico) {
+      // Técnico pode editar status e observações
+      if (field === 'status' || field === 'description') return true;
+    }
     return false;
   };
 
