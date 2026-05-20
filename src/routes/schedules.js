@@ -249,6 +249,16 @@ router.put('/:id', async (req, res) => {
   try {
     const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone } = req.body;
     
+    // Normalizar status antes de salvar
+    let normalizedStatus = status;
+    if (status !== undefined) {
+      normalizedStatus = (status || '').trim();
+      if (!normalizedStatus || normalizedStatus === 'pending') normalizedStatus = 'Aberto';
+      else if (normalizedStatus === 'confirmed') normalizedStatus = 'Em Andamento';
+      else if (normalizedStatus === 'completed') normalizedStatus = 'Realizado';
+      else if (normalizedStatus === 'cancelled') normalizedStatus = 'Finalizado';
+    }
+    
     // Construir query dinâmica para atualização parcial
     const updates = [];
     const values = [];
@@ -262,7 +272,7 @@ router.put('/:id', async (req, res) => {
       updates.push('scheduled_time = ?'); values.push(formattedTime); 
     }
     if (service_type !== undefined) { updates.push('service_type = ?'); values.push(service_type); }
-    if (status !== undefined) { updates.push('status = ?'); values.push(status); }
+    if (status !== undefined) { updates.push('status = ?'); values.push(normalizedStatus); }
     if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
     if (address !== undefined) { updates.push('address = ?'); values.push(address); }
     if (city !== undefined) { updates.push('city = ?'); values.push(city); }
@@ -280,7 +290,7 @@ router.put('/:id', async (req, res) => {
       values
     );
 
-    res.json({ data: { id: req.params.id, ...req.body } });
+    res.json({ data: { id: req.params.id, ...req.body, status: normalizedStatus } });
   } catch (error) {
     console.error('Error updating schedule:', error);
     res.status(500).json({ error: 'Erro ao atualizar agendamento' });
