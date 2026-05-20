@@ -270,8 +270,8 @@ export default function ReportsPage() {
                         </TableCell>
                         <TableCell className="text-gray-700">{report.technician_name || '-'}</TableCell>
                         <TableCell>
-                          {report.status === 'finalizado' ? (
-                            <Badge className="bg-green-500 hover:bg-green-600">Finalizado</Badge>
+                          {report.status === 'finalizado' || report.status === 'realizado' ? (
+                            <Badge className="bg-green-500 hover:bg-green-600">Realizado</Badge>
                           ) : (
                             <Badge variant="secondary">Pendente</Badge>
                           )}
