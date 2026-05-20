@@ -1306,6 +1306,8 @@ export default function ReportEditor() {
                           <img 
                             src={photo.url} 
                             alt="Foto" 
+                            width="640"
+                            height="360"
                             className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity" 
                             onClick={() => setZoomPhoto(photo.url)}
                           />
@@ -1355,7 +1357,7 @@ export default function ReportEditor() {
                     {isGerente ? (
                       formData.technician_signature ? (
                         <div className="border rounded-lg p-4 bg-muted/30 flex justify-center">
-                          <img src={formData.technician_signature} alt="Assinatura Técnico" className="max-w-full max-h-32 object-contain" />
+                          <img src={formData.technician_signature} alt="Assinatura Técnico" width="200" height="128" className="max-w-full max-h-32 object-contain" />
                         </div>
                       ) : (
                         <div className="border-2 border-dashed rounded-lg p-8 text-center">
@@ -1366,7 +1368,7 @@ export default function ReportEditor() {
                       formData.technician_signature ? (
                         <div className="space-y-2">
                           <div className="border bg-white rounded-xl p-4 flex justify-center">
-                            <img src={formData.technician_signature} alt="Assinatura do Técnico" className="max-w-full max-h-32 object-contain" />
+                            <img src={formData.technician_signature} alt="Assinatura do Técnico" width="200" height="128" className="max-w-full max-h-32 object-contain" />
                           </div>
                           <Button type="button" variant="outline" size="sm" onClick={redrawTechSignature} className="w-full">
                             Redesenhar Assinatura
@@ -1674,7 +1676,7 @@ export default function ReportEditor() {
                             {photos.map((photo) => (
                               <div key={photo.id} className="relative border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col">
                                 <div className="aspect-video relative bg-muted">
-                                  <img src={photo.url} alt="Foto" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
+                                  <img src={photo.url} alt="Foto" width="640" height="360" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
                                   <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => removePhoto(photo.id)}><X className="h-3 w-3" /></Button>
                                 </div>
                                 <div className="p-2"><Textarea placeholder="Comentário..." className="text-xs resize-none min-h-[40px]" value={photo.comment} onChange={e => updatePhoto(photo.id, 'comment', e.target.value)} /></div>
@@ -1694,7 +1696,7 @@ export default function ReportEditor() {
                         </div>
                         {formData.technician_signature ? (
                           <div className="border bg-white rounded-xl p-3 flex justify-center">
-                            <img src={formData.technician_signature} alt="Assinatura Técnico" className="max-w-full max-h-24 object-contain" />
+                            <img src={formData.technician_signature} alt="Assinatura Técnico" width="200" height="96" className="max-w-full max-h-24 object-contain" />
                           </div>
                         ) : (
                           <div className="space-y-2">
@@ -1742,7 +1744,7 @@ export default function ReportEditor() {
 
       <Dialog open={!!zoomPhoto} onOpenChange={() => setZoomPhoto(null)}>
         <DialogContent className="max-w-4xl p-1 bg-transparent border-none shadow-none">
-          {zoomPhoto && <img src={zoomPhoto} alt="Zoomed" className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl" />}
+          {zoomPhoto && <img src={zoomPhoto} alt="Zoomed" width="1920" height="1080" className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl" />}
         </DialogContent>
       </Dialog>
 
