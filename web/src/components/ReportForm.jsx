@@ -453,7 +453,7 @@ export default function ReportForm() {
       external_battery_connection: formData.external_battery_connection || null,
       external_battery_nobreak_connection: formData.external_battery_nobreak_connection || null,
       technician_edit_count: 0,
-      status: isTecnico ? 'finalizado' : 'draft'
+      status: 'submitted'
     };
     
     console.log('[DEBUG] Payload preparado:', payload);
@@ -465,11 +465,15 @@ export default function ReportForm() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       console.log('[DEBUG] Resposta da API:', record.data);
-      await processPhotos(record.data.data.id);
-      console.log('[DEBUG] Fotos processadas');
       
-      toast.success('Relatório salvo com sucesso!');
-      navigate(`/reports/${record.data.data.id}`);
+      const reportId = record.data.data.id;
+      
+      // Processar fotos
+      await processPhotos(reportId);
+      
+      toast.success('Relatório salvo e finalizado com sucesso!');
+      clearDraft();
+      navigate(`/reports/${reportId}`);
     } catch (error) {
       console.error('[DEBUG] Erro ao criar relatório:', error);
       console.error('[DEBUG] Detalhes do erro:', error.response?.data);
