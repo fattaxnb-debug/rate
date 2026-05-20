@@ -228,7 +228,11 @@ export default function ReportFormEditor() {
       const draft = loadDraft();
       if (draft && confirm('Há um rascunho não salvo. Deseja restaurar?')) {
         setFormData(prev => ({ ...prev, ...draft.formData }));
-        setPhotos(draft.photos || []);
+        // Só sobrescrever fotos se o rascunho tiver arquivos de fotos (não apenas URLs)
+        const draftHasPhotoFiles = draft.photos && draft.photos.some(p => p.file);
+        if (draftHasPhotoFiles) {
+          setPhotos(draft.photos);
+        }
         if (draft.activeTab) setActiveTab(draft.activeTab);
         if (draft.activeAccordion) setActiveAccordion(draft.activeAccordion);
         toast.success('Rascunho restaurado com sucesso');
