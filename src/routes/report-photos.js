@@ -29,9 +29,22 @@ const upload = multer({ storage: storage });
 
 // POST /report-photos - Salvar foto do relatório
 router.post('/', upload.single('photo_url'), async (req, res) => {
+  console.log('[UPLOAD DEBUG] POST /report-photos called');
+  console.log('[UPLOAD DEBUG] Request body:', req.body);
+  console.log('[UPLOAD DEBUG] Request file:', req.file ? 'Present' : 'MISSING');
+  
   try {
     const { report_id, comment, photo_type } = req.body;
-    const photo_url = req.file ? `/uploads/${req.file.filename}` : '';
+    
+    if (!req.file) {
+      console.error('[UPLOAD DEBUG] ERROR: No file uploaded');
+      return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    }
+    
+    const photo_url = `/uploads/${req.file.filename}`;
+    console.log('[UPLOAD DEBUG] Photo URL:', photo_url);
+    console.log('[UPLOAD DEBUG] File saved at:', req.file.path);
+    console.log('[UPLOAD DEBUG] File size:', req.file.size);
     
     const id = uuidv4();
     
@@ -40,10 +53,11 @@ router.post('/', upload.single('photo_url'), async (req, res) => {
       [id, report_id, photo_url, comment || '', photo_type || 'outro']
     );
     
+    console.log('[UPLOAD DEBUG] Photo saved to database:', id);
     res.json({ data: { id, report_id, photo_url, comment, photo_type } });
   } catch (error) {
-    console.error('Error saving report photo:', error);
-    res.status(500).json({ error: 'Erro ao salvar foto' });
+    console.error('[UPLOAD DEBUG] Error saving report photo:', error);
+    res.status(500).json({ error: 'Erro ao salvar foto', details: error.message });
   }
 });
 
