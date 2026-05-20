@@ -39,6 +39,8 @@ export default function ReportFormEditor() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState('');
   const [activeTab, setActiveTab] = useState('equipment');
   const [activeAccordion, setActiveAccordion] = useState('equipment');
   const [isMobile, setIsMobile] = useState(false);
@@ -794,6 +796,52 @@ export default function ReportFormEditor() {
     navigate('/reports');
   };
 
+  const handleGeneratePDF = async () => {
+    if (!validateForm()) return;
+    setGeneratingPDF(true);
+    setPdfProgress('Iniciando geração do PDF...');
+    
+    try {
+      const { generateReportPDF } = await import('@/utils/generateReportPDF.js');
+      setPdfProgress('Preparando dados do relatório...');
+
+      const coverEl = document.querySelector('[data-pdf-cover]');
+      const clientEquipEl = document.querySelector('[data-pdf-client-equip]');
+      const infraElecBatEl = document.querySelector('[data-pdf-infra-elec-bat]');
+      const descEl = document.querySelector('[data-pdf-desc]');
+      const signaturesEl = document.querySelector('[data-pdf-signatures]');
+
+      const refs = {
+        coverRef: { current: coverEl },
+        clientEquipRef: { current: clientEquipEl },
+        infraElecBatRef: { current: infraElecBatEl },
+        descRef: { current: descEl },
+        signaturesRef: { current: signaturesEl }
+      };
+      
+      setPdfProgress('Capturando conteúdo das páginas...');
+      const pdfBlob = await generateReportPDF(formData, null, refs);
+      setPdfProgress('PDF gerado com sucesso!');
+      
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-${formData.service_order_number || 'sem-numero'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success('PDF gerado e baixado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast.error('Erro ao gerar PDF: ' + error.message);
+    } finally {
+      setGeneratingPDF(false);
+      setPdfProgress('');
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center py-24"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div></div>;
   }
@@ -853,6 +901,20 @@ export default function ReportFormEditor() {
           </Popover>
         </div>
       </div>
+
+      {generatingPDF && (
+        <div className="w-full md:w-auto">
+          <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">{pdfProgress}</p>
+                <Progress value={85} className="h-2" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {validationErrors.length > 0 && !isReadOnly && (
         <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive flex items-start gap-3">
@@ -1916,7 +1978,11 @@ export default function ReportFormEditor() {
             </AccordionItem>
           </Accordion>
 
-          <div className="bg-muted/50 border-t p-4 mt-4">
+          <div className="bg-muted/50 border-t p-4 mt-4 space-y-3">
+            <Button onClick={handleGeneratePDF} disabled={generatingPDF || saving || !formData.equipment_id} className="w-full" variant="secondary">
+              {generatingPDF ? <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" /> : <FileText className="mr-2 h-4 w-4" />}
+              {generatingPDF ? 'Gerando PDF...' : 'Gerar PDF'}
+            </Button>
             <Button variant="outline" onClick={handleCancel} className="w-full">Cancelar / Voltar</Button>
           </div>
         </div>
