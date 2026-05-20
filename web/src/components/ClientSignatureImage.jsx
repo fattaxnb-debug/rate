@@ -19,6 +19,8 @@ export default function ClientSignatureImage({ signature }) {
     <img 
       src={normalizedSignature} 
       alt="Assinatura do Cliente" 
+      width="300"
+      height="200"
       style={{
         maxWidth: '100%',
         maxHeight: '200px',

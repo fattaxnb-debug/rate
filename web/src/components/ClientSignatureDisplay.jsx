@@ -23,6 +23,8 @@ export default function ClientSignatureDisplay({ signature, className = '' }) {
       <img 
         src={normalizedSignature} 
         alt="Assinatura do Cliente" 
+        width="300"
+        height="150"
         className="max-w-full max-h-32 object-contain"
         style={{ 
           display: 'block', 

@@ -19,6 +19,8 @@ export default function SignatureImage({ signature, className = '', alt = 'Assin
     <img 
       src={normalizedSignature} 
       alt={alt}
+      width="300"
+      height="200"
       className={className}
       style={{
         maxWidth: '100%',

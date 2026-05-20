@@ -202,7 +202,7 @@ export default function SettingsPage() {
                   <div className="mt-2 flex items-center gap-6">
                     <div className="w-40 h-40 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/30 relative overflow-hidden">
                       {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
+                        <img src={logoUrl} alt="Logo" width="160" height="160" className="w-full h-full object-contain p-2" />
                       ) : (
                         <span className="text-muted-foreground text-sm">Sem logo</span>
                       )}
@@ -282,7 +282,7 @@ export default function SettingsPage() {
                   <div className="mt-2 border rounded-lg p-4 bg-muted/10">
                     <div className="h-24 border-b border-dashed mb-4 flex items-center justify-center bg-white rounded">
                       {sigTiagoUrl ? (
-                        <img src={sigTiagoUrl} alt="Assinatura Tiago Viana" className="h-full object-contain" />
+                        <img src={sigTiagoUrl} alt="Assinatura Tiago Viana" width="200" height="96" className="h-full object-contain" />
                       ) : (
                         <span className="text-muted-foreground text-xs">Nenhuma assinatura</span>
                       )}
@@ -308,7 +308,7 @@ export default function SettingsPage() {
                   <div className="mt-2 border rounded-lg p-4 bg-muted/10">
                     <div className="h-24 border-b border-dashed mb-4 flex items-center justify-center bg-white rounded">
                       {sigTitoUrl ? (
-                        <img src={sigTitoUrl} alt="Assinatura Tito Livio" className="h-full object-contain" />
+                        <img src={sigTitoUrl} alt="Assinatura Tito Livio" width="200" height="96" className="h-full object-contain" />
                       ) : (
                         <span className="text-muted-foreground text-xs">Nenhuma assinatura</span>
                       )}

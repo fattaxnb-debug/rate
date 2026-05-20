@@ -208,6 +208,8 @@ export default function SettingsPageSimple() {
                     <img
                       src={settings.company_logo}
                       alt="Logo"
+                      width="150"
+                      height="40"
                       style={{ height: '40px', maxWidth: '150px', objectFit: 'contain' }}
                     />
                     <button
