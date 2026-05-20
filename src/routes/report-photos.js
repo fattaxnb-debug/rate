@@ -12,11 +12,16 @@ const __dirname = path.dirname(__filename);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../../uploads'));
+    const uploadPath = path.join(__dirname, '../../uploads');
+    console.log('[UPLOAD DEBUG] Destination path:', uploadPath);
+    console.log('[UPLOAD DEBUG] __dirname:', __dirname);
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'photo-' + uniqueSuffix + path.extname(file.originalname));
+    const filename = 'photo-' + uniqueSuffix + path.extname(file.originalname);
+    console.log('[UPLOAD DEBUG] Filename:', filename);
+    cb(null, filename);
   }
 });
 
