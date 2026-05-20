@@ -1,7 +1,4 @@
 
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-
 const fetchImageAsBase64 = async (url) => {
   try {
     // Se for uma URL local, não precisa de autenticação
@@ -51,6 +48,12 @@ const fetchImageAsBase64 = async (url) => {
 };
 
 export const generateReportPDF = async (report, companySettings, refs) => {
+  // Dynamic import de bibliotecas pesadas para reduzir bundle inicial
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas')
+  ]);
+  
   // We use our own dynamic pagination for photos, so we ignore photosAndSignaturesRef & photosRef
   const { coverRef, clientEquipRef, infraBatRef, elecRef, descRef, signaturesRef } = refs;
   
