@@ -982,7 +982,7 @@ export default function ReportViewer() {
                                       onClick={() => setZoomPhoto(p.url)}
                                       onError={(e) => {
                                         console.error('[PHOTO ERROR] Failed to load photo:', p.id, 'URL:', p.url);
-                                        e.target.src = 'https://via.placeholder.com/400x300/ccc/666?text=Erro+na+Imagem';
+                                        e.target.style.display = 'none';
                                       }}
                                     />
                                   </div>
