@@ -678,6 +678,8 @@ export default function ReportViewer() {
                                 src={p.url} 
                                 crossOrigin="anonymous" 
                                 alt={p.comment || `Foto ${i + 1}`} 
+                                width="400"
+                                height="300"
                                 className="w-full h-auto max-h-80 object-contain rounded-sm"
                                 style={{ 
                                   imageRendering: '-webkit-optimize-contrast',
@@ -718,7 +720,7 @@ export default function ReportViewer() {
                     <div className="grid grid-cols-2 gap-12 max-w-3xl mx-auto">
                       <div className="text-center flex flex-col items-center justify-end h-full">
                         {report.technician_signature ? (
-                          <img src={report.technician_signature} crossOrigin="anonymous" alt="Assinatura Técnico" className="h-24 max-w-full object-contain mb-2" style={{ imageRendering: 'crisp-edges' }} />
+                          <img src={report.technician_signature} crossOrigin="anonymous" alt="Assinatura Técnico" width="200" height="96" className="h-24 max-w-full object-contain mb-2" style={{ imageRendering: 'crisp-edges' }} />
                         ) : (
                           <div className="h-24 w-full max-w-[200px] mb-2 bg-white rounded border border-dashed flex items-center justify-center">
                             <span className="text-[10px] text-gray-400 uppercase tracking-widest">-</span>
@@ -730,7 +732,7 @@ export default function ReportViewer() {
                       <div className="text-center flex flex-col items-center justify-end h-full">
                         {report.client_signature ? (
                           <div className="mb-2 h-24 flex items-center justify-center">
-                            <img src={report.client_signature} crossOrigin="anonymous" alt="Assinatura do Cliente" className="max-h-full max-w-full object-contain" style={{ imageRendering: 'crisp-edges' }} />
+                            <img src={report.client_signature} crossOrigin="anonymous" alt="Assinatura do Cliente" width="240" height="96" className="max-h-full max-w-full object-contain" style={{ imageRendering: 'crisp-edges' }} />
                           </div>
                         ) : (
                           <div className="h-24 w-full max-w-[200px] mb-2 bg-white rounded border border-dashed flex items-center justify-center">
@@ -976,6 +978,8 @@ export default function ReportViewer() {
                                     <img 
                                       src={p.url} 
                                       alt={p.comment || `Foto ${chunkIdx * 15 + i + 1}`} 
+                                      width="400"
+                                      height="300"
                                       className="w-full h-full object-contain"
                                       style={{ 
                                         imageRendering: '-webkit-optimize-contrast',
@@ -1021,7 +1025,7 @@ export default function ReportViewer() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-3xl mx-auto">
                       <div className="text-center flex flex-col items-center justify-end h-full">
                         {report.technician_signature ? (
-                          <img src={report.technician_signature} alt="Assinatura Técnico" className="h-32 max-w-full object-contain mb-4" style={{ imageRendering: 'crisp-edges' }} />
+                          <img src={report.technician_signature} alt="Assinatura Técnico" width="250" height="128" className="h-32 max-w-full object-contain mb-4" style={{ imageRendering: 'crisp-edges' }} />
                         ) : (
                           <div className="h-32 w-full max-w-[250px] mb-4 bg-white rounded border border-dashed flex items-center justify-center">
                             <span className="text-xs text-gray-400 uppercase tracking-widest">-</span>
@@ -1036,7 +1040,7 @@ export default function ReportViewer() {
                       <div className="text-center flex flex-col items-center justify-end h-full">
                         {report.client_signature ? (
                           <div className="mb-4 h-32 flex items-center justify-center">
-                            <img src={report.client_signature} alt="Assinatura do Cliente" className="max-h-full max-w-full object-contain" style={{ imageRendering: 'crisp-edges' }} />
+                            <img src={report.client_signature} alt="Assinatura do Cliente" width="250" height="128" className="max-h-full max-w-full object-contain" style={{ imageRendering: 'crisp-edges' }} />
                           </div>
                         ) : (
                           <div className="h-32 w-full max-w-[250px] mb-4 bg-white rounded border border-dashed flex items-center justify-center">

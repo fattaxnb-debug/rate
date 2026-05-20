@@ -77,6 +77,8 @@ function Header() {
             <img 
               src="/fattax-perfil.png" 
               alt="FATTAX" 
+              width="200"
+              height="56"
               className="h-14 w-auto object-contain"
             />
           </Link>

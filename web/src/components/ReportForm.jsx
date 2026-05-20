@@ -128,6 +128,65 @@ export default function ReportForm() {
     initForm();
   }, [clientId, scheduleId]);
 
+  // ==================== RASCUNHO (PRE-SALVE) ====================
+  const draftKey = 'report_draft_new';
+
+  const saveDraft = () => {
+    try {
+      const draft = {
+        formData,
+        photos: photos.map(p => ({ ...p, file: null })),
+        activeTab,
+        activeAccordion,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      console.log('💾 Rascunho salvo:', new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('Erro ao salvar rascunho:', error);
+    }
+  };
+
+  const loadDraft = () => {
+    try {
+      const draftJson = localStorage.getItem(draftKey);
+      if (!draftJson) return null;
+      const draft = JSON.parse(draftJson);
+      // Verificar se o rascunho tem menos de 24 horas
+      const draftAge = Date.now() - new Date(draft.timestamp).getTime();
+      if (draftAge > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(draftKey);
+        return null;
+      }
+      return draft;
+    } catch (error) {
+      console.error('Erro ao carregar rascunho:', error);
+      return null;
+    }
+  };
+
+  const clearDraft = () => {
+    localStorage.removeItem(draftKey);
+  };
+
+  // Salvar rascunho automaticamente a cada 30 segundos
+  useEffect(() => {
+    const interval = setInterval(saveDraft, 30000);
+    return () => clearInterval(interval);
+  }, [formData, photos, activeTab, activeAccordion]);
+
+  // Salvar rascunho ao mudar de aba
+  const handleTabChange = (newTab) => {
+    saveDraft();
+    setActiveTab(newTab);
+  };
+
+  // Salvar rascunho ao mudar de accordion (mobile)
+  const handleAccordionChange = (value) => {
+    saveDraft();
+    setActiveAccordion(value);
+  };
+
   const initForm = async () => {
     try {
       const token = localStorage.getItem('auth_token');
@@ -164,6 +223,16 @@ export default function ReportForm() {
       
       if (formData.technician_id || currentUser?.id) {
         await handleTechnicianSignature(formData.technician_id || currentUser.id);
+      }
+
+      // Verificar se há rascunho salvo
+      const draft = loadDraft();
+      if (draft && confirm('Há um rascunho não salvo. Deseja restaurar?')) {
+        setFormData(prev => ({ ...prev, ...draft.formData }));
+        setPhotos(draft.photos || []);
+        if (draft.activeTab) setActiveTab(draft.activeTab);
+        if (draft.activeAccordion) setActiveAccordion(draft.activeAccordion);
+        toast.success('Rascunho restaurado com sucesso');
       }
       
       setLoading(false);
@@ -440,6 +509,7 @@ export default function ReportForm() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       toast.success('Relatório criado com sucesso!');
+      clearDraft();
       navigate('/reports');
     } catch (error) {
       toast.error('Erro ao criar relatório: ' + error.message);
@@ -742,24 +812,6 @@ export default function ReportForm() {
     }
   };
 
-  const handleAccordionChange = (value) => {
-    setActiveAccordion(value);
-    // Scroll suave para mostrar o topo do card aberto (mobile)
-    if (isMobile && value) {
-      setTimeout(() => {
-        try {
-          const accordionElement = document.getElementById(`accordion-${value}`);
-          if (accordionElement) {
-            const top = accordionElement.getBoundingClientRect().top + window.scrollY - 70;
-            window.scrollTo({ top, behavior: 'smooth' });
-          }
-        } catch (error) {
-          console.error('Erro ao fazer scroll:', error);
-        }
-      }, 350);
-    }
-  };
-
   if (loading) {
     return <div className="flex justify-center items-center py-24"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div></div>;
   }
@@ -853,7 +905,7 @@ export default function ReportForm() {
         {/* Desktop: Tabs */}
         {!isMobile && (
         <div key="desktop-tabs">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 flex flex-col">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex-1 flex flex-col">
             <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto overflow-x-auto flex-nowrap shrink-0">
               <TabsTrigger value="equipment" className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Settings2 className="w-4 h-4 mr-2"/> EQUIPAMENTO</TabsTrigger>
               <TabsTrigger value="installation" disabled={!formData.equipment_id} className="data-[state=active]:border-primary data-[state=active]:text-primary border-b-2 border-transparent rounded-none px-6 py-3 font-bold uppercase"><Activity className="w-4 h-4 mr-2"/> INSTALAÇÃO</TabsTrigger>
@@ -1240,7 +1292,7 @@ export default function ReportForm() {
                       {formData.technician_signature ? (
                         <div className="space-y-2">
                           <div className="border bg-white rounded-xl p-4 flex justify-center">
-                            <img src={formData.technician_signature} alt="Assinatura do Técnico" className="max-w-full max-h-32 object-contain" />
+                            <img src={formData.technician_signature} alt="Assinatura do Técnico" width="200" height="128" className="max-w-full max-h-32 object-contain" />
                           </div>
                           {!isReadOnly && (
                             <Button
@@ -1306,7 +1358,7 @@ export default function ReportForm() {
                       {formData.client_signature ? (
                         <div className="space-y-2">
                           <div className="border bg-white rounded-xl p-4 flex justify-center">
-                            <img src={formData.client_signature} alt="Assinatura do Cliente" className="max-w-full max-h-32 object-contain" />
+                            <img src={formData.client_signature} alt="Assinatura do Cliente" width="200" height="128" className="max-w-full max-h-32 object-contain" />
                           </div>
                           {!isReadOnly && (
                             <Button
@@ -1840,7 +1892,7 @@ export default function ReportForm() {
                     <Label className="font-bold uppercase">Assinatura Técnica <span className="text-destructive">*</span></Label>
                     {formData.technician_signature ? (
                       <div className="border bg-white rounded-xl p-3 flex justify-center">
-                        <img src={formData.technician_signature} alt="Assinatura do Técnico" className="max-w-full max-h-24 object-contain" />
+                        <img src={formData.technician_signature} alt="Assinatura do Técnico" width="200" height="96" className="max-w-full max-h-24 object-contain" />
                       </div>
                     ) : (
                       <div className="border rounded-lg overflow-hidden bg-white ring-1 ring-border shadow-inner">
@@ -1873,7 +1925,7 @@ export default function ReportForm() {
                     <Label className="font-bold uppercase">Assinatura Cliente <span className="text-destructive">*</span></Label>
                     {formData.client_signature ? (
                       <div className="border bg-white rounded-xl p-3 flex justify-center">
-                        <img src={formData.client_signature} alt="Assinatura do Cliente" className="max-w-full max-h-24 object-contain" />
+                        <img src={formData.client_signature} alt="Assinatura do Cliente" width="200" height="96" className="max-w-full max-h-24 object-contain" />
                       </div>
                     ) : (
                       <div className="border rounded-lg overflow-hidden bg-white ring-1 ring-border shadow-inner">
