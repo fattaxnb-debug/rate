@@ -415,7 +415,7 @@ export default function ReportViewer() {
             {/* PAGE 1: Cover */}
             <div ref={coverRef} className="w-[210mm] h-[297mm] bg-white flex flex-col items-center justify-center p-12 text-center" data-pdf-cover>
               <div className="h-[20px] mb-0"></div>
-              <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" className="h-auto max-w-[500px] object-contain mb-4" id="pdf-cover-logo" />
+              <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" width="500" height="500" className="h-auto max-w-[500px] object-contain mb-4" id="pdf-cover-logo" />
               <h2 className="text-3xl font-semibold mb-8 uppercase" style={{
                 color: '#000000'
               }}>RELATÓRIO TÉCNICO</h2>
@@ -433,7 +433,7 @@ export default function ReportViewer() {
             <div ref={clientEquipRef} className="w-[210mm] min-h-[297mm] bg-white p-12 text-black">
               <div className="flex justify-between items-start pb-6 mb-8" style={{ borderBottom: `2px solid ${colorMode === 'color' ? '#E31E24' : '#000000'}` }}>
                 <div className="flex items-center gap-4">
-                  <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" className="h-16 object-contain" />
+                  <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" width="64" height="64" className="h-16 object-contain" />
                   <div>
                     <h1 className="text-2xl font-bold tracking-tighter uppercase" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>{companySettings?.company_name || 'RELATÓRIO TÉCNICO'}</h1>
                     <p className="text-sm mt-1 uppercase font-medium">{report.service_type || 'Manutenção de Equipamentos'}</p>
@@ -677,7 +677,7 @@ export default function ReportViewer() {
                               <img 
                                 src={p.url} 
                                 crossOrigin="anonymous" 
-                                alt={p.comment || `Foto ${i + 1}`} 
+                                alt={p.comment || `Foto ${i + 1}`}
                                 width="400"
                                 height="300"
                                 className="w-full h-auto max-h-80 object-contain rounded-sm"
@@ -759,7 +759,7 @@ export default function ReportViewer() {
               }}>
                 <div className="flex items-center gap-4">
                   {companySettings?.company_logo && (
-                    <img src={companySettings.company_logo} alt="Logo" className="h-16 object-contain" />
+                    <img src={companySettings.company_logo} alt="Logo" width="64" height="64" className="h-16 object-contain" />
                   )}
                   <div>
                     <h1 className="text-2xl font-bold tracking-tighter uppercase" style={{
@@ -1074,7 +1074,7 @@ export default function ReportViewer() {
 
       <Dialog open={!!zoomPhoto} onOpenChange={() => setZoomPhoto(null)}>
         <DialogContent className="max-w-6xl p-1 bg-transparent border-none shadow-none">
-          {zoomPhoto && <img src={zoomPhoto} alt="Foto Ampliada" className="w-full h-auto max-h-[90vh] object-contain rounded-lg shadow-2xl bg-white" style={{ imageRendering: 'crisp-edges' }} />}
+          {zoomPhoto && <img src={zoomPhoto} alt="Foto Ampliada" width="1920" height="1080" className="w-full h-auto max-h-[90vh] object-contain rounded-lg shadow-2xl bg-white" style={{ imageRendering: 'crisp-edges' }} />}
         </DialogContent>
       </Dialog>
 
