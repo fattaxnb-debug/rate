@@ -1286,7 +1286,7 @@ export default function ReportFormEditor() {
                   {photos.map((photo) => (
                     <div key={photo.id} className="group relative border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col">
                       <div className="aspect-video relative bg-muted shrink-0">
-                        <img src={photo.url} alt="Foto" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
+                        <img src={photo.url} alt="Foto" width="640" height="360" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                           <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full" onClick={() => setZoomPhoto(photo.url)}><ZoomIn className="h-4 w-4" /></Button>
                           {!isReadOnly && (
@@ -1323,7 +1323,7 @@ export default function ReportFormEditor() {
                       {formData.technician_signature ? (
                         <div className="space-y-2">
                           <div className="border bg-white rounded-xl p-4 flex justify-center">
-                            <img src={formData.technician_signature} alt="Assinatura do Técnico" className="max-w-full max-h-32 object-contain" />
+                            <img src={formData.technician_signature} alt="Assinatura do Técnico" width="200" height="128" className="max-w-full max-h-32 object-contain" />
                           </div>
                           {!isReadOnly && (
                             <Button
@@ -1389,7 +1389,7 @@ export default function ReportFormEditor() {
                       {formData.client_signature ? (
                         <div className="space-y-2">
                           <div className="border bg-white rounded-xl p-4 flex justify-center">
-                            <img src={formData.client_signature} alt="Assinatura do Cliente" className="max-w-full max-h-32 object-contain" />
+                            <img src={formData.client_signature} alt="Assinatura do Cliente" width="200" height="128" className="max-w-full max-h-32 object-contain" />
                           </div>
                           {!isReadOnly && (
                             <Button
@@ -1875,7 +1875,7 @@ export default function ReportFormEditor() {
                     {photos.map((photo) => (
                       <div key={photo.id} className="group relative border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col">
                         <div className="aspect-video relative bg-muted shrink-0">
-                          <img src={photo.url} alt="Foto" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
+                          <img src={photo.url} alt="Foto" width="640" height="360" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
                         </div>
                         <div className="p-2 space-y-2 flex-1 flex flex-col">
                           <Textarea 
@@ -1912,7 +1912,7 @@ export default function ReportFormEditor() {
                     <Label className="font-bold uppercase">Assinatura Técnica <span className="text-destructive">*</span></Label>
                     {formData.technician_signature ? (
                       <div className="border bg-white rounded-xl p-3 flex justify-center">
-                        <img src={formData.technician_signature} alt="Assinatura do Técnico" className="max-w-full max-h-24 object-contain" />
+                        <img src={formData.technician_signature} alt="Assinatura do Técnico" width="200" height="96" className="max-w-full max-h-24 object-contain" />
                       </div>
                     ) : (
                       <div className="border rounded-lg overflow-hidden bg-white ring-1 ring-border shadow-inner">
@@ -1945,7 +1945,7 @@ export default function ReportFormEditor() {
                     <Label className="font-bold uppercase">Assinatura Cliente <span className="text-destructive">*</span></Label>
                     {formData.client_signature ? (
                       <div className="border bg-white rounded-xl p-3 flex justify-center">
-                        <img src={formData.client_signature} alt="Assinatura do Cliente" className="max-w-full max-h-24 object-contain" />
+                        <img src={formData.client_signature} alt="Assinatura do Cliente" width="200" height="96" className="max-w-full max-h-24 object-contain" />
                       </div>
                     ) : (
                       <div className="border rounded-lg overflow-hidden bg-white ring-1 ring-border shadow-inner">
@@ -1995,7 +1995,7 @@ export default function ReportFormEditor() {
 
       <Dialog open={!!zoomPhoto} onOpenChange={() => setZoomPhoto(null)}>
         <DialogContent className="max-w-4xl p-1 bg-transparent border-none shadow-none">
-          {zoomPhoto && <img src={zoomPhoto} alt="Zoomed" className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl" />}
+          {zoomPhoto && <img src={zoomPhoto} alt="Zoomed" width="1920" height="1080" className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl" />}
         </DialogContent>
       </Dialog>
 
