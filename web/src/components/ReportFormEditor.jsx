@@ -495,7 +495,7 @@ export default function ReportFormEditor() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const existingReport = existingReportRes.data.data;
-      const finalStatus = 'submitted';
+      const finalStatus = 'realizado';
       
       let editCount = existingReport.technician_edit_count || 0;
       if (currentUser?.role === 'Técnico' && editCount === 0) editCount = 1;
