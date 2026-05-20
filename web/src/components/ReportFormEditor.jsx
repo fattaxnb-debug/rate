@@ -1944,8 +1944,21 @@ export default function ReportFormEditor() {
                   <div className="space-y-2">
                     <Label className="font-bold uppercase">Assinatura Cliente <span className="text-destructive">*</span></Label>
                     {formData.client_signature ? (
-                      <div className="border bg-white rounded-xl p-3 flex justify-center">
-                        <img src={formData.client_signature} alt="Assinatura do Cliente" width="200" height="96" className="max-w-full max-h-24 object-contain" />
+                      <div className="space-y-2">
+                        <div className="border bg-white rounded-xl p-3 flex justify-center">
+                          <img src={formData.client_signature} alt="Assinatura do Cliente" width="200" height="96" className="max-w-full max-h-24 object-contain" />
+                        </div>
+                        {!isReadOnly && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={redrawClientSignature}
+                            className="w-full"
+                          >
+                            Redesenhar Assinatura
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <div className="border rounded-lg overflow-hidden bg-white ring-1 ring-border shadow-inner">
