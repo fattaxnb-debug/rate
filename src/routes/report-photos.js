@@ -4,28 +4,59 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import db from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
 
 const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const uploadPath = path.join(__dirname, '../../uploads');
+console.log('[UPLOAD DEBUG] Upload path resolved:', uploadPath);
+console.log('[UPLOAD DEBUG] __dirname:', __dirname);
+
+// Garantir que a pasta uploads existe
+if (!fs.existsSync(uploadPath)) {
+  console.log('[UPLOAD DEBUG] Uploads folder does not exist, creating:', uploadPath);
+  try {
+    fs.mkdirSync(uploadPath, { recursive: true });
+    console.log('[UPLOAD DEBUG] Uploads folder created successfully');
+  } catch (error) {
+    console.error('[UPLOAD DEBUG] ERROR creating uploads folder:', error);
+  }
+} else {
+  console.log('[UPLOAD DEBUG] Uploads folder exists');
+  // Verificar permissões
+  try {
+    fs.accessSync(uploadPath, fs.constants.W_OK);
+    console.log('[UPLOAD DEBUG] Uploads folder is writable');
+  } catch (error) {
+    console.error('[UPLOAD DEBUG] ERROR: Uploads folder is not writable:', error);
+  }
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '../../uploads');
-    console.log('[UPLOAD DEBUG] Destination path:', uploadPath);
-    console.log('[UPLOAD DEBUG] __dirname:', __dirname);
+    console.log('[UPLOAD DEBUG] Multer destination called with uploadPath:', uploadPath);
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const filename = 'photo-' + uniqueSuffix + path.extname(file.originalname);
-    console.log('[UPLOAD DEBUG] Filename:', filename);
+    console.log('[UPLOAD DEBUG] Filename generated:', filename);
+    console.log('[UPLOAD DEBUG] Original filename:', file.originalname);
+    console.log('[UPLOAD DEBUG] File mimetype:', file.mimetype);
+    console.log('[UPLOAD DEBUG] File size:', file.size);
     cb(null, filename);
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 // POST /report-photos - Salvar foto do relatório
 router.post('/', upload.single('photo_url'), async (req, res) => {
