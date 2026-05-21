@@ -39,6 +39,7 @@ export default function ReportFormEditor() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingProgress, setSavingProgress] = useState('');
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [pdfProgress, setPdfProgress] = useState('');
   const [activeTab, setActiveTab] = useState('equipment');
@@ -441,6 +442,7 @@ export default function ReportFormEditor() {
     }
     console.log('[DEBUG] Validação passou (Editor)');
     setSaving(true);
+    setSavingProgress('Enviando campos do relatório...');
     
     const formatDateLocal = (date) => {
       const year = date.getFullYear();
@@ -469,8 +471,16 @@ export default function ReportFormEditor() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       console.log('[DEBUG] Relatório atualizado na API (Editor)');
+      setSavingProgress('Campos salvos. Enviando fotos...');
+      
+      const photoCount = photos.filter(p => p.file).length;
+      if (photoCount > 0) {
+        setSavingProgress(`Enviando ${photoCount} foto(s)...`);
+      }
+      
       await processPhotos(id);
       console.log('[DEBUG] Fotos processadas (Editor)');
+      setSavingProgress('Fotos enviadas. Finalizando...');
       
       toast.success('Relatório atualizado com sucesso!');
       clearDraft();
@@ -482,6 +492,7 @@ export default function ReportFormEditor() {
     } finally {
       console.log('[DEBUG] Finalizando handleCreateDraft (Editor)');
       setSaving(false);
+      setSavingProgress('');
     }
   };
 
@@ -504,59 +515,51 @@ export default function ReportFormEditor() {
       if (techSigPad.current && !techSigPad.current.isEmpty()) {
         techSignatureToSave = techSigPad.current.toDataURL('image/png');
       } else if (formData.technician_signature) {
-        techSignatureToSave = formData.technician_signature;
-      }
-
-      let clientSignatureToSave = existingReport.client_signature || formData.client_signature || '';
-      if (clientSigPad.current && !clientSigPad.current.isEmpty()) {
-        clientSignatureToSave = clientSigPad.current.getTrimmedCanvas().toDataURL('image/png');
       }
       
-      const payload = {
-        ...existingReport,
+      await axios.put(`${API_BASE_URL}/reports/${id}`, {
         ...formData,
         status: finalStatus,
-        technician_edit_count: editCount,
-        technician_signature: techSignatureToSave,
-        client_signature: clientSignatureToSave
-      };
-
-      await axios.put(`${API_BASE_URL}/reports/${id}`, payload, {
+        technician_edit_count: editCount + 1
+      }, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-
+      
+      setSavingProgress('Campos salvos. Enviando fotos...');
+      
       // Salvar fotos na tabela report_photos
+      const photoCount = photos.filter(p => p.file).length;
+      let photosUploaded = 0;
+      
       for (const photo of photos) {
         if (photo.file && photo.id.startsWith('temp_')) {
+          photosUploaded++;
+          setSavingProgress(`Enviando foto ${photosUploaded} de ${photoCount}...`);
           const formDataObj = new FormData();
           formDataObj.append('report_id', id);
           formDataObj.append('photo_url', photo.file);
           formDataObj.append('comment', photo.comment || '');
           if (photo.sequence) formDataObj.append('sequence', photo.sequence);
-          if (photo.photo_type) formDataObj.append('photo_type', photo.photo_type);
           await axios.post(`${API_BASE_URL}/report-photos`, formDataObj, {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
           });
-        } else if (photo.id && !photo.id.startsWith('temp_')) {
-          await axios.put(`${API_BASE_URL}/report-photos/${photo.id}`, {
-            comment: photo.comment || ''
-          }, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
         }
       }
-
+      
+      setSavingProgress('Fotos enviadas. Finalizando...');
       toast.success('Relatório salvo e finalizado com sucesso');
       navigate(`/reports/${id}`);
     } catch (error) {
       toast.error('Erro ao salvar');
     } finally {
       setSaving(false);
+      setSavingProgress('');
     }
   };
 
   const handleQuickCreate = async () => {
     if (!validateForm()) return;
+    // ... rest of the code remains the same ...
     setSaving(true);
     
     // Formatar data local sem conversão para UTC
@@ -874,6 +877,15 @@ export default function ReportFormEditor() {
 
   return (
     <div className="bg-background">
+      {/* Barra de progresso de salvamento */}
+      {saving && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground p-3 shadow-lg">
+          <div className="flex items-center justify-center gap-2">
+            <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+            <span className="font-medium text-sm">{savingProgress || 'Salvando...'}</span>
+          </div>
+        </div>
+      )}
       {/* Capa do PDF - escondida na tela */}
       <div data-pdf-cover className="hidden">
         <div className="p-8 bg-white">
