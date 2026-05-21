@@ -1894,10 +1894,11 @@ export default function ReportFormEditor() {
                       <div key={photo.id} className="group relative border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col">
                         <div className="aspect-video relative bg-muted shrink-0">
                           <img src={photo.url} alt="Foto" width="640" height="360" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full" onClick={() => setZoomPhoto(photo.url)}><ZoomIn className="h-3 w-3" /></Button>
+                          {/* Botões fixos no canto - sempre visíveis em mobile */}
+                          <div className="absolute top-2 right-2 flex gap-2">
+                            <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full bg-white/90 hover:bg-white" onClick={() => setZoomPhoto(photo.url)}><ZoomIn className="h-3 w-3" /></Button>
                             {!isReadOnly && (
-                              <Button variant="destructive" size="icon" className="h-7 w-7 rounded-full" onClick={() => removePhoto(photo.id)}><X className="h-3 w-3" /></Button>
+                              <Button variant="destructive" size="icon" className="h-7 w-7 rounded-full bg-red-500/90 hover:bg-red-600" onClick={() => removePhoto(photo.id)}><X className="h-3 w-3" /></Button>
                             )}
                           </div>
                         </div>
