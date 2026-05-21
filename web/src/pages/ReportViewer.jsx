@@ -750,9 +750,7 @@ export default function ReportViewer() {
                 borderBottom: `2px solid ${colorMode === 'color' ? '#E31E24' : '#000000'}`
               }}>
                 <div className="flex items-center gap-4">
-                  {companySettings?.company_logo && (
-                    <img src={companySettings.company_logo} alt="Logo" width="64" height="64" className="h-16 object-contain" />
-                  )}
+                  <img src={companySettings?.company_logo || '/fattax-perfil.png'} alt="Logo" width="64" height="64" className="h-16 object-contain" />
                   <div>
                     <h1 className="text-2xl font-bold tracking-tighter uppercase" style={{
                       color: colorMode === 'color' ? '#E31E24' : '#000000'
