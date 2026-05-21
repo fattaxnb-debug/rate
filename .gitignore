@@ -43,3 +43,7 @@ Thumbs.db
 # Temp files
 .tmp/
 temp/
+
+# Uploads folder (não deve ser commitada)
+uploads/
+**/uploads/
