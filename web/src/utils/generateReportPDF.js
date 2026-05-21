@@ -149,8 +149,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   const totalPhotos = photos.length;
   let signaturesIncluded = false;
   let currentIdx = 0;
-  const maxPerPage = 9; // MAX 9 fotos por página para caber na A4
-  const SIGNATURES_THRESHOLD = 6; // Se >= 6 fotos, assinaturas em página separada
+  const maxPerPage = 12; // MAX 12 fotos por página para caber na A4
 
   const generatePhotoSignaturesPages = async () => {
     while (currentIdx < totalPhotos || currentIdx === 0) {
@@ -159,10 +158,11 @@ export const generateReportPDF = async (report, companySettings, refs) => {
       
       let includeSignatures = false;
       // CRITICAL PAGINATION RULE:
-      // 1. Se total de fotos < 6: fotos + assinaturas na MESMA página
-      // 2. Se total de fotos >= 6: assinaturas sempre em página SEPARADA
-      // 3. Máximo 9 fotos por página
-      if (isLastPhotoPage && totalPhotos < SIGNATURES_THRESHOLD) {
+      // 1. Se total de fotos <= 12: assinaturas em página SEPARADA (para não cortar)
+      // 2. Se total de fotos > 12 (13-21): assinaturas na MESMA página da última página de fotos
+      // 3. Máximo 12 fotos por página
+      if (isLastPhotoPage && totalPhotos > maxPerPage) {
+        // Mais de 12 fotos: assinaturas na mesma página junto com fotos restantes
         includeSignatures = true;
         signaturesIncluded = true;
       }
@@ -220,7 +220,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
 
           const imgWrapper = document.createElement('div');
           imgWrapper.style.width = '100%';
-          imgWrapper.style.height = '140px'; // Reduzido para caber 9 fotos na página
+          imgWrapper.style.height = '110px'; // Reduzido para caber 12 fotos na página
           imgWrapper.style.display = 'flex';
           imgWrapper.style.alignItems = 'center';
           imgWrapper.style.justifyContent = 'center';
