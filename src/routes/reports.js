@@ -277,144 +277,90 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /reports/:id - Atualizar relatório
+// PUT /reports/:id - Atualizar relatório (apenas campos enviados)
 router.put('/:id', async (req, res) => {
   try {
     console.log('[REPORTS BACKEND DEBUG] PUT /reports/:id called');
     console.log('[REPORTS BACKEND DEBUG] Request params:', req.params);
     console.log('[REPORTS BACKEND DEBUG] Request body keys:', Object.keys(req.body));
-    console.log('[REPORTS BACKEND DEBUG] Request body sample:', JSON.stringify(req.body, null, 2).substring(0, 500));
     
-    const { 
-      client_id, 
-      equipment_id, 
-      technician_id, 
-      client_signature,
-      technician_signature,
-      status,
-      service_type,
-      responsible_person,
-      installation_location,
-      installation_location_explanation,
-      power_supply_type,
-      breaker,
-      cable_entry_phase,
-      cable_entry_neutral,
-      cable_entry_ground,
-      cable_exit_phase,
-      cable_exit_neutral,
-      external_battery_positive_cable,
-      external_battery_negative_cable,
-      external_battery_neutral_cable,
-      external_battery_connection,
-      external_battery_nobreak_connection,
-      electrical_measurements,
-      battery_bank,
-      cooled_environment,
-      external_inspection,
-      internal_inspection,
-      attendance_description,
-      diagnosis,
-      conclusion,
-      reported_problems,
-      identified_defects,
-      procedures_performed,
-      replaced_parts,
-      parts_request,
-      observations,
-      technician_edit_count
-    } = req.body;
-
-    console.log('[REPORTS BACKEND DEBUG] Essential fields:', { client_id, equipment_id, technician_id, status });
+    // Buscar relatório atual para preservar campos não enviados
+    const [existing] = await db.query(`SELECT * FROM reports WHERE id = ?`, [req.params.id]);
+    if (!existing || existing.length === 0) {
+      return res.status(404).json({ error: 'Relatório não encontrado' });
+    }
     
-    await db.query(
-      `UPDATE reports SET 
-        client_id = ?, 
-        equipment_id = ?, 
-        technician_id = ?, 
-        client_signature = ?,
-        technician_signature = ?,
-        status = ?,
-        service_type = ?,
-        responsible_person = ?,
-        installation_location = ?,
-        installation_location_explanation = ?,
-        power_supply_type = ?,
-        breaker = ?,
-        cable_entry_phase = ?,
-        cable_entry_neutral = ?,
-        cable_entry_ground = ?,
-        cable_exit_phase = ?,
-        cable_exit_neutral = ?,
-        external_battery_positive_cable = ?,
-        external_battery_negative_cable = ?,
-        external_battery_neutral_cable = ?,
-        external_battery_connection = ?,
-        external_battery_nobreak_connection = ?,
-        electrical_measurements = ?,
-        battery_bank = ?,
-        cooled_environment = ?,
-        external_inspection = ?,
-        internal_inspection = ?,
-        attendance_description = ?,
-        diagnosis = ?,
-        conclusion = ?,
-        reported_problems = ?,
-        identified_defects = ?,
-        procedures_performed = ?,
-        replaced_parts = ?,
-        parts_request = ?,
-        observations = ?,
-        technician_edit_count = ?
-       WHERE id = ?`,
-      [
-        client_id, 
-        equipment_id, 
-        technician_id, 
-        client_signature,
-        technician_signature,
-        status || 'draft',
-        service_type || '',
-        responsible_person || '',
-        installation_location || '',
-        installation_location_explanation || '',
-        power_supply_type || '',
-        breaker || '',
-        cable_entry_phase || '',
-        cable_entry_neutral || '',
-        cable_entry_ground || '',
-        cable_exit_phase || '',
-        cable_exit_neutral || '',
-        external_battery_positive_cable || '',
-        external_battery_negative_cable || '',
-        external_battery_neutral_cable || '',
-        external_battery_connection || '',
-        external_battery_nobreak_connection || '',
-        JSON.stringify(electrical_measurements || {}),
-        JSON.stringify(battery_bank || {}),
-        cooled_environment || '',
-        external_inspection || '',
-        internal_inspection || '',
-        attendance_description || '',
-        diagnosis || '',
-        conclusion || '',
-        reported_problems || '',
-        identified_defects || '',
-        procedures_performed || '',
-        replaced_parts || '',
-        parts_request || '',
-        observations || '',
-        technician_edit_count || 0,
-        req.params.id
-      ]
-    );
-
-    console.log('[REPORTS BACKEND DEBUG] SQL query executed successfully');
-    res.json({ data: { id: req.params.id, ...req.body } });
+    const currentReport = existing[0];
+    console.log('[REPORTS BACKEND DEBUG] Current report signature fields:', { 
+      client_signature: currentReport.client_signature ? 'EXISTS' : 'NULL', 
+      technician_signature: currentReport.technician_signature ? 'EXISTS' : 'NULL' 
+    });
+    
+    // Campos que podem ser atualizados
+    const updateableFields = [
+      'client_id', 'equipment_id', 'technician_id', 
+      'client_signature', 'technician_signature',
+      'status', 'service_type', 'responsible_person',
+      'installation_location', 'installation_location_explanation',
+      'power_supply_type', 'breaker',
+      'cable_entry_phase', 'cable_entry_neutral', 'cable_entry_ground',
+      'cable_exit_phase', 'cable_exit_neutral',
+      'external_battery_positive_cable', 'external_battery_negative_cable', 
+      'external_battery_neutral_cable', 'external_battery_connection', 
+      'external_battery_nobreak_connection',
+      'electrical_measurements', 'battery_bank',
+      'cooled_environment', 'external_inspection', 'internal_inspection',
+      'attendance_description', 'diagnosis', 'conclusion',
+      'reported_problems', 'identified_defects', 'procedures_performed',
+      'replaced_parts', 'parts_request', 'observations',
+      'technician_edit_count'
+    ];
+    
+    // Construir UPDATE dinâmico apenas para campos enviados
+    const updates = [];
+    const values = [];
+    
+    for (const field of updateableFields) {
+      if (req.body.hasOwnProperty(field)) {
+        updates.push(`${field} = ?`);
+        
+        // Tratar campos JSON
+        if (field === 'electrical_measurements' || field === 'battery_bank') {
+          values.push(JSON.stringify(req.body[field] || {}));
+        } else {
+          // Para assinaturas, se for string vazia, enviar NULL para limpar
+          if ((field === 'client_signature' || field === 'technician_signature') && req.body[field] === '') {
+            values.push(null);
+          } else {
+            values.push(req.body[field] || null);
+          }
+        }
+      }
+    }
+    
+    if (updates.length === 0) {
+      return res.json({ message: 'Nenhum campo para atualizar', data: currentReport });
+    }
+    
+    const query = `UPDATE reports SET ${updates.join(', ')} WHERE id = ?`;
+    values.push(req.params.id);
+    
+    console.log('[REPORTS BACKEND DEBUG] Update query:', query);
+    console.log('[REPORTS BACKEND DEBUG] Update values:', values);
+    
+    await db.query(query, values);
+    
+    // Buscar relatório atualizado
+    const [updated] = await db.query(`SELECT * FROM reports WHERE id = ?`, [req.params.id]);
+    
+    console.log('[REPORTS BACKEND DEBUG] Updated report signature fields:', { 
+      client_signature: updated[0].client_signature ? 'EXISTS' : 'NULL', 
+      technician_signature: updated[0].technician_signature ? 'EXISTS' : 'NULL' 
+    });
+    
+    res.json({ data: updated[0] });
   } catch (error) {
-    console.error('[REPORTS BACKEND DEBUG] Error updating report:', error.message);
-    console.error('[REPORTS BACKEND DEBUG] Error code:', error.code);
-    console.error('[REPORTS BACKEND DEBUG] Error stack:', error.stack);
+    console.error('[REPORTS BACKEND DEBUG] Error updating report:', error);
     res.status(500).json({ error: 'Erro ao atualizar relatório', message: error.message });
   }
 });
