@@ -16,9 +16,11 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "scope": "/",
+  "prefer_related_applications": false
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rate-pwa-v5';
+const CACHE_NAME = 'rate-pwa-v6';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -8,23 +8,36 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing service worker...');
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[SW] Caching static assets');
+      return cache.addAll(STATIC_ASSETS);
+    }).catch((error) => {
+      console.error('[SW] Failed to cache assets:', error);
+    })
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating service worker...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
+      console.log('[SW] Cleaning old caches');
       return Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+          .map((name) => {
+            console.log('[SW] Deleting cache:', name);
+            return caches.delete(name);
+          })
       );
+    }).then(() => {
+      console.log('[SW] Service worker activated');
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
