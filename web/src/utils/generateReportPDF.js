@@ -1,48 +1,44 @@
 
 const fetchImageAsBase64 = async (url) => {
   try {
-    // Se for uma URL local, não precisa de autenticação
+    console.log(`[PDF] Fetching image: ${url}`);
+    
+    // Se for uma URL local, constroi URL completa
+    let fullUrl = url;
     if (url.startsWith('/')) {
-      const response = await fetch(url);
-      if (!response.ok) {
-        console.warn(`Failed to fetch local image: ${response.status} ${response.statusText}`);
-        return null;
-      }
-      const blob = await response.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      fullUrl = `${window.location.origin}${url}`;
+      console.log(`[PDF] Local URL converted to: ${fullUrl}`);
     }
     
-    // Para URLs externas, usa autenticação
-    const token = localStorage.getItem('auth_token');
-    const urlWithToken = token ? `${url}${url.includes('?') ? '&' : '?'}token=${token}` : url;
-    
-    const response = await fetch(urlWithToken, {
+    // Para URLs locais ou externas, tenta primeiro sem autenticação
+    const response = await fetch(fullUrl, {
       method: 'GET',
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : ''
-      },
-      mode: 'cors'
+      mode: 'cors',
+      cache: 'no-cache'
     });
 
     if (!response.ok) {
-      console.warn(`Failed to fetch logo image: ${response.status} ${response.statusText}`);
-      return null; // Return null gracefully to prevent breaking the PDF execution
+      console.warn(`[PDF] Failed to fetch image: ${response.status} ${response.statusText}`);
+      return null;
     }
 
     const blob = await response.blob();
+    console.log(`[PDF] Image blob received: ${blob.size} bytes, type: ${blob.type}`);
+    
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
+      reader.onloadend = () => {
+        console.log(`[PDF] Image converted to base64: ${reader.result?.substring(0, 50)}...`);
+        resolve(reader.result);
+      };
+      reader.onerror = (e) => {
+        console.error('[PDF] FileReader error:', e);
+        reject(e);
+      };
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    console.error('Error fetching image as base64:', error);
+    console.error('[PDF] Error fetching image as base64:', error);
     return null;
   }
 };
@@ -363,7 +359,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
       pdf.text('FATTAX - NOBREAKS E ESTABILIZADORES DE TENSÃO', 46, 16);
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
-      pdf.text('ATIVAÇÃO', 46, 22);
+      pdf.text(report.service_type?.toUpperCase() || 'ATIVAÇÃO', 46, 22);
       
       pdf.setFontSize(8);
       const rightX = 198;

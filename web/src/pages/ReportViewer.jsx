@@ -407,14 +407,15 @@ export default function ReportViewer() {
             <div ref={coverRef} className="w-[210mm] h-[297mm] bg-white flex flex-col items-center justify-center p-12 text-center" data-pdf-cover>
               <div className="h-[20px] mb-0"></div>
               <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" width="500" height="500" className="h-auto max-w-[500px] object-contain mb-4" id="pdf-cover-logo" />
-              <h2 className="text-3xl font-semibold mb-8 uppercase" style={{
+              <h2 className="text-3xl font-semibold mb-2 uppercase" style={{
                 color: '#000000'
               }}>RELATÓRIO TÉCNICO</h2>
+              <p className="text-lg mb-8 uppercase" style={{ color: '#000000' }}>{report.service_type || 'MANUTENÇÃO DE EQUIPAMENTOS'}</p>
               <div className="text-xl space-y-2" style={{
                 color: '#000000'
               }}>
                 <p>Cliente: <span className="font-bold">{valOrDash(client.name)}</span></p>
-                <p>Data: <span className="font-bold">{report.attendance_date_time ? format(new Date(report.attendance_date_time), 'dd/MM/yyyy') : report.created ? format(new Date(report.created), 'dd/MM/yyyy') : '-'}</span></p>
+                <p>Data: <span className="font-bold">{report.created_date ? format(new Date(report.created_date), 'dd/MM/yyyy') : report.attendance_date_time ? format(new Date(report.attendance_date_time), 'dd/MM/yyyy') : '-'}</span></p>
                 <p>O.S.: <span className="font-bold">{valOrDash(report.service_order_number)}</span></p>
                 <p>Técnico Responsável: <span className="font-bold">{valOrDash(technician.name)}</span></p>
               </div>
