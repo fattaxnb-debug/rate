@@ -81,3 +81,46 @@ async function syncReports() {
   // Em um cenário real, aqui seria feita a leitura de IndexedDB
   // e o POST dos relatórios pendentes para a API.
 }
+
+// Push notifications
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  const options = {
+    body: data.body || 'Nova notificação',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1,
+      url: data.url || '/'
+    },
+    actions: [
+      {
+        action: 'open',
+        title: 'Abrir',
+        icon: '/icon-192.png'
+      },
+      {
+        action: 'close',
+        title: 'Fechar',
+        icon: '/icon-192.png'
+      }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'RATe', options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'open') {
+    const url = event.notification.data.url || '/';
+    event.waitUntil(
+      clients.openWindow(url)
+    );
+  }
+});
