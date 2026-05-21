@@ -632,8 +632,26 @@ export default function ReportFormEditor() {
     setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, [field]: value } : p));
   };
 
-  const removePhoto = (photoId) => {
+  const removePhoto = async (photoId) => {
+    const photo = photos.find(p => p.id === photoId);
+    
+    // Se a foto já existe no banco (não é temp), deletar do banco
+    if (photo && !photoId.startsWith('temp_')) {
+      try {
+        const token = localStorage.getItem('auth_token');
+        await axios.delete(`${API_BASE_URL}/report-photos/${photoId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        toast.success('Foto excluída do banco de dados');
+      } catch (error) {
+        console.error('Erro ao deletar foto do banco:', error);
+        toast.error('Erro ao excluir foto do banco');
+        return;
+      }
+    }
+    
     setPhotos(prev => prev.filter(p => p.id !== photoId));
+    toast.success('Foto removida');
   };
 
   const formatDate = (dateString) => {
@@ -1876,6 +1894,12 @@ export default function ReportFormEditor() {
                       <div key={photo.id} className="group relative border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col">
                         <div className="aspect-video relative bg-muted shrink-0">
                           <img src={photo.url} alt="Foto" width="640" height="360" className="w-full h-full object-cover cursor-pointer" onClick={() => setZoomPhoto(photo.url)} />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <Button variant="secondary" size="icon" className="h-7 w-7 rounded-full" onClick={() => setZoomPhoto(photo.url)}><ZoomIn className="h-3 w-3" /></Button>
+                            {!isReadOnly && (
+                              <Button variant="destructive" size="icon" className="h-7 w-7 rounded-full" onClick={() => removePhoto(photo.id)}><X className="h-3 w-3" /></Button>
+                            )}
+                          </div>
                         </div>
                         <div className="p-2 space-y-2 flex-1 flex flex-col">
                           <Textarea 
