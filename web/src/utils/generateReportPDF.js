@@ -149,7 +149,8 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   const totalPhotos = photos.length;
   let signaturesIncluded = false;
   let currentIdx = 0;
-  const maxPerPage = 15; // Set to strictly 15 images maximum per page
+  const maxPerPage = 9; // MAX 9 fotos por página para caber na A4
+  const SIGNATURES_THRESHOLD = 6; // Se >= 6 fotos, assinaturas em página separada
 
   const generatePhotoSignaturesPages = async () => {
     while (currentIdx < totalPhotos || currentIdx === 0) {
@@ -158,9 +159,10 @@ export const generateReportPDF = async (report, companySettings, refs) => {
       
       let includeSignatures = false;
       // CRITICAL PAGINATION RULE:
-      // If total images <= 15: It fits images + signatures on the SAME page.
-      // If total images > 15: A page fitting 15 images cannot fit signatures unless the remaining chunk is < 15.
-      if (isLastPhotoPage && (chunk.length < maxPerPage || totalPhotos <= maxPerPage)) {
+      // 1. Se total de fotos < 6: fotos + assinaturas na MESMA página
+      // 2. Se total de fotos >= 6: assinaturas sempre em página SEPARADA
+      // 3. Máximo 9 fotos por página
+      if (isLastPhotoPage && totalPhotos < SIGNATURES_THRESHOLD) {
         includeSignatures = true;
         signaturesIncluded = true;
       }
@@ -218,7 +220,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
 
           const imgWrapper = document.createElement('div');
           imgWrapper.style.width = '100%';
-          imgWrapper.style.height = '200px';
+          imgWrapper.style.height = '140px'; // Reduzido para caber 9 fotos na página
           imgWrapper.style.display = 'flex';
           imgWrapper.style.alignItems = 'center';
           imgWrapper.style.justifyContent = 'center';
