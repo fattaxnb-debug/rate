@@ -64,7 +64,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="bg-card rounded-2xl shadow-lg p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-primary mb-2" style={{ letterSpacing: '-0.02em' }}>Fattax</h1>
+              <img src="/fattax-perfil.png" alt="Fattax Logo" className="h-20 mx-auto mb-2 object-contain" />
               <p className="text-muted-foreground">Entre na sua conta</p>
             </div>
 
