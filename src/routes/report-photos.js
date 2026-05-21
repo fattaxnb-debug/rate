@@ -19,9 +19,11 @@ const logFileOperation = (operation, filePath, details = '') => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadPath = path.join(__dirname, '../../uploads');
+// Usar variável de ambiente para o caminho da pasta uploads (fora do diretório do projeto)
+const uploadPath = process.env.UPLOADS_PATH || path.join(__dirname, '../../uploads');
 console.log('[UPLOAD DEBUG] Upload path resolved:', uploadPath);
 console.log('[UPLOAD DEBUG] __dirname:', __dirname);
+console.log('[UPLOAD DEBUG] UPLOADS_PATH from env:', process.env.UPLOADS_PATH);
 
 // Garantir que a pasta uploads existe
 if (!fs.existsSync(uploadPath)) {
