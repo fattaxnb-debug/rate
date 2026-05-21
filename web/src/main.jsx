@@ -9,12 +9,25 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    console.log('[PWA] Attempting to register service worker...');
     navigator.serviceWorker.register('/serviceWorker.js')
       .then(registration => {
-        console.log('SW registered: ', registration);
+        console.log('[PWA] SW registered successfully: ', registration);
+        console.log('[PWA] SW state: ', registration.installing ? 'installing' : registration.waiting ? 'waiting' : registration.active ? 'active' : 'unknown');
+        
+        // Check for updates
+        registration.addEventListener('updatefound', () => {
+          console.log('[PWA] New service worker found');
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            console.log('[PWA] SW state changed to: ', newWorker.state);
+          });
+        });
       })
       .catch(registrationError => {
-        console.log('SW registration failed: ', registrationError);
+        console.error('[PWA] SW registration failed: ', registrationError);
       });
   });
+} else {
+  console.warn('[PWA] Service worker not supported');
 }
