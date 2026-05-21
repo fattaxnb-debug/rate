@@ -15,8 +15,10 @@ import { startNotificationScheduler } from './src/utils/notificationScheduler.js
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Garantir que a pasta uploads existe
-const uploadsDir = path.join(__dirname, 'uploads');
+// Garantir que a pasta uploads existe (usar variável de ambiente ou caminho padrão)
+const uploadsDir = process.env.UPLOADS_PATH || path.join(__dirname, 'uploads');
+console.log('[UPLOADS] Using uploads directory:', uploadsDir);
+console.log('[UPLOADS] UPLOADS_PATH from env:', process.env.UPLOADS_PATH);
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   console.log('[UPLOADS] Pasta uploads criada:', uploadsDir);
@@ -86,10 +88,10 @@ app.use('/api/uploads', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  const filePath = path.join(__dirname, 'uploads', req.path);
+  const filePath = path.join(uploadsDir, req.path);
   console.log('[UPLOADS] Requested:', req.path, '| Full path:', filePath, '| Exists:', fs.existsSync(filePath));
   next();
-}, express.static(path.join(__dirname, 'uploads')));
+}, express.static(uploadsDir));
 
 app.use('/api', routes());
 
