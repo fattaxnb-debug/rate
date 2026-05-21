@@ -375,46 +375,6 @@ export default function DashboardPage() {
 
               <CardHeader>
 
-                <CardTitle>Agendamentos por Status</CardTitle>
-
-              </CardHeader>
-
-              <CardContent>
-
-                <ResponsiveContainer width="100%" height={300}>
-
-                  <BarChart data={schedulesByStatus}>
-
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-
-                    <XAxis dataKey="status" axisLine={false} tickLine={false} />
-
-                    <YAxis axisLine={false} tickLine={false} />
-
-                    <Tooltip 
-
-                      cursor={{fill: 'hsl(var(--muted))'}}
-
-                      contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
-
-                    />
-
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-
-                  </BarChart>
-
-                </ResponsiveContainer>
-
-              </CardContent>
-
-            </Card>
-
-
-
-            <Card>
-
-              <CardHeader>
-
                 <CardTitle>Ações Rápidas</CardTitle>
 
               </CardHeader>
