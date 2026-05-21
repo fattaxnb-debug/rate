@@ -25,7 +25,15 @@ export const usePushNotifications = () => {
           console.error('Erro ao registrar Service Worker:', error);
         });
     }
-  }, []);
+    
+    // Solicitar permissão automaticamente se usuário for técnico
+    if (currentUser?.role === 'Técnico' && 'Notification' in window && Notification.permission === 'default') {
+      // Pequeno delay para não bloquear o carregamento inicial
+      setTimeout(() => {
+        requestPermission();
+      }, 2000);
+    }
+  }, [currentUser]);
 
   const requestPermission = async () => {
     if (!('Notification' in window)) {
