@@ -1,12 +1,18 @@
 import express from 'express';
+import db from '../config/database.js';
+import logger from '../utils/logger.js';
 import multer from 'multer';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import db from '../config/database.js';
-import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
 const router = express.Router();
+
+// Log para monitorar operações de arquivos
+const logFileOperation = (operation, filePath, details = '') => {
+  const timestamp = new Date().toISOString();
+  console.log(`[FILE MONITOR] ${timestamp} | ${operation} | ${filePath} | ${details}`);
+  logger.info(`${operation}: ${filePath} ${details}`);
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,22 +66,37 @@ const upload = multer({
 
 // POST /report-photos - Salvar foto do relatório
 router.post('/', upload.single('photo_url'), async (req, res) => {
-  console.log('[UPLOAD DEBUG] POST /report-photos called');
-  console.log('[UPLOAD DEBUG] Request body:', req.body);
-  console.log('[UPLOAD DEBUG] Request file:', req.file ? 'Present' : 'MISSING');
+  const timestamp = new Date().toISOString();
+  console.log(`[UPLOAD DEBUG] ${timestamp} | POST /report-photos called`);
+  console.log(`[UPLOAD DEBUG] ${timestamp} | Request body:`, req.body);
+  console.log(`[UPLOAD DEBUG] ${timestamp} | Request file:`, req.file ? 'Present' : 'MISSING');
   
   try {
     const { report_id, comment, photo_type } = req.body;
     
     if (!req.file) {
-      console.error('[UPLOAD DEBUG] ERROR: No file uploaded');
+      console.error(`[UPLOAD DEBUG] ${timestamp} | ERROR: No file uploaded`);
       return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     }
     
     const photo_url = `/uploads/${req.file.filename}`;
-    console.log('[UPLOAD DEBUG] Photo URL:', photo_url);
-    console.log('[UPLOAD DEBUG] File saved at:', req.file.path);
-    console.log('[UPLOAD DEBUG] File size:', req.file.size);
+    const filePath = req.file.path;
+    
+    logFileOperation('UPLOAD_SUCCESS', filePath, `Photo URL: ${photo_url}, Report ID: ${report_id}, Size: ${req.file.size}`);
+    
+    console.log(`[UPLOAD DEBUG] ${timestamp} | Photo URL: ${photo_url}`);
+    console.log(`[UPLOAD DEBUG] ${timestamp} | File saved at: ${filePath}`);
+    console.log(`[UPLOAD DEBUG] ${timestamp} | File size: ${req.file.size}`);
+    
+    // Verificar se o arquivo existe após upload
+    if (fs.existsSync(filePath)) {
+      const stats = fs.statSync(filePath);
+      console.log(`[UPLOAD DEBUG] ${timestamp} | File verification: EXISTS, Size: ${stats.size}`);
+      logFileOperation('FILE_VERIFY', filePath, `Exists: true, Size: ${stats.size}`);
+    } else {
+      console.error(`[UPLOAD DEBUG] ${timestamp} | File verification: NOT EXISTS!`);
+      logFileOperation('FILE_VERIFY_ERROR', filePath, 'File does not exist after upload!');
+    }
     
     const id = uuidv4();
     
@@ -84,10 +105,10 @@ router.post('/', upload.single('photo_url'), async (req, res) => {
       [id, report_id, photo_url, comment || '', photo_type || 'outro']
     );
     
-    console.log('[UPLOAD DEBUG] Photo saved to database:', id);
+    console.log(`[UPLOAD DEBUG] ${timestamp} | Photo saved to database: ${id}`);
     res.json({ data: { id, report_id, photo_url, comment, photo_type } });
   } catch (error) {
-    console.error('[UPLOAD DEBUG] Error saving report photo:', error);
+    console.error(`[UPLOAD DEBUG] ${timestamp} | Error saving report photo:`, error);
     res.status(500).json({ error: 'Erro ao salvar foto', details: error.message });
   }
 });
@@ -112,10 +133,40 @@ router.put('/:id', async (req, res) => {
 // DELETE /report-photos/:id - Deletar foto do relatório
 router.delete('/:id', async (req, res) => {
   try {
+    // Primeiro, buscar a foto para obter a URL antes de deletar
+    const [photos] = await db.query(
+      `SELECT photo_url FROM report_photos WHERE id = ?`,
+      [req.params.id]
+    );
+    
+    if (photos.length === 0) {
+      return res.status(404).json({ error: 'Foto não encontrada' });
+    }
+    
+    const photoUrl = photos[0].photo_url;
+    logFileOperation('DELETE_REQUEST', photoUrl, `Photo ID: ${req.params.id}`);
+    
+    // Deletar do banco
     await db.query(
       `DELETE FROM report_photos WHERE id = ?`,
       [req.params.id]
     );
+    
+    // Deletar arquivo físico
+    if (photoUrl) {
+      const fileName = path.basename(photoUrl);
+      const filePath = path.join('../../uploads', fileName);
+      const absolutePath = path.resolve(filePath);
+      
+      logFileOperation('DELETE_FILE_ATTEMPT', absolutePath, `Photo ID: ${req.params.id}`);
+      
+      if (fs.existsSync(absolutePath)) {
+        fs.unlinkSync(absolutePath);
+        logFileOperation('DELETE_FILE_SUCCESS', absolutePath, `Photo ID: ${req.params.id}`);
+      } else {
+        logFileOperation('DELETE_FILE_NOT_FOUND', absolutePath, `Photo ID: ${req.params.id}`);
+      }
+    }
     
     res.json({ success: true });
   } catch (error) {
