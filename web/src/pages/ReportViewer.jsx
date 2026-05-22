@@ -47,6 +47,7 @@ export default function ReportViewer() {
   const clientEquipRef = useRef(null);
   const infraBatRef = useRef(null);
   const elecRef = useRef(null);
+  const infraElecCombinedRef = useRef(null); // Nova ref para página combinada quando não for nobreak
   const descRef = useRef(null);
   const photosAndSignaturesRef = useRef(null);
   const photosRef = useRef(null);
@@ -555,8 +556,103 @@ export default function ReportViewer() {
               </div>
             </div>
 
-            {/* PAGE 4: Medições Elétricas */}
-            {!isBatteryMonitor && (
+            {/* PAGE 3 COMBINADA: Infra-Instalação + Medições Elétricas (quando não for nobreak) */}
+            {!isNobreak && !isBatteryMonitor && (
+            <div ref={infraElecCombinedRef} className="w-[210mm] bg-white p-8 text-black">
+              <div className="space-y-4">
+                <section className="border border-border rounded-lg overflow-hidden">
+                  <h2 className="border-b p-2 text-xs font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Infra-Instalação</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 p-3 text-xs bg-white">
+                    {renderField('Tipo de Serviço', report.service_type)}
+                    {renderField('Ambiente Refrigerado', report.cooled_environment)}
+                    {renderField('Local', report.installation_location)}
+                    {renderField('Alimentação', report.power_supply_type)}
+                    {renderField('DISJUNTOR', report.breaker)}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 p-3 pt-0 text-xs bg-white border-t border-gray-100">
+                    {renderField('CABO ENTRADA FASE (MM²)', report.cable_entry_phase)}
+                    {renderField('CABO ENTRADA NEUTRO (MM²)', report.cable_entry_neutral)}
+                    {renderField('CABO ENTRADA TERRA (MM²)', report.cable_entry_ground)}
+                    {renderField('CABO SAÍDA FASE (MM²)', report.cable_exit_phase)}
+                    {renderField('CABO SAÍDA NEUTRO (MM²)', report.cable_exit_neutral)}
+                  </div>
+                  {report.installation_location === 'Inadequado' && renderField('Motivo Local Inadequado', report.installation_location_explanation)}
+                </section>
+
+                <section className="border border-border rounded-lg overflow-hidden">
+                  <h2 className="border-b p-2 text-xs font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Medições Elétricas</h2>
+                  <div className="p-3 space-y-4 bg-white">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 text-xs">
+                      {renderElecBlock('entrada', 'Entrada')}
+                      {renderElecBlock('saida', 'Saída')}
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+            )}
+
+            {/* PAGE 3: Infra-Instalação + Banco de Baterias (quando for nobreak) */}
+            {isNobreak && (
+            <div ref={infraBatRef} className="w-[210mm] bg-white p-12 text-black">
+              <div className="space-y-8">
+                <section className="border border-border rounded-lg overflow-hidden">
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Infra-Instalação</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 text-sm bg-white">
+                    {renderField('Tipo de Serviço', report.service_type)}
+                    {renderField('Ambiente Refrigerado', report.cooled_environment)}
+                    {renderField('Local', report.installation_location)}
+                    {!isBatteryMonitor && renderField('Alimentação', report.power_supply_type)}
+                    {!isBatteryMonitor && renderField('DISJUNTOR', report.breaker)}
+                  </div>
+                  {!isBatteryMonitor && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 pt-0 text-sm bg-white border-t border-gray-100">
+                    {renderField('CABO ENTRADA FASE (MM²)', report.cable_entry_phase)}
+                    {renderField('CABO ENTRADA NEUTRO (MM²)', report.cable_entry_neutral)}
+                    {renderField('CABO ENTRADA TERRA (MM²)', report.cable_entry_ground)}
+                    {renderField('CABO SAÍDA FASE (MM²)', report.cable_exit_phase)}
+                    {renderField('CABO SAÍDA NEUTRO (MM²)', report.cable_exit_neutral)}
+                  </div>
+                  )}
+                  {hasValue(report.external_battery_positive_cable) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 pt-0 text-sm bg-white border-t border-gray-100">
+                      <h3 className="font-bold uppercase col-span-3" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>Banco Externo</h3>
+                      {renderField('Cabo Positivo (mm²)', report.external_battery_positive_cable)}
+                      {renderField('Cabo Negativo (mm²)', report.external_battery_negative_cable)}
+                      {renderField('Cabo Neutro (mm²)', report.external_battery_neutral_cable)}
+                      {renderField('Conexão Bateria', report.external_battery_connection)}
+                      {renderField('Conexão Nobreak', report.external_battery_nobreak_connection)}
+                    </div>
+                  )}
+                  {report.installation_location === 'Inadequado' && renderField('Motivo Local Inadequado', report.installation_location_explanation)}
+                </section>
+
+                {hasBattery && bat && hasValue(bat.type) && (
+                <section className="border border-border rounded-lg overflow-hidden">
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Banco de Baterias</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 p-4 text-sm bg-white">
+                    {!isBatteryMonitor && renderField('Banco de Baterias', bat.type)}
+                    {renderField('QUANTIDADE BATERIAS', bat.quantity)}
+                    {renderField('BATERIA VOLTS (VDC)', bat.battery_volts)}
+                    {renderField('CORRENTE BATERIA (AH/W)', bat.battery_current)}
+                    {renderField('TENSÃO DO BANCO +/- (VDC)', bat.voltage)}
+                    {!isBatteryMonitor && isSymmetric && renderField('Tensão Positivo/Neutro (VDC)', bat.voltage_positive_neutral)}
+                    {!isBatteryMonitor && isSymmetric && renderField('Tensão Neutro/Negativo (VDC)', bat.voltage_neutral_negative)}
+                    {renderField('TENSÃO DO CARREGADOR (VDC)', bat.charger_voltage)}
+                    {renderField('MARCA', bat.brand)}
+                    {renderField('MODELO', bat.model)}
+                    {renderField('TROCOU BATERIAS', bat.trocou_baterias)}
+                    {!isBatteryMonitor && bat.trocou_baterias?.toUpperCase() === 'SIM' && bat.last_change && renderField('Última Troca', bat.last_change)}
+                    {!isBatteryMonitor && bat.trocou_baterias?.toUpperCase() === 'NÃO' && bat.motivo_nao_troca && renderField('Motivo da Não Troca', bat.motivo_nao_troca)}
+                  </div>
+                </section>
+                )}
+              </div>
+            </div>
+            )}
+
+            {/* PAGE 4: Medições Elétricas (quando for nobreak) */}
+            {isNobreak && !isBatteryMonitor && (
             <div ref={elecRef} className="w-[210mm] bg-white p-12 text-black">
               <div className="space-y-8">
                 <section className="border border-border rounded-lg overflow-hidden">

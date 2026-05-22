@@ -51,7 +51,7 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   ]);
   
   // We use our own dynamic pagination for photos, so we ignore photosAndSignaturesRef & photosRef
-  const { coverRef, clientEquipRef, infraBatRef, elecRef, descRef, signaturesRef } = refs;
+  const { coverRef, clientEquipRef, infraBatRef, elecRef, infraElecCombinedRef, descRef, signaturesRef } = refs;
   
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pdfWidth = 210;
@@ -129,11 +129,23 @@ export const generateReportPDF = async (report, companySettings, refs) => {
   // PAGE 2: Client + Equipment
   await captureAndAddPage(clientEquipRef, true, false, true);
 
-  // PAGE 3: Infra-Instalação + Banco de Baterias
-  await captureAndAddPage(infraBatRef, true, false, false);
+  // PAGE 3: Infra-Instalação + Banco de Baterias (quando for nobreak) OU Infra-Instalação + Medições Elétricas (quando não for nobreak)
+  const eqData = report.expand?.equipment_id || {};
+  const isNobreak = eqData.type === 'Nobreak';
+  const isBatteryMonitor = eqData.type === 'Monitor de Bateria';
 
-  // PAGE 4: Medições Elétricas (only if ref exists and has content)
-  if (elecRef?.current) {
+  if (isNobreak) {
+    // Nobreak: usa infraBatRef (Infra-Instalação + Banco de Baterias)
+    await captureAndAddPage(infraBatRef, true, false, false);
+  } else if (!isBatteryMonitor) {
+    // Não é nobreak e não é monitor de bateria: usa infraElecCombinedRef (Infra-Instalação + Medições Elétricas combinadas)
+    if (infraElecCombinedRef?.current) {
+      await captureAndAddPage(infraElecCombinedRef, true, false, false);
+    }
+  }
+
+  // PAGE 4: Medições Elétricas (only if ref exists and has content) - só para nobreak
+  if (isNobreak && elecRef?.current) {
     await captureAndAddPage(elecRef, true, false, false);
   }
 
