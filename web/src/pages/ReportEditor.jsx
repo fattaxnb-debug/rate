@@ -349,7 +349,7 @@ export default function ReportEditor() {
     return true;
   };
 
-  const hasBattery = selectedEquipmentData?.type === 'Nobreak' || selectedEquipmentData?.type === 'Monitor de Bateria';
+  const hasBattery = selectedEquipmentData?.type === 'Nobreak';
   const isBatteryMonitor = selectedEquipmentData?.type === 'Monitor de Bateria';
   const tabsOrder = isBatteryMonitor 
     ? ['equipment', 'installation', 'battery', 'attendance', 'photos', 'signatures']
