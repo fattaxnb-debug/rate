@@ -15,7 +15,7 @@ import { API_BASE_URL } from '@/config/api.js';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useSearch } from '@/hooks/useSearch.js';
 
-const STATUS_OPTIONS = ['Aberto', 'Em Andamento', 'Realizado', 'Finalizado'];
+const STATUS_OPTIONS = ['ABERTO', 'ATENDENDO', 'CONCLUIDO', 'FINALIZADO'];
 
 export default function ScheduleForm({ schedule, onSave, onCancel }) {
   const { currentUser } = useAuth();
@@ -25,7 +25,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
     equipment_id: '',
     scheduled_date: '',
     scheduled_time: '',
-    status: 'Aberto',
+    status: 'ABERTO',
     technician_id: '',
     notes: ''
   });
@@ -73,7 +73,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
         equipment_id: schedule.equipment_id || '',
         scheduled_date: schedule.scheduled_date || '',
         scheduled_time: schedule.scheduled_time || '',
-        status: schedule.status && schedule.status !== '' ? schedule.status : 'Aberto',
+        status: schedule.status && schedule.status !== '' ? schedule.status : 'ABERTO',
         technician_id: schedule.technician_id || '',
         notes: schedule.notes || ''
       };

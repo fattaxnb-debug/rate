@@ -87,10 +87,10 @@ router.get('/', async (req, res) => {
       
       // Normalizar status: converter valores antigos para novos
       let normalizedStatus = (schedule.status || '').trim();
-      if (!normalizedStatus || normalizedStatus === 'pending') normalizedStatus = 'Aberto';
-      else if (normalizedStatus === 'confirmed') normalizedStatus = 'Em Andamento';
-      else if (normalizedStatus === 'completed') normalizedStatus = 'Realizado';
-      else if (normalizedStatus === 'cancelled') normalizedStatus = 'Finalizado';
+      if (!normalizedStatus || normalizedStatus === 'pending') normalizedStatus = 'ABERTO';
+      else if (normalizedStatus === 'confirmed') normalizedStatus = 'ATENDENDO';
+      else if (normalizedStatus === 'completed') normalizedStatus = 'CONCLUIDO';
+      else if (normalizedStatus === 'cancelled') normalizedStatus = 'FINALIZADO';
       
       return {
         ...schedule,
@@ -189,10 +189,10 @@ router.get('/:id', async (req, res) => {
       
       // Normalizar status: converter valores antigos para novos
       let normalizedStatus = (schedule.status || '').trim();
-      if (!normalizedStatus || normalizedStatus === 'pending') normalizedStatus = 'Aberto';
-      else if (normalizedStatus === 'confirmed') normalizedStatus = 'Em Andamento';
-      else if (normalizedStatus === 'completed') normalizedStatus = 'Realizado';
-      else if (normalizedStatus === 'cancelled') normalizedStatus = 'Finalizado';
+      if (!normalizedStatus || normalizedStatus === 'pending') normalizedStatus = 'ABERTO';
+      else if (normalizedStatus === 'confirmed') normalizedStatus = 'ATENDENDO';
+      else if (normalizedStatus === 'completed') normalizedStatus = 'CONCLUIDO';
+      else if (normalizedStatus === 'cancelled') normalizedStatus = 'FINALIZADO';
       
       return {
         ...schedule,
@@ -253,10 +253,19 @@ router.put('/:id', async (req, res) => {
     let normalizedStatus = status;
     if (status !== undefined) {
       normalizedStatus = (status || '').trim();
-      if (!normalizedStatus || normalizedStatus === 'pending') normalizedStatus = 'Aberto';
-      else if (normalizedStatus === 'confirmed') normalizedStatus = 'Em Andamento';
-      else if (normalizedStatus === 'completed') normalizedStatus = 'Realizado';
-      else if (normalizedStatus === 'cancelled') normalizedStatus = 'Finalizado';
+      console.log('DEBUG PUT - Status recebido:', status);
+      console.log('DEBUG PUT - Status normalizado:', normalizedStatus);
+      
+      if (!normalizedStatus || normalizedStatus === 'pending') normalizedStatus = 'ABERTO';
+      else if (normalizedStatus === 'confirmed') normalizedStatus = 'ATENDENDO';
+      else if (normalizedStatus === 'completed') normalizedStatus = 'CONCLUIDO';
+      else if (normalizedStatus === 'cancelled') normalizedStatus = 'FINALIZADO';
+      else if (normalizedStatus === 'CONCLUIDO') normalizedStatus = 'CONCLUIDO'; // Manter CONCLUIDO como está
+      else if (normalizedStatus === 'ATENDENDO') normalizedStatus = 'ATENDENDO'; // Manter ATENDENDO como está
+      else if (normalizedStatus === 'FINALIZADO') normalizedStatus = 'FINALIZADO'; // Manter FINALIZADO como está
+      else if (normalizedStatus === 'ABERTO') normalizedStatus = 'ABERTO'; // Manter ABERTO como está
+      
+      console.log('DEBUG PUT - Status final:', normalizedStatus);
     }
     
     // Construir query dinâmica para atualização parcial

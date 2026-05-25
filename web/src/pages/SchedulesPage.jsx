@@ -143,30 +143,33 @@ export default function SchedulesPage() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Aberto': return 'bg-blue-500';
-      case 'Em Andamento': return 'bg-amber-500';
-      case 'Realizado': return 'bg-emerald-500';
-      case 'Finalizado': return 'bg-slate-500';
+      case 'ABERTO': return 'bg-blue-500';
+      case 'ATENDENDO': return 'bg-amber-500';
+      case 'CONCLUIDO': return 'bg-emerald-500';
+      case 'FINALIZADO': return 'bg-slate-500';
+      case 'ATRASADO': return 'bg-red-500';
       default: return 'bg-slate-500';
     }
   };
 
   const getTemporalStatus = (schedule) => {
-    // Se o status for Em Andamento, retorna azul
-    if (schedule.status === 'Em Andamento') return 'em_andamento';
-    // Se o status for Realizado, retorna laranja
-    if (schedule.status === 'Realizado') return 'realizado';
-    // Se o status for Finalizado, retorna sem destaque
-    if (schedule.status === 'Finalizado') return 'concluido';
-    
+    // Se o status for ATENDENDO, retorna azul
+    if (schedule.status === 'ATENDENDO') return 'em_andamento';
+    // Se o status for CONCLUIDO, retorna laranja
+    if (schedule.status === 'CONCLUIDO') return 'realizado';
+    // Se o status for FINALIZADO, retorna sem destaque
+    if (schedule.status === 'FINALIZADO') return 'concluido';
+    // Se o status for ATRASADO, retorna vermelho
+    if (schedule.status === 'ATRASADO') return 'atrasado';
+
     if (!schedule.data_hora_agendamento && !schedule.scheduled_date) return null;
-    
+
     const now = currentTime;
     const appointmentDate = schedule.data_hora_agendamento ? new Date(schedule.data_hora_agendamento) : new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`);
     const diffMs = appointmentDate.getTime() - now.getTime();
     const diffMinutes = diffMs / (1000 * 60);
     const diffHours = diffMs / (1000 * 60 * 60);
-    
+
     // Atrasado (passou da hora): vermelho
     if (diffMs < 0) return 'atrasado';
     // Na hora (menos de 2 horas): amarelo
@@ -176,16 +179,18 @@ export default function SchedulesPage() {
   };
 
   const getTemporalRowClass = (schedule) => {
-    // Se o status for Em Andamento, retorna azul
-    if (schedule.status === 'Em Andamento') return 'bg-blue-50 dark:bg-blue-950/20';
-    // Se o status for Realizado, retorna laranja
-    if (schedule.status === 'Realizado') return 'bg-orange-50 dark:bg-orange-950/20';
-    // Se o status for Finalizado, retorna sem destaque
-    if (schedule.status === 'Finalizado') return '';
-    
+    // Se o status for ATENDENDO, retorna azul
+    if (schedule.status === 'ATENDENDO') return 'bg-blue-50 dark:bg-blue-950/20';
+    // Se o status for CONCLUIDO, retorna laranja
+    if (schedule.status === 'CONCLUIDO') return 'bg-orange-50 dark:bg-orange-950/20';
+    // Se o status for FINALIZADO, retorna sem destaque
+    if (schedule.status === 'FINALIZADO') return '';
+    // Se o status for ATRASADO, retorna vermelho
+    if (schedule.status === 'ATRASADO') return 'bg-red-50 dark:bg-red-950/20';
+
     const status = getTemporalStatus(schedule);
     if (!status) return '';
-    
+
     switch (status) {
       case 'atrasado': return 'bg-red-50 dark:bg-red-950/20';
       case 'verde': return 'bg-green-50 dark:bg-green-950/20';
