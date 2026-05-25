@@ -193,8 +193,19 @@ export default function ReportViewer() {
     }
   };
 
-  const handleFinalize = () => {
-    navigate('/reports');
+  const handleFinalize = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      await axios.put(`${API_BASE_URL}/reports/${id}`, 
+        { status: 'completed' },
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      toast.success('Relatório finalizado com sucesso!');
+      navigate('/reports');
+    } catch (error) {
+      console.error('Erro ao finalizar relatório:', error);
+      toast.error('Erro ao finalizar relatório');
+    }
   };
 
   const valOrDash = val => {

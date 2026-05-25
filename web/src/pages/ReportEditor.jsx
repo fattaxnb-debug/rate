@@ -458,7 +458,7 @@ export default function ReportEditor() {
       });
       const existingReport = existingReportRes.data.data;
       console.log('[REPORT EDITOR FRONTEND DEBUG] Existing report:', existingReport);
-      const finalStatus = 'concluído';
+      const finalStatus = 'completed';
       
       let editCount = existingReport.technician_edit_count || 0;
       if (isTech && editCount === 0) editCount = 1;

@@ -270,8 +270,8 @@ export default function ReportsPage() {
                         </TableCell>
                         <TableCell className="text-gray-700">{report.technician_name || '-'}</TableCell>
                         <TableCell>
-                          {report.status === 'finalizado' || report.status === 'realizado' ? (
-                            <Badge className="bg-green-500 hover:bg-green-600">Realizado</Badge>
+                          {report.status === 'finalizado' || report.status === 'realizado' || report.status === 'completed' ? (
+                            <Badge className="bg-green-500 hover:bg-green-600">CONCLUÍDO</Badge>
                           ) : (
                             <Badge variant="secondary">Pendente</Badge>
                           )}
@@ -372,8 +372,8 @@ export default function ReportsPage() {
                             <div className="flex items-center">
                               <span className="font-semibold text-blue-600 w-24">Status:</span>
                               <span className="text-gray-900">
-                                {report.status === 'finalizado' ? (
-                                  <Badge className="bg-green-500">Finalizado</Badge>
+                                {report.status === 'finalizado' || report.status === 'completed' ? (
+                                  <Badge className="bg-green-500">CONCLUÍDO</Badge>
                                 ) : (
                                   <Badge variant="secondary">Pendente</Badge>
                                 )}
@@ -424,8 +424,8 @@ export default function ReportsPage() {
                           <div className="flex justify-between items-center py-2">
                             <span className="font-semibold text-blue-600">Status:</span>
                             <span className="text-gray-900 font-medium">
-                              {report.status === 'finalizado' ? (
-                                <Badge className="bg-green-500">Finalizado</Badge>
+                              {report.status === 'finalizado' || report.status === 'completed' ? (
+                                <Badge className="bg-green-500">CONCLUÍDO</Badge>
                               ) : (
                                 <Badge variant="secondary">Pendente</Badge>
                               )}
