@@ -327,6 +327,9 @@ router.put('/:id', async (req, res) => {
         // Tratar campos JSON
         if (field === 'electrical_measurements' || field === 'battery_bank') {
           values.push(JSON.stringify(req.body[field] || {}));
+        } else if (field === 'status') {
+          // Status nunca deve ser null - sempre preservar o valor enviado
+          values.push(req.body[field] || 'draft');
         } else {
           // Para assinaturas, se for string vazia, enviar NULL para limpar
           if ((field === 'client_signature' || field === 'technician_signature') && req.body[field] === '') {
