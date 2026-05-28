@@ -54,7 +54,7 @@ export default function DashboardPage() {
 
 
 
-  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
 
 
 
@@ -417,7 +417,7 @@ export default function DashboardPage() {
 
                 </Link>
 
-                {currentUser?.role !== 'Técnico' && (
+                {currentUser?.role !== 'Técnico' && currentUser?.role !== 'technician' && (
                 <Link to="/reports/new">
 
                   <Button className="w-full justify-start">

@@ -61,7 +61,7 @@ export default function ReportForm() {
   const [formData, setFormData] = useState({
     client_id: clientId || '',
     equipment_id: '',
-    technician_id: currentUser?.role === 'Técnico' ? currentUser.id : '',
+    technician_id: (currentUser?.role === 'Técnico' || currentUser?.role === 'technician') ? currentUser.id : '',
     schedule_id: scheduleId || '',
     service_order_number: '',
     service_type: '',
@@ -113,8 +113,8 @@ export default function ReportForm() {
   const clientSigPad = useRef(null);
   const techSigPad = useRef(null);
 
-  const isTech = currentUser?.role === 'Técnico';
-  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
+  const isTech = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
 
   useLayoutEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
@@ -432,7 +432,7 @@ export default function ReportForm() {
     console.log('[DEBUG] Validação passou');
     setSaving(true);
     
-    const isTecnico = currentUser?.role === 'Técnico';
+    const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
     console.log('[DEBUG] isTecnico:', isTecnico);
     
     // Formatar data local sem conversão para UTC

@@ -196,7 +196,7 @@ export default function ReportsPage() {
               <p className="text-muted-foreground">Gerenciamento de relatórios técnicos</p>
             </div>
             <div className="hidden md:block">
-              {currentUser?.role !== 'Técnico' && (
+              {currentUser?.role !== 'Técnico' && currentUser?.role !== 'technician' && (
               <Link to="/reports/new">
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
@@ -338,7 +338,7 @@ export default function ReportsPage() {
 
           <div className="space-y-4 md:hidden">
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              {currentUser?.role !== 'Técnico' && (
+              {currentUser?.role !== 'Técnico' && currentUser?.role !== 'technician' && (
                 <Link to="/reports/new">
                   <Button size="sm">
                     <Plus className="mr-2 h-4 w-4" />

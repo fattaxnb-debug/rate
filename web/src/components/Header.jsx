@@ -108,7 +108,7 @@ function Header() {
 
               <div className="flex items-center space-x-4">
                 {/* Botão de notificações para técnicos */}
-                {currentUser?.role === 'Técnico' && (
+                {(currentUser?.role === 'Técnico' || currentUser?.role === 'technician') && (
                   <Button
                     variant="ghost"
                     size="icon"

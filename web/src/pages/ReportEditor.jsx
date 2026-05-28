@@ -114,8 +114,8 @@ export default function ReportEditor() {
   const clientSigPad = useRef(null);
   const techSigPad = useRef(null);
 
-  const isTech = currentUser?.role === 'Técnico';
-  const isGerente = currentUser?.role === 'Gerente';
+  const isTech = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
 
   useLayoutEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');

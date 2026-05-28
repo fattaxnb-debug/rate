@@ -113,8 +113,8 @@ export default function ReportFormEditor() {
   const clientSigPad = useRef(null);
   const techSigPad = useRef(null);
 
-  const isTech = currentUser?.role === 'Técnico';
-  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
+  const isTech = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
 
   useLayoutEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
@@ -509,7 +509,7 @@ export default function ReportFormEditor() {
       const finalStatus = 'realizado';
       
       let editCount = existingReport.technician_edit_count || 0;
-      if (currentUser?.role === 'Técnico' && editCount === 0) editCount = 1;
+      if ((currentUser?.role === 'Técnico' || currentUser?.role === 'technician') && editCount === 0) editCount = 1;
       
       let techSignatureToSave = existingReport.technician_signature || '';
       if (techSigPad.current && !techSigPad.current.isEmpty()) {
