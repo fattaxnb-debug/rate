@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import { Button } from '@/components/ui/button';
 
-import { Users, Wrench, Calendar, FileText, Plus } from 'lucide-react';
+import { Users, Wrench, Calendar, FileText, Plus, ShoppingCart } from 'lucide-react';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -48,6 +48,13 @@ export default function DashboardPage() {
 
   });
 
+  const [proposals, setProposals] = useState({
+    abertas: 0,
+    fechadas: 0,
+    dispensadas: 0,
+    total: 0
+  });
+
   const [schedulesByStatus, setSchedulesByStatus] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -76,7 +83,7 @@ export default function DashboardPage() {
 
       // Fetch stats from backend API
 
-      const [clientsRes, equipmentsRes, schedulesRes, reportsRes] = await Promise.all([
+      const [clientsRes, equipmentsRes, schedulesRes, reportsRes, proposalsRes] = await Promise.all([
 
         axios.get(`${API_BASE_URL}/clients`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: [] } })),
 
@@ -84,7 +91,9 @@ export default function DashboardPage() {
 
         axios.get(`${API_BASE_URL}/schedules`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: [] } })),
 
-        axios.get(`${API_BASE_URL}/reports`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: [] } }))
+        axios.get(`${API_BASE_URL}/reports`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: [] } })),
+
+        axios.get(`${API_BASE_URL}/proposals`, { headers: { 'Authorization': `Bearer ${token}` } }).catch(() => ({ data: { data: [] } }))
 
       ]);
 
@@ -97,6 +106,13 @@ export default function DashboardPage() {
       const schedules = schedulesRes.data.data || [];
 
       const reports = reportsRes.data.data || [];
+
+      const proposals = proposalsRes.data.data || [];
+
+      // Count proposals by status
+      const abertas = proposals.filter(p => (p.status || 'ABERTA') === 'ABERTA').length;
+      const fechadas = proposals.filter(p => p.status === 'FECHADA').length;
+      const dispensadas = proposals.filter(p => p.status === 'DISPENSADA').length;
 
 
 
@@ -126,6 +142,13 @@ export default function DashboardPage() {
 
         allReports: reports.length
 
+      });
+
+      setProposals({
+        abertas,
+        fechadas,
+        dispensadas,
+        total: proposals.length
       });
 
 
@@ -196,7 +219,7 @@ export default function DashboardPage() {
 
         <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8">
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
 
             {[1, 2, 3, 4, 5].map(i => (
 
@@ -274,7 +297,7 @@ export default function DashboardPage() {
 
 
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
 
             <Link to="/clients">
               <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 border-0 shadow-xl cursor-pointer">
@@ -343,6 +366,30 @@ export default function DashboardPage() {
                   <div className="flex items-baseline gap-2">
                     <div className="text-4xl font-bold text-white">{stats.reports}</div>
                     <div className="text-xs text-white/70">pendentes</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link to="/proposals">
+              <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 border-0 shadow-xl cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <CardTitle className="text-sm font-semibold text-white/90">Propostas</CardTitle>
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <ShoppingCart className="h-5 w-5 text-white" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1">
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-3xl font-bold text-white">{proposals.total}</div>
+                      <div className="text-xs text-white/70">total</div>
+                    </div>
+                    <div className="flex gap-3 text-xs">
+                      <span className="text-white/90">{proposals.abertas} abertas</span>
+                      <span className="text-white/90">{proposals.fechadas} fechadas</span>
+                      <span className="text-white/90">{proposals.dispensadas} dispensadas</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
