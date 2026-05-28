@@ -346,6 +346,10 @@ router.put('/:id', async (req, res) => {
     const hasStatusUpdate = req.body.status === 'CONCLUIDO';
     const currentStatus = (currentReport.status || '').toUpperCase();
     
+    console.log('[REPORTS BACKEND DEBUG] Current status:', currentReport.status, 'UPPER:', currentStatus);
+    console.log('[REPORTS BACKEND DEBUG] Has status update:', hasStatusUpdate);
+    console.log('[REPORTS BACKEND DEBUG] Request body status:', req.body.status);
+    
     if (!hasStatusUpdate && currentStatus === 'PENDENTE') {
       updates.push('status = ?');
       values.push('CONCLUIDO');

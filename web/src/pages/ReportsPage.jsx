@@ -96,6 +96,11 @@ export default function ReportsPage() {
       // Ordenar por data de criação (mais recente primeiro)
       const sortedReports = enrichedReports.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       
+      console.log('[REPORTS LIST DEBUG] Total reports:', sortedReports.length);
+      sortedReports.forEach(r => {
+        console.log('[REPORTS LIST DEBUG] Report:', r.service_order_number, 'Status:', r.status, 'Status display:', r.status === 'CONCLUIDO' ? 'CONCLUÍDO' : 'Pendente');
+      });
+      
       setReports(sortedReports);
       setFilteredReports(sortedReports);
       setLoading(false);

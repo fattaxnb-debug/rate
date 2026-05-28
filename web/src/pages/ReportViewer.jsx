@@ -195,11 +195,14 @@ export default function ReportViewer() {
 
   const handleFinalize = async () => {
     try {
+      console.log('[REPORT VIEWER DEBUG] Finalize button clicked');
+      console.log('[REPORT VIEWER DEBUG] Current status before finalize:', report.status);
       const token = localStorage.getItem('auth_token');
-      await axios.put(`${API_BASE_URL}/reports/${id}`, 
+      const response = await axios.put(`${API_BASE_URL}/reports/${id}`, 
         { status: 'CONCLUIDO' },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
+      console.log('[REPORT VIEWER DEBUG] Finalize response:', response.data);
       toast.success('Relatório finalizado com sucesso!');
       fetchReport();
     } catch (error) {
@@ -359,6 +362,11 @@ export default function ReportViewer() {
   
   // Can Edit Logic: Only creator can edit OR manager, but not when status is submitted or finalized
   const canEdit = isGerente && report.status !== 'submitted' && report.status !== 'CONCLUIDO' || (isTech && report.technician_id === currentUser.id && report.status !== 'submitted' && report.status !== 'CONCLUIDO');
+  
+  console.log('[REPORT VIEWER DEBUG] Report status:', report.status);
+  console.log('[REPORT VIEWER DEBUG] isGerente:', isGerente, 'isTech:', isTech);
+  console.log('[REPORT VIEWER DEBUG] canEdit:', canEdit);
+  console.log('[REPORT VIEWER DEBUG] Show Finalizar button:', report.status !== 'CONCLUIDO' && (isGerente || isTech));
 
   return (
     <>
