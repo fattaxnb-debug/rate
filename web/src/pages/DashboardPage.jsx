@@ -373,32 +373,30 @@ export default function DashboardPage() {
             </Link>
 
             <Link to="/proposals">
-              <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 border-0 shadow-xl cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-semibold text-white/90">Propostas</CardTitle>
+              <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 border-0 shadow-xl cursor-pointer min-h-[140px]">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 pt-3">
+                  <CardTitle className="text-base font-semibold text-white">Propostas</CardTitle>
                   <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm flex-shrink-0">
-                    <ShoppingCart className="h-5 w-5 text-white" />
+                    <ShoppingCart className="h-6 w-6 text-white" />
                   </div>
                 </CardHeader>
-                <CardContent className="pb-3">
-                  <div className="space-y-2">
-                    <div className="flex items-baseline gap-2">
-                      <div className="text-3xl font-bold text-white">{proposals.total}</div>
-                      <div className="text-xs text-white/70">total</div>
+                <CardContent className="pb-4">
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <div className="text-5xl font-bold text-white">{proposals.total}</div>
+                    <div className="text-sm text-white/80 font-medium">total</div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
+                      <span className="text-2xl font-bold text-white">{proposals.abertas}</span>
+                      <span className="text-xs text-white/90 font-medium whitespace-nowrap">abertas</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-1 text-xs">
-                      <div className="flex flex-col items-center bg-white/10 rounded px-1 py-1">
-                        <span className="font-bold text-white">{proposals.abertas}</span>
-                        <span className="text-white/80 whitespace-nowrap">abertas</span>
-                      </div>
-                      <div className="flex flex-col items-center bg-white/10 rounded px-1 py-1">
-                        <span className="font-bold text-white">{proposals.fechadas}</span>
-                        <span className="text-white/80 whitespace-nowrap">fechadas</span>
-                      </div>
-                      <div className="flex flex-col items-center bg-white/10 rounded px-1 py-1">
-                        <span className="font-bold text-white">{proposals.dispensadas}</span>
-                        <span className="text-white/80 whitespace-nowrap">dispensadas</span>
-                      </div>
+                    <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
+                      <span className="text-2xl font-bold text-white">{proposals.fechadas}</span>
+                      <span className="text-xs text-white/90 font-medium whitespace-nowrap">fechadas</span>
+                    </div>
+                    <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
+                      <span className="text-2xl font-bold text-white">{proposals.dispensadas}</span>
+                      <span className="text-xs text-white/90 font-medium whitespace-nowrap">dispensadas</span>
                     </div>
                   </div>
                 </CardContent>
