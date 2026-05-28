@@ -372,8 +372,8 @@ router.put('/:id', async (req, res) => {
 // PUT /reports/:id/finalize - Finalizar relatório
 router.put('/:id/finalize', async (req, res) => {
   try {
-    await db.query('UPDATE reports SET status = ? WHERE id = ?', ['finalizado', req.params.id]);
-    res.json({ data: { id: req.params.id, status: 'finalizado' } });
+    await db.query('UPDATE reports SET status = ? WHERE id = ?', ['CONCLUIDO', req.params.id]);
+    res.json({ data: { id: req.params.id, status: 'CONCLUIDO' } });
   } catch (error) {
     console.error('Error finalizing report:', error);
     res.status(500).json({ error: 'Erro ao finalizar relatório' });
