@@ -342,11 +342,11 @@ router.put('/:id', async (req, res) => {
       }
     }
     
-    // Se campos importantes foram preenchidos, mudar status automaticamente para CONCLUIDO
-    const hasImportantFields = req.body.attendance_description || req.body.diagnosis || req.body.conclusion;
+    // Se status atual é PENDENTE e não está sendo enviado um novo status, mudar automaticamente para CONCLUIDO
     const hasStatusUpdate = req.body.status === 'CONCLUIDO';
+    const currentStatus = (currentReport.status || '').toUpperCase();
     
-    if (hasImportantFields && !hasStatusUpdate && currentReport.status === 'PENDENTE') {
+    if (!hasStatusUpdate && currentStatus === 'PENDENTE') {
       updates.push('status = ?');
       values.push('CONCLUIDO');
       console.log('[REPORTS BACKEND DEBUG] Auto-updating status to CONCLUIDO');
