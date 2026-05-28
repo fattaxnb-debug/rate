@@ -10,6 +10,7 @@ import reportPhotosRouter from './report-photos.js';
 import statsRouter from './stats.js';
 import migrateRouter from './migrate.js';
 import pushSubscriptionsRouter from './push-subscriptions.js';
+import proposalsRouter from './proposals.js';
 import db from '../config/database.js';
 
 const router = Router();
@@ -59,6 +60,8 @@ export default () => {
     router.use('/migrate', migrateRouter);
     console.log('Registering /push-subscriptions route...');
     router.use('/push-subscriptions', pushSubscriptionsRouter);
+    console.log('Registering /proposals route...');
+    router.use('/proposals', proposalsRouter);
     console.log('All routes registered');
 
     return router;

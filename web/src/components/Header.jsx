@@ -67,6 +67,7 @@ function Header() {
     { path: '/equipments', label: 'Equipamentos', icon: Wrench },
     { path: '/schedules', label: 'Agendamentos', icon: Calendar },
     { path: '/reports', label: 'Relatórios', icon: FileText },
+    { path: '/proposals', label: 'Propostas', icon: FileText },
   ];
 
   return (

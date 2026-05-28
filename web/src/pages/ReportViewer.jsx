@@ -341,6 +341,11 @@ export default function ReportViewer() {
     technical_contact: report.client_technical_contact
   };
   const technician = { name: report.technician_name, email: report.technician_email };
+  const techSignatureUrl = report.technician_signature
+    ? report.technician_signature
+    : report.technician_signature_file
+      ? `${API_BASE_URL}/uploads/${report.technician_signature_file}`
+      : null;
   const eqData = report.expand?.equipment_id || {};
   const bat = report.battery_bank || {};
   const photos = report.fetched_photos || [];
@@ -1119,33 +1124,29 @@ export default function ReportViewer() {
                     color: sectionTitleColor
                   }}>Assinaturas</h2>
                   <div className="p-8 bg-white">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-3xl mx-auto">
-                      <div className="text-center flex flex-col items-center justify-end h-full">
-                        {report.technician_signature ? (
-                          <img src={report.technician_signature} alt="Assinatura Técnico" width="250" height="128" className="h-32 max-w-full object-contain mb-4" style={{ imageRendering: 'crisp-edges' }} />
+                    <div className="grid grid-cols-2 gap-16 max-w-3xl mx-auto">
+                      {/* Lado esquerdo: Técnico */}
+                      <div className="flex flex-col items-center justify-end">
+                        {techSignatureUrl ? (
+                          <img src={techSignatureUrl} alt="Assinatura Técnico" width="250" height="96" className="h-24 max-w-full object-contain mb-2" style={{ imageRendering: 'crisp-edges' }} />
                         ) : (
-                          <div className="h-32 w-full max-w-[250px] mb-4 bg-white rounded border border-dashed flex items-center justify-center">
-                            <span className="text-xs text-gray-400 uppercase tracking-widest">-</span>
-                          </div>
+                          <div className="h-24 w-full max-w-[250px] mb-2" />
                         )}
-                        <div className="border-t border-gray-400 pt-3 w-full max-w-[280px]">
+                        <div className="border-t border-gray-400 pt-2 w-full max-w-[280px] text-center">
                           <p className="font-bold text-sm uppercase text-gray-900">{valOrDash(technician.name)}</p>
                           <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-1">Técnico Responsável</p>
                         </div>
                       </div>
-                      
-                      <div className="text-center flex flex-col items-center justify-end h-full">
+
+                      {/* Lado direito: Cliente */}
+                      <div className="flex flex-col items-center justify-end">
                         {report.client_signature ? (
-                          <div className="mb-4 h-32 flex items-center justify-center">
-                            <img src={report.client_signature} alt="Assinatura do Cliente" width="250" height="128" className="max-h-full max-w-full object-contain" style={{ imageRendering: 'crisp-edges' }} />
-                          </div>
+                          <img src={report.client_signature} alt="Assinatura do Cliente" width="250" height="96" className="h-24 max-w-full object-contain mb-2" style={{ imageRendering: 'crisp-edges' }} />
                         ) : (
-                          <div className="h-32 w-full max-w-[250px] mb-4 bg-white rounded border border-dashed flex items-center justify-center">
-                            <span className="text-xs text-gray-400 uppercase tracking-widest">Assinatura não capturada</span>
-                          </div>
+                          <div className="h-24 w-full max-w-[250px] mb-2" />
                         )}
-                        <div className="border-t border-gray-400 pt-3 w-full max-w-[280px]">
-                          <p className="font-bold text-sm uppercase text-gray-900">{valOrDash(report.responsible_person)}</p>
+                        <div className="border-t border-gray-400 pt-2 w-full max-w-[280px] text-center">
+                          <p className="font-bold text-sm uppercase text-gray-900">{valOrDash(companySettings?.company_name) !== '-' ? valOrDash(companySettings?.company_name) : 'FATTAX'}</p>
                           <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mt-1">Cliente / Responsável no Local</p>
                         </div>
                       </div>

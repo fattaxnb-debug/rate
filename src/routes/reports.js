@@ -43,7 +43,8 @@ router.get('/:id', async (req, res) => {
               c.email as client_email, 
               c.technical_contact as client_technical_contact,
               u.name as technician_name,
-              u.email as technician_email
+              u.email as technician_email,
+              u.signature as technician_signature_file
        FROM reports r 
        LEFT JOIN clients c ON r.client_id = c.id 
        LEFT JOIN users u ON r.technician_id = u.id
