@@ -8,6 +8,7 @@ import ProtectedRoute from '@/components/ProtectedRoute.jsx';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.jsx';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
+import { useServiceWorkerUpdate } from '@/hooks/useServiceWorkerUpdate.js';
 
 const HomePage = lazy(() => import('@/pages/HomePage.jsx'));
 const LoginPage = lazy(() => import('@/pages/LoginPage.jsx'));
@@ -40,6 +41,8 @@ const ReportFormWrapper = ({ isEdit }) => (
 );
 
 function App() {
+  useServiceWorkerUpdate();
+
   return (
     <Router>
       <ScrollToTop />
