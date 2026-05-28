@@ -122,9 +122,10 @@ export default function DashboardPage() {
 
       const filteredReports = isGerente ? reports : myReports;
 
-      // Count only pending reports (not completed/finalized)
-
-      const pendingReports = filteredReports.filter(r => r.status !== 'Finalizado' && r.status !== 'Concluído' && r.status !== 'completed');
+      // Para gerente: contar todos os relatórios PENDENTE de qualquer usuário; para técnico: só os seus
+      const pendingReports = isGerente
+        ? reports.filter(r => (r.status || 'PENDENTE').toUpperCase() === 'PENDENTE')
+        : filteredReports.filter(r => (r.status || 'PENDENTE').toUpperCase() === 'PENDENTE');
 
 
 
@@ -373,22 +374,31 @@ export default function DashboardPage() {
 
             <Link to="/proposals">
               <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600 border-0 shadow-xl cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-semibold text-white/90">Propostas</CardTitle>
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm flex-shrink-0">
                     <ShoppingCart className="h-5 w-5 text-white" />
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-1">
+                <CardContent className="pb-3">
+                  <div className="space-y-2">
                     <div className="flex items-baseline gap-2">
                       <div className="text-3xl font-bold text-white">{proposals.total}</div>
                       <div className="text-xs text-white/70">total</div>
                     </div>
-                    <div className="flex gap-3 text-xs">
-                      <span className="text-white/90">{proposals.abertas} abertas</span>
-                      <span className="text-white/90">{proposals.fechadas} fechadas</span>
-                      <span className="text-white/90">{proposals.dispensadas} dispensadas</span>
+                    <div className="grid grid-cols-3 gap-1 text-xs">
+                      <div className="flex flex-col items-center bg-white/10 rounded px-1 py-1">
+                        <span className="font-bold text-white">{proposals.abertas}</span>
+                        <span className="text-white/80 whitespace-nowrap">abertas</span>
+                      </div>
+                      <div className="flex flex-col items-center bg-white/10 rounded px-1 py-1">
+                        <span className="font-bold text-white">{proposals.fechadas}</span>
+                        <span className="text-white/80 whitespace-nowrap">fechadas</span>
+                      </div>
+                      <div className="flex flex-col items-center bg-white/10 rounded px-1 py-1">
+                        <span className="font-bold text-white">{proposals.dispensadas}</span>
+                        <span className="text-white/80 whitespace-nowrap">dispensadas</span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
