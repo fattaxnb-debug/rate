@@ -197,11 +197,11 @@ export default function ReportViewer() {
     try {
       const token = localStorage.getItem('auth_token');
       await axios.put(`${API_BASE_URL}/reports/${id}`, 
-        { status: 'completed' },
+        { status: 'CONCLUIDO' },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       toast.success('Relatório finalizado com sucesso!');
-      navigate('/reports');
+      fetchReport();
     } catch (error) {
       console.error('Erro ao finalizar relatório:', error);
       toast.error('Erro ao finalizar relatório');
@@ -358,7 +358,7 @@ export default function ReportViewer() {
   const sectionBgColor = colorMode === 'color' ? '#FFD700' : '#f5f5f5';
   
   // Can Edit Logic: Only creator can edit OR manager, but not when status is submitted or finalized
-  const canEdit = isGerente && report.status !== 'submitted' && report.status !== 'finalizado' || (isTech && report.technician_id === currentUser.id && report.status !== 'submitted' && report.status !== 'finalizado');
+  const canEdit = isGerente && report.status !== 'submitted' && report.status !== 'CONCLUIDO' || (isTech && report.technician_id === currentUser.id && report.status !== 'submitted' && report.status !== 'CONCLUIDO');
 
   return (
     <>
@@ -402,7 +402,7 @@ export default function ReportViewer() {
                   Editar
                 </Button>
               )}
-              {report.status !== 'finalizado' && (isGerente || isTech) && (
+              {report.status !== 'CONCLUIDO' && (isGerente || isTech) && (
                 <Button variant="default" onClick={handleFinalize} className="bg-green-500 hover:bg-green-600">
                   Finalizar
                 </Button>

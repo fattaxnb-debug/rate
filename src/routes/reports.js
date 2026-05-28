@@ -342,6 +342,16 @@ router.put('/:id', async (req, res) => {
       }
     }
     
+    // Se campos importantes foram preenchidos, mudar status automaticamente para CONCLUIDO
+    const hasImportantFields = req.body.attendance_description || req.body.diagnosis || req.body.conclusion;
+    const hasStatusUpdate = req.body.status === 'CONCLUIDO';
+    
+    if (hasImportantFields && !hasStatusUpdate && currentReport.status === 'PENDENTE') {
+      updates.push('status = ?');
+      values.push('CONCLUIDO');
+      console.log('[REPORTS BACKEND DEBUG] Auto-updating status to CONCLUIDO');
+    }
+    
     if (updates.length === 0) {
       return res.json({ message: 'Nenhum campo para atualizar', data: currentReport });
     }
