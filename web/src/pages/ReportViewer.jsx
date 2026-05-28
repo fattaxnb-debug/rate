@@ -32,8 +32,8 @@ export default function ReportViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin';
-  const isTech = currentUser?.role === 'Técnico';
+  const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
+  const isTech = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
 
   const [report, setReport] = useState(null);
   const [companySettings, setCompanySettings] = useState(null);
@@ -410,7 +410,7 @@ export default function ReportViewer() {
                   Editar
                 </Button>
               )}
-              {report.status !== 'CONCLUIDO' && (isGerente || isTech) && (
+              {(isGerente || isTech) && (
                 <Button variant="default" onClick={handleFinalize} className="bg-green-500 hover:bg-green-600">
                   Finalizar
                 </Button>
