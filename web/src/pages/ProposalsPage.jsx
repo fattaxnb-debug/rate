@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Search, FileText, Trash2, Eye, Edit, X } from 'lucide-react';
+import { Plus, Search, FileText, Trash2, Eye, Edit, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { API_BASE_URL } from '@/config/api.js';
@@ -20,6 +20,14 @@ export default function ProposalsPage() {
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [isViewMode, setIsViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('ABERTA');
+  const [expandedCards, setExpandedCards] = useState({});
+
+  const toggleCard = (proposalId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [proposalId]: !prev[proposalId]
+    }));
+  };
 
   useEffect(() => {
     fetchProposals();
@@ -193,17 +201,17 @@ export default function ProposalsPage() {
             </button>
           </div>
 
-          {/* Tabela de Propostas */}
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">
-              Carregando propostas...
-            </div>
-          ) : filteredProposals.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              Nenhuma proposta encontrada nesta aba
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
+          {/* Tabela de Propostas - Desktop */}
+          <div className="hidden md:block overflow-x-auto">
+            {loading ? (
+              <div className="text-center py-8 text-gray-500">
+                Carregando propostas...
+              </div>
+            ) : filteredProposals.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                Nenhuma proposta encontrada nesta aba
+              </div>
+            ) : (
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100 border-b">
@@ -286,8 +294,159 @@ export default function ProposalsPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Versão Mobile - Cards Expansíveis */}
+          <div className="md:hidden space-y-4">
+            {loading ? (
+              <div className="text-center py-8 text-gray-500">
+                Carregando propostas...
+              </div>
+            ) : filteredProposals.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                Nenhuma proposta encontrada nesta aba
+              </div>
+            ) : (
+              filteredProposals.map((proposal) => (
+                <div key={proposal.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
+                  <div 
+                    className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors relative overflow-hidden"
+                    onClick={() => toggleCard(proposal.id)}
+                  >
+                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-500"></div>
+                    <div className="flex items-center justify-between pl-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 truncate text-base">
+                          {proposal.proposal_number}
+                        </h3>
+                        <div className="text-sm text-gray-600 mt-2 space-y-1">
+                          <div className="flex items-center">
+                            <span className="font-semibold text-blue-600 w-24">Cliente:</span>
+                            <span className="text-gray-900">{proposal.client_name || '-'}</span>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="font-semibold text-blue-600 w-24">Status:</span>
+                            <span className="text-gray-900">
+                              <span
+                                className="px-2 py-1 rounded-full text-xs font-semibold"
+                                style={{
+                                  backgroundColor:
+                                    proposal.status === 'FECHADA' ? '#bbf7d0' :
+                                    proposal.status === 'DISPENSADA' ? '#fecaca' :
+                                    '#bfdbfe',
+                                  color:
+                                    proposal.status === 'FECHADA' ? '#166534' :
+                                    proposal.status === 'DISPENSADA' ? '#991b1b' :
+                                    '#1e40af',
+                                }}
+                              >
+                                {proposal.status || 'ABERTA'}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-2 shadow-md">
+                          {expandedCards[proposal.id] ? (
+                            <ChevronUp className="h-4 w-4 text-white" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-white" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {expandedCards[proposal.id] && (
+                    <div className="px-4 pb-4 border-t border-blue-500/20 pt-4 bg-gradient-to-b from-blue-500/5 to-transparent">
+                      <div className="grid grid-cols-1 gap-3 text-sm">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Nº Proposta:</span>
+                          <span className="text-gray-900 font-medium">{proposal.proposal_number || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Cliente:</span>
+                          <span className="text-gray-900 font-medium">{proposal.client_name || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">CNPJ:</span>
+                          <span className="text-gray-900 font-medium">{proposal.client_cnpj || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Data:</span>
+                          <span className="text-gray-900 font-medium">{proposal.proposal_date || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Valor Total:</span>
+                          <span className="text-gray-900 font-medium">{formatCurrency(proposal.total_amount)}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                          <span className="font-semibold text-blue-600">Status:</span>
+                          <span className="text-gray-900 font-medium">
+                            <span
+                              className="px-2 py-1 rounded-full text-xs font-semibold"
+                              style={{
+                                backgroundColor:
+                                  proposal.status === 'FECHADA' ? '#bbf7d0' :
+                                  proposal.status === 'DISPENSADA' ? '#fecaca' :
+                                  '#bfdbfe',
+                                color:
+                                  proposal.status === 'FECHADA' ? '#166534' :
+                                  proposal.status === 'DISPENSADA' ? '#991b1b' :
+                                  '#1e40af',
+                              }}
+                            >
+                              {proposal.status || 'ABERTA'}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-blue-500/20">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewProposal(proposal);
+                          }}
+                          title="Visualizar"
+                          className="bg-gradient-to-br from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                        >
+                          <Eye className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditProposal(proposal);
+                          }}
+                          title="Editar"
+                          className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProposal(proposal);
+                          }}
+                          title="Excluir"
+                          className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
