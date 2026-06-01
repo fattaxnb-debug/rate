@@ -7,6 +7,9 @@ const router = express.Router();
 // GET /proposals - Listar todas as propostas
 router.get('/', authMiddleware, async (req, res) => {
   try {
+    console.log('[PROPOSALS BACKEND DEBUG] GET /proposals called');
+    console.log('[PROPOSALS BACKEND DEBUG] Auth header:', req.headers['authorization'] ? 'Present' : 'Missing');
+    console.log('[PROPOSALS BACKEND DEBUG] User from auth:', req.user);
     const { client_name } = req.query;
     
     let sql = `
@@ -151,6 +154,9 @@ async function generateProposalNumber() {
 // POST /proposals - Criar nova proposta
 router.post('/', authMiddleware, async (req, res) => {
   try {
+    console.log('[PROPOSALS BACKEND DEBUG] POST /proposals called');
+    console.log('[PROPOSALS BACKEND DEBUG] Auth header:', req.headers['authorization'] ? 'Present' : 'Missing');
+    console.log('[PROPOSALS BACKEND DEBUG] User from auth:', req.user);
     console.log('[BACKEND DEBUG] Request body keys:', Object.keys(req.body));
     console.log('[BACKEND DEBUG] Request body:', JSON.stringify(req.body, null, 2));
 
