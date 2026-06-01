@@ -62,6 +62,13 @@ export default () => {
     router.use('/push-subscriptions', pushSubscriptionsRouter);
     console.log('Registering /proposals route...');
     router.use('/proposals', proposalsRouter);
+    
+    // Endpoint de teste para proposals (sem autenticação)
+    router.get('/proposals-test', (req, res) => {
+        console.log('[PROPOSALS TEST] Endpoint called');
+        res.json({ message: 'Proposals test endpoint working', timestamp: new Date().toISOString() });
+    });
+    
     console.log('All routes registered');
 
     return router;
