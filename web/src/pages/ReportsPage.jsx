@@ -30,6 +30,7 @@ export default function ReportsPage() {
   const [equipments, setEquipments] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [expandedCards, setExpandedCards] = useState({});
+  const [activeTab, setActiveTab] = useState('PENDENTE');
 
   const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
 
@@ -46,7 +47,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     filterReports();
-  }, [searchTerm, reports]);
+  }, [searchTerm, reports, activeTab]);
 
   const fetchReports = async () => {
     try {
@@ -113,20 +114,28 @@ export default function ReportsPage() {
   };
 
   const filterReports = () => {
-    if (!searchTerm.trim()) {
-      setFilteredReports(reports);
-      return;
+    let filtered = reports;
+
+    // Filtrar por status baseado na aba ativa
+    if (activeTab === 'PENDENTE') {
+      filtered = filtered.filter(report => !report.status || report.status.toUpperCase() !== 'CONCLUIDO');
+    } else if (activeTab === 'CONCLUIDO') {
+      filtered = filtered.filter(report => report.status && report.status.toUpperCase() === 'CONCLUIDO');
     }
 
-    const term = searchTerm.toLowerCase();
-    const filtered = reports.filter(report => {
-      return report.client_name?.toLowerCase().includes(term) ||
-             report.technician_name?.toLowerCase().includes(term) ||
-             (report.service_order_number && report.service_order_number.toLowerCase().includes(term)) ||
-             (report.equipment_brand && report.equipment_brand.toLowerCase().includes(term)) ||
-             (report.equipment_model && report.equipment_model.toLowerCase().includes(term)) ||
-             (report.equipment_serial && report.equipment_serial.toLowerCase().includes(term));
-    });
+    // Filtrar por termo de busca
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(report => {
+        return report.client_name?.toLowerCase().includes(term) ||
+               report.technician_name?.toLowerCase().includes(term) ||
+               (report.service_order_number && report.service_order_number.toLowerCase().includes(term)) ||
+               (report.equipment_brand && report.equipment_brand.toLowerCase().includes(term)) ||
+               (report.equipment_model && report.equipment_model.toLowerCase().includes(term)) ||
+               (report.equipment_serial && report.equipment_serial.toLowerCase().includes(term));
+      });
+    }
+
     setFilteredReports(filtered);
   };
 
@@ -208,6 +217,28 @@ export default function ReportsPage() {
           </div>
 
           <div className="mb-6">
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setActiveTab('PENDENTE')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  activeTab === 'PENDENTE'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Pendentes
+              </button>
+              <button
+                onClick={() => setActiveTab('CONCLUIDO')}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  activeTab === 'CONCLUIDO'
+                    ? 'bg-green-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Concluídos
+              </button>
+            </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
