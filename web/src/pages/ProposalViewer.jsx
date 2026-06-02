@@ -391,7 +391,7 @@ export default function ProposalViewer() {
             color: sectionTitleColor,
             lineHeight: '1.2'
           }}>ASSINATURAS</h2>
-          <div className="grid grid-cols-2 gap-8 px-2 pt-12 pb-2">
+          <div className="grid grid-cols-2 gap-8 px-2 pt-24 pb-4">
             {/* Lado esquerdo: Usuário criador da proposta */}
             <div className="flex flex-col items-center text-center">
               <div className="border-t border-gray-400 pt-1 w-full max-w-[200px]">
