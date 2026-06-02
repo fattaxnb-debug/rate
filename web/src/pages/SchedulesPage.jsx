@@ -32,6 +32,7 @@ export default function SchedulesPage() {
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [scheduleToDelete, setScheduleToDelete] = useState(null);
   const [expandedCards, setExpandedCards] = useState({});
+  const [activeTab, setActiveTab] = useState('ABERTO');
 
   const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
   const isTecnico = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
@@ -56,27 +57,23 @@ export default function SchedulesPage() {
   }, []);
 
   useEffect(() => {
-    const sorted = sortSchedulesByUrgency(
-      searchTerm.trim() ? filterBySearchTerm(schedules, searchTerm) : schedules
-    );
+    const filteredByTab = schedules.filter(s => s.status?.toUpperCase() === activeTab);
+    const searched = searchTerm.trim() ? filterBySearchTerm(filteredByTab, searchTerm) : filteredByTab;
+    const sorted = sortSchedulesByDate(searched);
     setFilteredSchedules(sorted);
-  }, [searchTerm, schedules]);
+  }, [searchTerm, schedules, activeTab]);
 
-  const sortSchedulesByUrgency = (schedulesList) => {
+  const sortSchedulesByDate = (schedulesList) => {
     if (!schedulesList || schedulesList.length === 0) return [];
-    const now = new Date();
 
     return [...schedulesList].sort((a, b) => {
-      const getPriority = (schedule) => {
-        const dateStr = schedule.data_hora_agendamento;
-        if (!dateStr) return 9999;
-
-        const appointmentDate = new Date(dateStr);
-        const diffMs = appointmentDate.getTime() - now.getTime();
-        return diffMs;
+      const getDate = (schedule) => {
+        if (schedule.data_hora_agendamento) return new Date(schedule.data_hora_agendamento).getTime();
+        if (schedule.scheduled_date) return new Date(`${schedule.scheduled_date}T${schedule.scheduled_time || '00:00'}`).getTime();
+        return Infinity;
       };
 
-      return getPriority(a) - getPriority(b);
+      return getDate(a) - getDate(b);
     });
   };
 
@@ -236,6 +233,26 @@ export default function SchedulesPage() {
                 </Button>
               )}
             </div>
+          </div>
+
+          {/* Abas de Status */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            {['ABERTO', 'ATENDENDO', 'CONCLUIDO', 'FINALIZADO'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+                  activeTab === tab
+                    ? 'bg-blue-600 text-white shadow-lg scale-105'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {tab}
+                <span className="ml-2 text-xs opacity-75">
+                  ({schedules.filter(s => s.status?.toUpperCase() === tab).length})
+                </span>
+              </button>
+            ))}
           </div>
 
           <div className="mb-6">
