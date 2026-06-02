@@ -384,7 +384,7 @@ export default function ProposalViewer() {
         </div>
 
         {/* Seção Assinaturas */}
-        <div className="proposal-section mt-20">
+        <div className="proposal-section mb-2">
           <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
