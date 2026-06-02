@@ -384,14 +384,14 @@ export default function ProposalViewer() {
         </div>
 
         {/* Seção Assinaturas */}
-        <div className="proposal-section mt-8">
+        <div className="proposal-section mt-12">
           <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
             color: sectionTitleColor,
             lineHeight: '1.2'
           }}>ASSINATURAS</h2>
-          <div className="grid grid-cols-2 gap-8 px-2 pt-8 pb-2">
+          <div className="grid grid-cols-2 gap-8 px-2 pt-12 pb-2">
             {/* Lado esquerdo: Usuário criador da proposta */}
             <div className="flex flex-col items-center text-center">
               <div className="border-t border-gray-400 pt-1 w-full max-w-[200px]">
