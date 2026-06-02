@@ -15,6 +15,7 @@ export default function ProposalViewer() {
   const [proposal, setProposal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const isGeneratingRef = useRef(false);
   const proposalRef = useRef(null);
   const [colorMode, setColorMode] = useState('color');
 
@@ -79,22 +80,33 @@ export default function ProposalViewer() {
   };
 
   const handleGeneratePDF = async () => {
+    // Proteção contra duplo clique usando ref
+    if (isGeneratingRef.current || generatingPdf) {
+      console.log('[PDF DEBUG] Generation already in progress, skipping');
+      return;
+    }
+
     if (!proposalRef.current) {
       toast.error('Não foi possível gerar o PDF');
       return;
     }
 
+    isGeneratingRef.current = true;
     setGeneratingPdf(true);
     toast.info('Gerando PDF, aguarde...');
 
     try {
+      console.log('[PDF DEBUG] Starting PDF generation');
       await generateProposalPDF(proposalRef.current, proposal);
+      console.log('[PDF DEBUG] PDF generation completed');
       toast.success('PDF gerado com sucesso!');
     } catch (error) {
       console.error('PDF generation error:', error);
       toast.error('Erro ao gerar PDF');
     } finally {
+      isGeneratingRef.current = false;
       setGeneratingPdf(false);
+      console.log('[PDF DEBUG] PDF generation finished, state reset');
     }
   };
 
