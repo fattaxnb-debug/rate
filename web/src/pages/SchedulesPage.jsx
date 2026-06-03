@@ -78,7 +78,9 @@ export default function SchedulesPage() {
   };
 
   const getAttendanceClientName = (schedule) => {
-    if (schedule.use_default_address) {
+    // Se use_default_address for NULL/undefined, considerar como true (endereço padrão)
+    const useDefault = schedule.use_default_address !== false;
+    if (useDefault) {
       return schedule.client_name || '-';
     } else if (schedule.use_registered_client && schedule.attendance_client_id) {
       return schedule.attendance_client_name || '-';
