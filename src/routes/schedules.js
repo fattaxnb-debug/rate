@@ -301,15 +301,6 @@ router.put('/:id', async (req, res) => {
   try {
     const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, use_default_address, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state } = req.body;
     
-    // Se use_registered_client = true e attendance_client_id existe, buscar nome do cliente
-    let finalAttendanceClientName = attendance_client_name;
-    if (use_registered_client && attendance_client_id && !attendance_client_name) {
-      const [clientRows] = await db.query('SELECT name FROM clients WHERE id = ?', [attendance_client_id]);
-      if (clientRows.length > 0) {
-        finalAttendanceClientName = clientRows[0].name;
-      }
-    }
-    
     // Normalizar status antes de salvar
     let normalizedStatus = status;
     if (status !== undefined) {
@@ -351,7 +342,7 @@ router.put('/:id', async (req, res) => {
     if (use_default_address !== undefined) { updates.push('use_default_address = ?'); values.push(use_default_address); }
     if (use_registered_client !== undefined) { updates.push('use_registered_client = ?'); values.push(use_registered_client); }
     if (attendance_client_id !== undefined) { updates.push('attendance_client_id = ?'); values.push(attendance_client_id); }
-    if (attendance_client_name !== undefined || finalAttendanceClientName) { updates.push('attendance_client_name = ?'); values.push(attendance_client_name !== undefined ? attendance_client_name : finalAttendanceClientName); }
+    if (attendance_client_name !== undefined) { updates.push('attendance_client_name = ?'); values.push(attendance_client_name); }
     if (attendance_address !== undefined) { updates.push('attendance_address = ?'); values.push(attendance_address); }
     if (attendance_number !== undefined) { updates.push('attendance_number = ?'); values.push(attendance_number); }
     if (attendance_neighborhood !== undefined) { updates.push('attendance_neighborhood = ?'); values.push(attendance_neighborhood); }
