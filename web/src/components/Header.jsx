@@ -107,19 +107,16 @@ function Header() {
               </nav>
 
               <div className="flex items-center space-x-4">
-                {/* Botão de notificações para técnicos */}
-                {(currentUser?.role === 'Técnico' || currentUser?.role === 'technician') && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={requestPermission}
-                    disabled={loading || permission === 'granted'}
-                    className="hidden md:flex"
-                    title={permission === 'granted' ? 'Notificações ativadas' : 'Ativar notificações'}
-                  >
-                    <Bell className={`h-5 w-5 ${permission === 'granted' ? 'text-green-500' : ''}`} />
-                  </Button>
-                )}
+                {/* Botão de notificações para todos os usuários */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={requestPermission}
+                  disabled={loading || permission === 'granted'}
+                  title={permission === 'granted' ? 'Notificações ativadas' : 'Ativar notificações'}
+                >
+                  <Bell className={`h-5 w-5 ${permission === 'granted' ? 'text-green-500' : ''}`} />
+                </Button>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

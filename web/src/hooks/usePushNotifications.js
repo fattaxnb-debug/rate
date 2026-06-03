@@ -26,8 +26,8 @@ export const usePushNotifications = () => {
         });
     }
     
-    // Solicitar permissão automaticamente se usuário for técnico
-    if (currentUser?.role === 'Técnico' && 'Notification' in window && Notification.permission === 'default') {
+    // Solicitar permissão automaticamente para todos os usuários
+    if (currentUser?.id && 'Notification' in window && Notification.permission === 'default') {
       // Pequeno delay para não bloquear o carregamento inicial
       setTimeout(() => {
         requestPermission();
