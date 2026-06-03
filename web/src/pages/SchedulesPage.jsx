@@ -287,9 +287,9 @@ export default function SchedulesPage() {
                   <TableHead className="font-bold text-gray-900">DATA/HORA</TableHead>
                   <TableHead className="font-bold text-gray-900">CLIENTE SOLICITANTE</TableHead>
                   <TableHead className="font-bold text-gray-900">LOCAL DO ATENDIMENTO</TableHead>
-                  <TableHead className="font-bold text-gray-900 hidden-col-equipment">EQUIPAMENTO</TableHead>
-                  <TableHead className="font-bold text-gray-900 hidden-col-equipment">NÚMERO DE SÉRIE</TableHead>
-                  <TableHead className="font-bold text-gray-900 hidden-col-equipment">POTÊNCIA</TableHead>
+                  <TableHead className="font-bold text-gray-900">EQUIPAMENTO</TableHead>
+                  <TableHead className="font-bold text-gray-900">NS</TableHead>
+                  <TableHead className="font-bold text-gray-900">POTÊNCIA</TableHead>
                   <TableHead className="font-bold text-gray-900">TÉCNICO</TableHead>
                   <TableHead className="font-bold text-gray-900">STATUS</TableHead>
                   <TableHead className="text-right font-bold text-gray-900">AÇÕES</TableHead>
@@ -298,7 +298,7 @@ export default function SchedulesPage() {
               <TableBody>
                 {filteredSchedules.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
                       <div className="flex flex-col items-center justify-center">
                         <div className="text-6xl mb-4">📅</div>
                         <p className="text-lg font-semibold">Nenhum agendamento encontrado</p>
@@ -326,14 +326,14 @@ export default function SchedulesPage() {
                         <TableCell className="text-gray-700 font-medium">
                           {schedule.use_default_address ? 'Endereço padrão' : attendanceClientName}
                         </TableCell>
-                        <TableCell className={`text-gray-700 ${!hasEquipment ? 'hidden' : ''}`}>
-                          {schedule.equipment_brand && schedule.equipment_model ? `${schedule.equipment_brand} - ${schedule.equipment_model}` : <span className="text-muted-foreground italic">SEM EQUIPAMENTO</span>}
+                        <TableCell className="text-gray-700">
+                          {hasEquipment && schedule.equipment_brand && schedule.equipment_model ? `${schedule.equipment_brand} - ${schedule.equipment_model}` : <span className="text-muted-foreground font-medium">RELATÓRIO SOLICITANTE</span>}
                         </TableCell>
-                        <TableCell className={`text-gray-700 ${!hasEquipment ? 'hidden' : ''}`}>
-                          {schedule.equipment_serial || '-'}
+                        <TableCell className="text-gray-700">
+                          {hasEquipment ? (schedule.equipment_serial || '-') : <span className="text-muted-foreground font-medium">RELATÓRIO SOLICITANTE</span>}
                         </TableCell>
-                        <TableCell className={`text-gray-700 ${!hasEquipment ? 'hidden' : ''}`}>
-                          {schedule.equipment_power ? `${schedule.equipment_power} VA` : '-'}
+                        <TableCell className="text-gray-700">
+                          {hasEquipment ? (schedule.equipment_power ? `${schedule.equipment_power} VA` : '-') : <span className="text-muted-foreground font-medium">RELATÓRIO SOLICITANTE</span>}
                         </TableCell>
                         <TableCell className="text-gray-700">{schedule.technician_name || '-'}</TableCell>
                         <TableCell>

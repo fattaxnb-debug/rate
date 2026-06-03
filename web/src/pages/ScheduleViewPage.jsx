@@ -476,6 +476,7 @@ export default function ScheduleViewPage() {
                 )}
               </div>
             </div>
+            )}
 
             {/* Schedule Info */}
             <div className="bg-card rounded-lg border p-6">
