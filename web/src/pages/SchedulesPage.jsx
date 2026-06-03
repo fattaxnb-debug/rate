@@ -78,14 +78,13 @@ export default function SchedulesPage() {
   };
 
   const getAttendanceClientName = (schedule) => {
-    // Se use_default_address for NULL/undefined, considerar como true (endereço padrão)
-    const useDefault = schedule.use_default_address !== false;
-    if (useDefault) {
-      return schedule.client_name || '-';
-    } else {
-      // Se não for endereço padrão, mostrar attendance_client_name (preenchido manualmente ou do cliente cadastrado)
+    // MySQL retorna 0/1, não true/false. Tratar 0, null, undefined como endereço padrão
+    if (schedule.use_default_address === 0 || schedule.use_default_address === false) {
+      // Endereço NÃO padrão - mostrar attendance_client_name
       return schedule.attendance_client_name || '-';
     }
+    // Endereço padrão (1, true, null, undefined)
+    return schedule.client_name || '-';
   };
 
   const filterBySearchTerm = (schedulesList, term) => {
