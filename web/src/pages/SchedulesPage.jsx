@@ -82,9 +82,8 @@ export default function SchedulesPage() {
     const useDefault = schedule.use_default_address !== false;
     if (useDefault) {
       return schedule.client_name || '-';
-    } else if (schedule.use_registered_client && schedule.attendance_client_id) {
-      return schedule.attendance_client_name || '-';
     } else {
+      // Se não for endereço padrão, mostrar attendance_client_name (preenchido manualmente ou do cliente cadastrado)
       return schedule.attendance_client_name || '-';
     }
   };
