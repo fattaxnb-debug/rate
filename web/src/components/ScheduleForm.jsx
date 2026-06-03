@@ -27,7 +27,16 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
     scheduled_time: '',
     status: 'ABERTO',
     technician_id: '',
-    notes: ''
+    notes: '',
+    use_default_address: true,
+    use_registered_client: false,
+    attendance_client_id: '',
+    attendance_client_name: '',
+    attendance_address: '',
+    attendance_number: '',
+    attendance_neighborhood: '',
+    attendance_city: '',
+    attendance_state: ''
   });
 
   const [hasEquipment, setHasEquipment] = useState(true);
@@ -36,6 +45,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
   const [technicians, setTechnicians] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedEquipment, setSelectedEquipment] = useState(null);
+  const [selectedAttendanceClient, setSelectedAttendanceClient] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -75,7 +85,16 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
         scheduled_time: schedule.scheduled_time || '',
         status: schedule.status && schedule.status !== '' ? schedule.status : 'ABERTO',
         technician_id: schedule.technician_id || '',
-        notes: schedule.notes || ''
+        notes: schedule.notes || '',
+        use_default_address: schedule.use_default_address !== undefined ? schedule.use_default_address : true,
+        use_registered_client: schedule.use_registered_client || false,
+        attendance_client_id: schedule.attendance_client_id || '',
+        attendance_client_name: schedule.attendance_client_name || '',
+        attendance_address: schedule.attendance_address || '',
+        attendance_number: schedule.attendance_number || '',
+        attendance_neighborhood: schedule.attendance_neighborhood || '',
+        attendance_city: schedule.attendance_city || '',
+        attendance_state: schedule.attendance_state || ''
       };
       
       console.log('Setting formData:', newFormData);
@@ -89,6 +108,9 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
       }
       if (schedule.equipment_id) {
         fetchEquipmentDetails(schedule.equipment_id);
+      }
+      if (schedule.attendance_client_id) {
+        fetchAttendanceClientDetails(schedule.attendance_client_id);
       }
     }
   }, [schedule]);
@@ -161,6 +183,18 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
       setSelectedEquipment(response.data.data);
     } catch (error) {
       console.error('Error fetching equipment:', error);
+    }
+  };
+
+  const fetchAttendanceClientDetails = async (clientId) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await axios.get(`${API_BASE_URL}/clients/${clientId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setSelectedAttendanceClient(response.data.data);
+    } catch (error) {
+      console.error('Error fetching attendance client:', error);
     }
   };
 
@@ -307,6 +341,204 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
           </Popover>
           {errors.client_id && <p className="text-sm text-destructive mt-1">{errors.client_id}</p>}
         </div>
+
+        <div className="flex flex-col space-y-3">
+          <Label className="font-bold">ENDEREÇO PADRÃO?</Label>
+          <RadioGroup
+            value={formData.use_default_address ? "sim" : "nao"}
+            onValueChange={(val) => {
+              const useDefault = val === "sim";
+              setFormData(prev => ({ 
+                ...prev, 
+                use_default_address: useDefault,
+                use_registered_client: false,
+                attendance_client_id: '',
+                attendance_client_name: '',
+                attendance_address: '',
+                attendance_number: '',
+                attendance_neighborhood: '',
+                attendance_city: '',
+                attendance_state: ''
+              }));
+              setSelectedAttendanceClient(null);
+            }}
+            className="flex space-x-4 mt-1"
+            disabled={!canEditField('client_id')}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="sim" id="addr-sim" />
+              <Label htmlFor="addr-sim" className="cursor-pointer">SIM</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="nao" id="addr-nao" />
+              <Label htmlFor="addr-nao" className="cursor-pointer">NÃO</Label>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {!formData.use_default_address && (
+          <div className="flex flex-col space-y-3">
+            <Label className="font-bold">CLIENTE CADASTRADO?</Label>
+            <RadioGroup
+              value={formData.use_registered_client ? "sim" : "nao"}
+              onValueChange={(val) => {
+                const useRegistered = val === "sim";
+                setFormData(prev => ({ 
+                  ...prev, 
+                  use_registered_client: useRegistered,
+                  attendance_client_id: '',
+                  attendance_client_name: '',
+                  attendance_address: '',
+                  attendance_number: '',
+                  attendance_neighborhood: '',
+                  attendance_city: '',
+                  attendance_state: ''
+                }));
+                setSelectedAttendanceClient(null);
+              }}
+              className="flex space-x-4 mt-1"
+              disabled={!canEditField('client_id')}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="sim" id="reg-sim" />
+                <Label htmlFor="reg-sim" className="cursor-pointer">SIM</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="nao" id="reg-nao" />
+                <Label htmlFor="reg-nao" className="cursor-pointer">NÃO</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        )}
+
+        {!formData.use_default_address && formData.use_registered_client && (
+          <div className="flex flex-col space-y-1.5 md:col-span-2">
+            <Label htmlFor="attendance_client_id" className="font-bold">CLIENTE DO ATENDIMENTO *</Label>
+            <Popover open={clientOpen} onOpenChange={(open) => { setClientOpen(open); if (!open) setClientSearchTerm(''); }}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  disabled={!canEditField('client_id')}
+                  className={cn("justify-between font-normal")}
+                >
+                  <span className="truncate pr-6">
+                    {formData.attendance_client_id
+                      ? clients.find((client) => client.id === formData.attendance_client_id)?.name
+                      : "SELECIONE O CLIENTE..."}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[400px] p-0">
+                <Command shouldFilter={false}>
+                  <CommandInput 
+                    placeholder="BUSCAR POR NOME, CNPJ/CPF..." 
+                    value={clientSearchTerm}
+                    onValueChange={setClientSearchTerm}
+                  />
+                  <CommandList>
+                    {filteredClients.length === 0 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">NENHUM CLIENTE ENCONTRADO.</div>
+                    ) : (
+                      <CommandGroup>
+                        {filteredClients.map((client) => (
+                          <CommandItem
+                            key={client.id}
+                            onSelect={() => {
+                              handleSelectChange('attendance_client_id', client.id);
+                              fetchAttendanceClientDetails(client.id);
+                              setClientOpen(false);
+                              setClientSearchTerm('');
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", formData.attendance_client_id === client.id ? "opacity-100" : "opacity-0")} />
+                            <div className="flex flex-col">
+                              <span>{client.name}</span>
+                              <span className="text-xs text-muted-foreground">{client.cnpj_cpf}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
+
+        {!formData.use_default_address && !formData.use_registered_client && (
+          <>
+            <div className="flex flex-col space-y-1.5 md:col-span-2">
+              <Label htmlFor="attendance_client_name" className="font-bold">NOME DO CLIENTE *</Label>
+              <Input
+                id="attendance_client_name"
+                name="attendance_client_name"
+                value={formData.attendance_client_name}
+                onChange={handleChange}
+                disabled={!canEditField('client_id')}
+                onInput={(e) => e.target.value = e.target.value.toUpperCase()}
+              />
+            </div>
+            <div className="flex flex-col space-y-1.5 md:col-span-2">
+              <Label htmlFor="attendance_address" className="font-bold">RUA *</Label>
+              <Input
+                id="attendance_address"
+                name="attendance_address"
+                value={formData.attendance_address}
+                onChange={handleChange}
+                disabled={!canEditField('client_id')}
+                onInput={(e) => e.target.value = e.target.value.toUpperCase()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="attendance_number" className="font-bold">NÚMERO *</Label>
+              <Input
+                id="attendance_number"
+                name="attendance_number"
+                value={formData.attendance_number}
+                onChange={handleChange}
+                disabled={!canEditField('client_id')}
+                onInput={(e) => e.target.value = e.target.value.toUpperCase()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="attendance_neighborhood" className="font-bold">BAIRRO *</Label>
+              <Input
+                id="attendance_neighborhood"
+                name="attendance_neighborhood"
+                value={formData.attendance_neighborhood}
+                onChange={handleChange}
+                disabled={!canEditField('client_id')}
+                onInput={(e) => e.target.value = e.target.value.toUpperCase()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="attendance_city" className="font-bold">CIDADE *</Label>
+              <Input
+                id="attendance_city"
+                name="attendance_city"
+                value={formData.attendance_city}
+                onChange={handleChange}
+                disabled={!canEditField('client_id')}
+                onInput={(e) => e.target.value = e.target.value.toUpperCase()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="attendance_state" className="font-bold">UF *</Label>
+              <Input
+                id="attendance_state"
+                name="attendance_state"
+                value={formData.attendance_state}
+                onChange={handleChange}
+                maxLength={2}
+                disabled={!canEditField('client_id')}
+                onInput={(e) => e.target.value = e.target.value.toUpperCase()}
+              />
+            </div>
+          </>
+        )}
 
         <div className="flex flex-col space-y-3">
           <Label className="font-bold">VINCULAR EQUIPAMENTO?</Label>

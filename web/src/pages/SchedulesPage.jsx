@@ -77,13 +77,25 @@ export default function SchedulesPage() {
     });
   };
 
+  const getAttendanceClientName = (schedule) => {
+    if (schedule.use_default_address) {
+      return schedule.client_name || '-';
+    } else if (schedule.use_registered_client && schedule.attendance_client_id) {
+      return schedule.attendance_client_name || '-';
+    } else {
+      return schedule.attendance_client_name || '-';
+    }
+  };
+
   const filterBySearchTerm = (schedulesList, term) => {
     const lowerTerm = term.toLowerCase();
     return schedulesList.filter(schedule =>
       schedule.client_name?.toLowerCase().includes(lowerTerm) ||
       schedule.status?.toLowerCase().includes(lowerTerm) ||
       schedule.technician_name?.toLowerCase().includes(lowerTerm) ||
-      schedule.equipment_serial?.toLowerCase().includes(lowerTerm)
+      schedule.equipment_serial?.toLowerCase().includes(lowerTerm) ||
+      (schedule.attendance_client_name && schedule.attendance_client_name.toLowerCase().includes(lowerTerm)) ||
+      (schedule.attendance_address && schedule.attendance_address.toLowerCase().includes(lowerTerm))
     );
   };
 
@@ -273,10 +285,11 @@ export default function SchedulesPage() {
               <TableHeader className="bg-gradient-to-r from-gray-100 to-gray-200">
                 <TableRow>
                   <TableHead className="font-bold text-gray-900">DATA/HORA</TableHead>
-                  <TableHead className="font-bold text-gray-900">CLIENTE</TableHead>
-                  <TableHead className="font-bold text-gray-900">EQUIPAMENTO</TableHead>
-                  <TableHead className="font-bold text-gray-900">NÚMERO DE SÉRIE</TableHead>
-                  <TableHead className="font-bold text-gray-900">POTÊNCIA</TableHead>
+                  <TableHead className="font-bold text-gray-900">CLIENTE SOLICITANTE</TableHead>
+                  <TableHead className="font-bold text-gray-900">LOCAL DO ATENDIMENTO</TableHead>
+                  <TableHead className="font-bold text-gray-900 hidden-col-equipment">EQUIPAMENTO</TableHead>
+                  <TableHead className="font-bold text-gray-900 hidden-col-equipment">NÚMERO DE SÉRIE</TableHead>
+                  <TableHead className="font-bold text-gray-900 hidden-col-equipment">POTÊNCIA</TableHead>
                   <TableHead className="font-bold text-gray-900">TÉCNICO</TableHead>
                   <TableHead className="font-bold text-gray-900">STATUS</TableHead>
                   <TableHead className="text-right font-bold text-gray-900">AÇÕES</TableHead>
@@ -295,6 +308,8 @@ export default function SchedulesPage() {
                   </TableRow>
                 ) : (
                   filteredSchedules.map((schedule) => {
+                    const attendanceClientName = getAttendanceClientName(schedule);
+                    const hasEquipment = !!schedule.equipment_id;
                     return (
                       <TableRow key={schedule.id} className={`${getTemporalRowClass(schedule)} hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors duration-200`}>
                         <TableCell className="font-semibold text-gray-900">
@@ -308,13 +323,16 @@ export default function SchedulesPage() {
                           })()}
                         </TableCell>
                         <TableCell className="text-gray-700">{schedule.client_name || '-'}</TableCell>
-                        <TableCell className="text-gray-700">
+                        <TableCell className="text-gray-700 font-medium">
+                          {schedule.use_default_address ? 'Endereço padrão' : attendanceClientName}
+                        </TableCell>
+                        <TableCell className={`text-gray-700 ${!hasEquipment ? 'hidden' : ''}`}>
                           {schedule.equipment_brand && schedule.equipment_model ? `${schedule.equipment_brand} - ${schedule.equipment_model}` : <span className="text-muted-foreground italic">SEM EQUIPAMENTO</span>}
                         </TableCell>
-                        <TableCell className="text-gray-700">
+                        <TableCell className={`text-gray-700 ${!hasEquipment ? 'hidden' : ''}`}>
                           {schedule.equipment_serial || '-'}
                         </TableCell>
-                        <TableCell className="text-gray-700">
+                        <TableCell className={`text-gray-700 ${!hasEquipment ? 'hidden' : ''}`}>
                           {schedule.equipment_power ? `${schedule.equipment_power} VA` : '-'}
                         </TableCell>
                         <TableCell className="text-gray-700">{schedule.technician_name || '-'}</TableCell>

@@ -122,20 +122,49 @@ export default function ScheduleViewPage() {
   const cidadeStr = schedule.client_city || '';
   const ufStr = schedule.client_state || '';
 
-  // Build a formatted address string for the map search query
+  // Determine attendance address based on use_default_address
+  let attendanceRuaStr, attendanceNumStr, attendanceBairroStr, attendanceCidadeStr, attendanceUfStr, attendanceClientName;
+
+  if (schedule.use_default_address) {
+    // Use client's default address
+    attendanceRuaStr = schedule.client_address || '';
+    attendanceNumStr = schedule.client_number || '';
+    attendanceBairroStr = schedule.client_neighborhood || '';
+    attendanceCidadeStr = schedule.client_city || '';
+    attendanceUfStr = schedule.client_state || '';
+    attendanceClientName = schedule.client_name || '';
+  } else if (schedule.use_registered_client && schedule.attendance_client_id) {
+    // Use registered client's address
+    attendanceRuaStr = schedule.attendance_client_address || '';
+    attendanceNumStr = schedule.attendance_client_number || '';
+    attendanceBairroStr = schedule.attendance_client_neighborhood || '';
+    attendanceCidadeStr = schedule.attendance_client_city || '';
+    attendanceUfStr = schedule.attendance_client_state || '';
+    attendanceClientName = schedule.attendance_client_name || '';
+  } else {
+    // Use manually entered address
+    attendanceRuaStr = schedule.attendance_address || '';
+    attendanceNumStr = schedule.attendance_number || '';
+    attendanceBairroStr = schedule.attendance_neighborhood || '';
+    attendanceCidadeStr = schedule.attendance_city || '';
+    attendanceUfStr = schedule.attendance_state || '';
+    attendanceClientName = schedule.attendance_client_name || '';
+  }
+
+  // Build a formatted address string for the map search query (using attendance address)
   const addressParts = [];
-  if (ruaStr || numStr) {
-    addressParts.push([ruaStr, numStr].filter(Boolean).join(', '));
+  if (attendanceRuaStr || attendanceNumStr) {
+    addressParts.push([attendanceRuaStr, attendanceNumStr].filter(Boolean).join(', '));
   }
-  if (bairroStr) {
-    addressParts.push(bairroStr);
+  if (attendanceBairroStr) {
+    addressParts.push(attendanceBairroStr);
   }
-  if (cidadeStr || ufStr) {
-    addressParts.push([cidadeStr, ufStr].filter(Boolean).join(' - '));
+  if (attendanceCidadeStr || attendanceUfStr) {
+    addressParts.push([attendanceCidadeStr, attendanceUfStr].filter(Boolean).join(' - '));
   }
   
   const fullAddress = addressParts.join(' - ');
-  const encodedAddress = encodeURIComponent(fullAddress || (schedule.client_name || ''));
+  const encodedAddress = encodeURIComponent(fullAddress || attendanceClientName || '');
   
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
   const wazeUrl = `https://waze.com/ul?q=${encodedAddress}`;
@@ -179,7 +208,7 @@ export default function ScheduleViewPage() {
           <div className="space-y-6">
             {/* Client Info */}
             <div className="bg-card rounded-lg border p-6">
-              <h2 className="text-xl font-semibold mb-4">INFORMAÇÕES DO CLIENTE</h2>
+              <h2 className="text-xl font-semibold mb-4">CLIENTE SOLICITANTE</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -210,7 +239,7 @@ export default function ScheduleViewPage() {
 
                 <div className="md:col-span-2 mt-2">
                   <h3 className="text-sm font-semibold text-muted-foreground border-b pb-2 mb-4 uppercase tracking-wide">
-                    ENDEREÇO
+                    ENDEREÇO CADASTRADO
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="sm:col-span-2 md:col-span-2">
@@ -236,14 +265,53 @@ export default function ScheduleViewPage() {
                   </div>
                 </div>
               </div>
+            </div>
 
-              {client && (
+            {/* Attendance Address Info */}
+            <div className="bg-card rounded-lg border p-6">
+              <h2 className="text-xl font-semibold mb-4">CLIENTE DO ATENDIMENTO</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm text-muted-foreground">NOME</p>
+                  <p className="font-medium">{attendanceClientName || '-'}</p>
+                </div>
+
+                <div className="md:col-span-2 mt-2">
+                  <h3 className="text-sm font-semibold text-muted-foreground border-b pb-2 mb-4 uppercase tracking-wide">
+                    ENDEREÇO DO ATENDIMENTO
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="sm:col-span-2 md:col-span-2">
+                      <p className="text-sm text-muted-foreground">RUA</p>
+                      <p className="font-medium">{attendanceRuaStr || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">NÚMERO</p>
+                      <p className="font-medium">{attendanceNumStr || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">BAIRRO</p>
+                      <p className="font-medium">{attendanceBairroStr || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">CIDADE</p>
+                      <p className="font-medium">{attendanceCidadeStr || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">UF</p>
+                      <p className="font-medium">{attendanceUfStr || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {fullAddress && (
                 <div className="mt-6 border-t pt-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button disabled={!fullAddress}>
                         <MapPin className="mr-2 h-4 w-4" />
-                        ABRIR NO MAPA
+                        ABRIR NO MAPA (ENDEREÇO DO ATENDIMENTO)
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
@@ -259,7 +327,8 @@ export default function ScheduleViewPage() {
               )}
             </div>
 
-            {/* Equipment Info */}
+            {/* Equipment Info - only show if equipment is linked */}
+            {schedule.equipment_id && (
             <div className="bg-card rounded-lg border p-6">
               <h2 className="text-xl font-semibold mb-4">INFORMAÇÕES DO EQUIPAMENTO</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

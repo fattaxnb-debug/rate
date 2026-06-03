@@ -22,6 +22,11 @@ router.get('/', async (req, res) => {
     const [schedules] = await db.query(`
       SELECT s.*, 
              c.name as client_name,
+             c.address as client_address,
+             c.number as client_number,
+             c.neighborhood as client_neighborhood,
+             c.city as client_city,
+             c.state as client_state,
              u.name as technician_name,
              e.type as equipment_type,
              e.brand as equipment_brand,
@@ -29,11 +34,18 @@ router.get('/', async (req, res) => {
              e.serial_number as equipment_serial,
              e.power_va as equipment_power,
              e.voltage_in as equipment_voltage_in,
-             e.voltage_out as equipment_voltage_out
+             e.voltage_out as equipment_voltage_out,
+             ac.name as attendance_client_name,
+             ac.address as attendance_client_address,
+             ac.number as attendance_client_number,
+             ac.neighborhood as attendance_client_neighborhood,
+             ac.city as attendance_client_city,
+             ac.state as attendance_client_state
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
       LEFT JOIN users u ON s.technician_id = u.id
       LEFT JOIN equipments e ON s.equipment_id = e.id
+      LEFT JOIN clients ac ON s.attendance_client_id = ac.id
       ORDER BY s.scheduled_date DESC
     `);
     console.log('=== Schedules fetched successfully ===');
@@ -132,11 +144,18 @@ router.get('/:id', async (req, res) => {
              e.serial_number as equipment_serial,
              e.power_va as equipment_power,
              e.voltage_in as equipment_voltage_in,
-             e.voltage_out as equipment_voltage_out
+             e.voltage_out as equipment_voltage_out,
+             ac.name as attendance_client_name,
+             ac.address as attendance_client_address,
+             ac.number as attendance_client_number,
+             ac.neighborhood as attendance_client_neighborhood,
+             ac.city as attendance_client_city,
+             ac.state as attendance_client_state
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
       LEFT JOIN users u ON s.technician_id = u.id
       LEFT JOIN equipments e ON s.equipment_id = e.id
+      LEFT JOIN clients ac ON s.attendance_client_id = ac.id
       WHERE s.id = ?
     `, [req.params.id]);
     
@@ -216,7 +235,7 @@ router.post('/', async (req, res) => {
   console.log('=== POST /schedules called ===');
   console.log('Request body:', JSON.stringify(req.body, null, 2));
   try {
-    const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone } = req.body;
+    const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, use_default_address, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state } = req.body;
     
     console.log('Extracted fields:', { client_id, equipment_id, technician_id, scheduled_date, scheduled_time });
     
@@ -230,11 +249,11 @@ router.post('/', async (req, res) => {
     // Formatar scheduled_time para incluir segundos se necessário
     const formattedTime = scheduled_time && scheduled_time.length === 5 ? `${scheduled_time}:00` : scheduled_time;
     
-    const sql = `INSERT INTO schedules (id, client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO schedules (id, client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, use_default_address, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     console.log('SQL:', sql);
-    console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'pending', notes, address, city, contact_name, contact_phone]);
+    console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
     
-    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone]);
+    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
 
     res.json({ data: { id, ...req.body } });
   } catch (error) {
@@ -247,7 +266,7 @@ router.post('/', async (req, res) => {
 // PUT /schedules/:id - Atualizar agendamento
 router.put('/:id', async (req, res) => {
   try {
-    const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone } = req.body;
+    const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, use_default_address, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state } = req.body;
     
     // Normalizar status antes de salvar
     let normalizedStatus = status;
@@ -287,6 +306,15 @@ router.put('/:id', async (req, res) => {
     if (city !== undefined) { updates.push('city = ?'); values.push(city); }
     if (contact_name !== undefined) { updates.push('contact_name = ?'); values.push(contact_name); }
     if (contact_phone !== undefined) { updates.push('contact_phone = ?'); values.push(contact_phone); }
+    if (use_default_address !== undefined) { updates.push('use_default_address = ?'); values.push(use_default_address); }
+    if (use_registered_client !== undefined) { updates.push('use_registered_client = ?'); values.push(use_registered_client); }
+    if (attendance_client_id !== undefined) { updates.push('attendance_client_id = ?'); values.push(attendance_client_id); }
+    if (attendance_client_name !== undefined) { updates.push('attendance_client_name = ?'); values.push(attendance_client_name); }
+    if (attendance_address !== undefined) { updates.push('attendance_address = ?'); values.push(attendance_address); }
+    if (attendance_number !== undefined) { updates.push('attendance_number = ?'); values.push(attendance_number); }
+    if (attendance_neighborhood !== undefined) { updates.push('attendance_neighborhood = ?'); values.push(attendance_neighborhood); }
+    if (attendance_city !== undefined) { updates.push('attendance_city = ?'); values.push(attendance_city); }
+    if (attendance_state !== undefined) { updates.push('attendance_state = ?'); values.push(attendance_state); }
     
     if (updates.length === 0) {
       return res.json({ data: { id: req.params.id } });
