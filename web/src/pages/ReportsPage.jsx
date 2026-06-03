@@ -34,6 +34,12 @@ export default function ReportsPage() {
 
   const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
 
+  const isConcluido = (status) => {
+    if (!status) return false;
+    const s = status.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return s === 'CONCLUIDO' || s === 'FINALIZADO' || s === 'REALIZADO' || s === 'COMPLETED';
+  };
+
   const toggleCard = (reportId) => {
     setExpandedCards(prev => ({
       ...prev,
@@ -118,9 +124,9 @@ export default function ReportsPage() {
 
     // Filtrar por status baseado na aba ativa
     if (activeTab === 'PENDENTE') {
-      filtered = filtered.filter(report => !report.status || report.status.toUpperCase() !== 'CONCLUIDO');
+      filtered = filtered.filter(report => !isConcluido(report.status));
     } else if (activeTab === 'CONCLUIDO') {
-      filtered = filtered.filter(report => report.status && report.status.toUpperCase() === 'CONCLUIDO');
+      filtered = filtered.filter(report => isConcluido(report.status));
     }
 
     // Filtrar por termo de busca
@@ -306,7 +312,7 @@ export default function ReportsPage() {
                         </TableCell>
                         <TableCell className="text-gray-700">{report.technician_name || '-'}</TableCell>
                         <TableCell>
-                          {report.status === 'finalizado' || report.status === 'realizado' || report.status === 'completed' || report.status === 'CONCLUIDO' ? (
+                          {isConcluido(report.status) ? (
                             <Badge className="bg-green-500 hover:bg-green-600">CONCLUÍDO</Badge>
                           ) : (
                             <Badge variant="secondary">Pendente</Badge>
@@ -408,7 +414,7 @@ export default function ReportsPage() {
                             <div className="flex items-center">
                               <span className="font-semibold text-blue-600 w-24">Status:</span>
                               <span className="text-gray-900">
-                                {report.status === 'finalizado' || report.status === 'completed' || report.status === 'CONCLUIDO' ? (
+                                {isConcluido(report.status) ? (
                                   <Badge className="bg-green-500">CONCLUÍDO</Badge>
                                 ) : (
                                   <Badge variant="secondary">Pendente</Badge>
@@ -460,7 +466,7 @@ export default function ReportsPage() {
                           <div className="flex justify-between items-center py-2">
                             <span className="font-semibold text-blue-600">Status:</span>
                             <span className="text-gray-900 font-medium">
-                              {report.status === 'finalizado' || report.status === 'completed' || report.status === 'CONCLUIDO' ? (
+                              {isConcluido(report.status) ? (
                                 <Badge className="bg-green-500">CONCLUÍDO</Badge>
                               ) : (
                                 <Badge variant="secondary">Pendente</Badge>

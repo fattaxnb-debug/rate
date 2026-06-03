@@ -235,7 +235,7 @@ router.post('/', async (req, res) => {
   console.log('=== POST /schedules called ===');
   console.log('Request body:', JSON.stringify(req.body, null, 2));
   try {
-    const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, use_default_address, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state } = req.body;
+    const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, use_default_address, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state, create_report } = req.body;
     
     console.log('Extracted fields:', { client_id, equipment_id, technician_id, scheduled_date, scheduled_time });
     
@@ -254,6 +254,32 @@ router.post('/', async (req, res) => {
     console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
     
     const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
+
+    // Criar relatório automaticamente se solicitado
+    if (create_report && equipment_id && technician_id) {
+      try {
+        // Gerar número de O.S. automaticamente
+        const now = new Date();
+        const yearMonth = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+        const [reports] = await db.query('SELECT service_order_number FROM reports ORDER BY created_at DESC LIMIT 1');
+        let nextSeq = 1;
+        if (reports.length > 0 && reports[0].service_order_number) {
+          const match = reports[0].service_order_number.match(/RAT-\d{6}-(\d+)/);
+          if (match) nextSeq = parseInt(match[1], 10) + 1;
+        }
+        const serviceOrderNumber = `RAT-${yearMonth}-${nextSeq.toString().padStart(4, '0')}`;
+
+        // Criar relatório rápido
+        const reportId = uuidv4();
+        const reportSql = `INSERT INTO reports (id, schedule_id, client_id, equipment_id, technician_id, created_date, service_order_number, status, technician_edit_count) VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', 0)`;
+        await db.query(reportSql, [reportId, id, client_id, equipment_id, technician_id, scheduled_date, serviceOrderNumber]);
+        
+        console.log('Relatório criado automaticamente:', reportId);
+      } catch (reportError) {
+        console.error('Erro ao criar relatório automaticamente:', reportError);
+        // Não falhar o agendamento se o relatório falhar
+      }
+    }
 
     res.json({ data: { id, ...req.body } });
   } catch (error) {

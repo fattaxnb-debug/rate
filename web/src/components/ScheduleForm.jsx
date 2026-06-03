@@ -36,7 +36,8 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
     attendance_number: '',
     attendance_neighborhood: '',
     attendance_city: '',
-    attendance_state: ''
+    attendance_state: '',
+    create_report: false
   });
 
   const [hasEquipment, setHasEquipment] = useState(true);
@@ -94,7 +95,8 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
         attendance_number: schedule.attendance_number || '',
         attendance_neighborhood: schedule.attendance_neighborhood || '',
         attendance_city: schedule.attendance_city || '',
-        attendance_state: schedule.attendance_state || ''
+        attendance_state: schedule.attendance_state || '',
+        create_report: false
       };
       
       console.log('Setting formData:', newFormData);
@@ -228,6 +230,13 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
     if (!formData.scheduled_time) newErrors.scheduled_time = 'HORA É OBRIGATÓRIA';
     if (!formData.status) newErrors.status = 'STATUS É OBRIGATÓRIO';
     if (!formData.technician_id) newErrors.technician_id = 'TÉCNICO É OBRIGATÓRIO';
+    
+    // Se criar relatório, exige cliente, equipamento e técnico
+    if (formData.create_report) {
+      if (!formData.client_id) newErrors.create_report = 'PARA CRIAR RELATÓRIO, CLIENTE É OBRIGATÓRIO';
+      if (!formData.equipment_id) newErrors.create_report = 'PARA CRIAR RELATÓRIO, EQUIPAMENTO É OBRIGATÓRIO';
+      if (!formData.technician_id) newErrors.create_report = 'PARA CRIAR RELATÓRIO, TÉCNICO É OBRIGATÓRIO';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -567,6 +576,32 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
           </RadioGroup>
         </div>
 
+        <div className="flex flex-col space-y-3">
+          <Label className="font-bold">CRIAR RELATÓRIO?</Label>
+          <RadioGroup
+            value={formData.create_report ? "sim" : "nao"}
+            onValueChange={(val) => {
+              setFormData(prev => ({ ...prev, create_report: val === "sim" }));
+            }}
+            className="flex space-x-4 mt-1"
+            disabled={!canEditField('client_id')}
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="sim" id="report-sim" />
+              <Label htmlFor="report-sim" className="cursor-pointer">SIM</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="nao" id="report-nao" />
+              <Label htmlFor="report-nao" className="cursor-pointer">NÃO</Label>
+            </div>
+          </RadioGroup>
+          {formData.create_report && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Ao salvar, será criado automaticamente um relatório rápido na lista de relatórios.
+            </p>
+          )}
+        </div>
+
         {hasEquipment && (
           <div className="flex flex-col space-y-1.5 md:col-span-2">
             <Label htmlFor="equipment_id" className="font-bold">EQUIPAMENTO *</Label>
@@ -707,6 +742,7 @@ export default function ScheduleForm({ schedule, onSave, onCancel }) {
             onInput={(e) => e.target.value = e.target.value.toUpperCase()}
           />
         </div>
+
       </div>
 
       {selectedClient && (
