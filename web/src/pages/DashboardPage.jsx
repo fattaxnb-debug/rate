@@ -55,7 +55,11 @@ export default function DashboardPage() {
     total: 0
   });
 
+  const [proposalsChart, setProposalsChart] = useState([]);
+
   const [schedulesByStatus, setSchedulesByStatus] = useState([]);
+
+  const [todaySchedules, setTodaySchedules] = useState([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -109,6 +113,19 @@ export default function DashboardPage() {
 
       const proposals = proposalsRes.data.data || [];
 
+      // Get today's schedules for desktop panel
+      const today = new Date().toISOString().split('T')[0];
+      const todaySchedulesList = schedules
+        .filter(s => s.scheduled_date === today)
+        .sort((a, b) => {
+          const dateA = new Date(`${a.scheduled_date}T${a.scheduled_time || '00:00'}`);
+          const dateB = new Date(`${b.scheduled_date}T${b.scheduled_time || '00:00'}`);
+          return dateA - dateB;
+        })
+        .slice(0, 5);
+
+      setTodaySchedules(todaySchedulesList);
+
       // Count proposals by status
       const abertas = proposals.filter(p => (p.status || 'ABERTA') === 'ABERTA').length;
       const fechadas = proposals.filter(p => p.status === 'FECHADA').length;
@@ -151,6 +168,13 @@ export default function DashboardPage() {
         dispensadas,
         total: proposals.length
       });
+
+      // Prepare proposals chart data
+      setProposalsChart([
+        { name: 'Abertas', value: abertas, color: '#3b82f6' },
+        { name: 'Fechadas', value: fechadas, color: '#10b981' },
+        { name: 'Dispensadas', value: dispensadas, color: '#f59e0b' }
+      ]);
 
 
 
@@ -424,7 +448,142 @@ export default function DashboardPage() {
 
 
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Desktop: Layout profissional com painel Hoje e gráficos */}
+          <div className="hidden lg:grid lg:grid-cols-3 gap-6 mb-8">
+            {/* Painel Hoje - Próximos Agendamentos */}
+            <Card className="lg:col-span-2 bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-blue-600" />
+                  Hoje - Próximos Agendamentos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {todaySchedules.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Nenhum agendamento para hoje</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {todaySchedules.map(schedule => (
+                      <div key={schedule.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-blue-100 text-blue-600 p-2 rounded-lg">
+                            <Calendar className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{schedule.client_name}</p>
+                            <p className="text-sm text-gray-500">{schedule.scheduled_time || '--:--'}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+                            schedule.status === 'Aberto' ? 'bg-green-100 text-green-700' :
+                            schedule.status === 'Em Andamento' ? 'bg-blue-100 text-blue-700' :
+                            schedule.status === 'Realizado' ? 'bg-emerald-100 text-emerald-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {schedule.status || 'Aberto'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Resumo do Dia */}
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-slate-600" />
+                  Resumo do Dia
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-white rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-500 mb-1">Agendamentos Hoje</p>
+                  <p className="text-3xl font-bold text-blue-600">{todaySchedules.length}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-500 mb-1">Relatórios Pendentes</p>
+                  <p className="text-3xl font-bold text-amber-600">{stats.reports}</p>
+                </div>
+                <div className="p-4 bg-white rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-500 mb-1">Propostas Abertas</p>
+                  <p className="text-3xl font-bold text-emerald-600">{proposals.abertas}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Desktop: Gráficos */}
+          <div className="hidden lg:grid lg:grid-cols-2 gap-6 mb-8">
+            {/* Gráfico de Propostas */}
+            <Card className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5 text-pink-600" />
+                  Propostas por Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={proposalsChart}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1f2937', 
+                        border: 'none', 
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                    />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                      {proposalsChart.map((entry, index) => (
+                        <rect key={`bar-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico de Agendamentos por Status */}
+            <Card className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-amber-600" />
+                  Agendamentos por Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={schedulesByStatus}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="status" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1f2937', 
+                        border: 'none', 
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                    />
+                    <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mobile: Ações Rápidas (mantido igual) */}
+          <div className="lg:hidden grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
             <Card>
 
