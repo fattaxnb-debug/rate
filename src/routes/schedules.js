@@ -235,11 +235,11 @@ router.post('/', async (req, res) => {
     // Formatar scheduled_time para incluir segundos se necessário
     const formattedTime = scheduled_time && scheduled_time.length === 5 ? `${scheduled_time}:00` : scheduled_time;
     
-    const sql = `INSERT INTO schedules (id, client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, use_default_address, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO schedules (id, client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     console.log('SQL:', sql);
-    console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
+    console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone]);
     
-    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
+    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone]);
 
     // Criar relatório automaticamente se solicitado
     if (create_report && equipment_id && technician_id) {
@@ -318,15 +318,6 @@ router.put('/:id', async (req, res) => {
     if (city !== undefined) { updates.push('city = ?'); values.push(city); }
     if (contact_name !== undefined) { updates.push('contact_name = ?'); values.push(contact_name); }
     if (contact_phone !== undefined) { updates.push('contact_phone = ?'); values.push(contact_phone); }
-    if (use_default_address !== undefined) { updates.push('use_default_address = ?'); values.push(use_default_address); }
-    if (use_registered_client !== undefined) { updates.push('use_registered_client = ?'); values.push(use_registered_client); }
-    if (attendance_client_id !== undefined) { updates.push('attendance_client_id = ?'); values.push(attendance_client_id); }
-    if (attendance_client_name !== undefined) { updates.push('attendance_client_name = ?'); values.push(attendance_client_name); }
-    if (attendance_address !== undefined) { updates.push('attendance_address = ?'); values.push(attendance_address); }
-    if (attendance_number !== undefined) { updates.push('attendance_number = ?'); values.push(attendance_number); }
-    if (attendance_neighborhood !== undefined) { updates.push('attendance_neighborhood = ?'); values.push(attendance_neighborhood); }
-    if (attendance_city !== undefined) { updates.push('attendance_city = ?'); values.push(attendance_city); }
-    if (attendance_state !== undefined) { updates.push('attendance_state = ?'); values.push(attendance_state); }
     
     if (updates.length === 0) {
       return res.json({ data: { id: req.params.id } });
