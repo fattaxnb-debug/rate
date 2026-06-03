@@ -34,18 +34,11 @@ router.get('/', async (req, res) => {
              e.serial_number as equipment_serial,
              e.power_va as equipment_power,
              e.voltage_in as equipment_voltage_in,
-             e.voltage_out as equipment_voltage_out,
-             ac.name as attendance_client_name,
-             ac.address as attendance_client_address,
-             ac.number as attendance_client_number,
-             ac.neighborhood as attendance_client_neighborhood,
-             ac.city as attendance_client_city,
-             ac.state as attendance_client_state
+             e.voltage_out as equipment_voltage_out
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
       LEFT JOIN users u ON s.technician_id = u.id
       LEFT JOIN equipments e ON s.equipment_id = e.id
-      LEFT JOIN clients ac ON s.attendance_client_id = ac.id
       ORDER BY s.scheduled_date DESC
     `);
     console.log('=== Schedules fetched successfully ===');
@@ -144,18 +137,11 @@ router.get('/:id', async (req, res) => {
              e.serial_number as equipment_serial,
              e.power_va as equipment_power,
              e.voltage_in as equipment_voltage_in,
-             e.voltage_out as equipment_voltage_out,
-             ac.name as attendance_client_name,
-             ac.address as attendance_client_address,
-             ac.number as attendance_client_number,
-             ac.neighborhood as attendance_client_neighborhood,
-             ac.city as attendance_client_city,
-             ac.state as attendance_client_state
+             e.voltage_out as equipment_voltage_out
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
       LEFT JOIN users u ON s.technician_id = u.id
       LEFT JOIN equipments e ON s.equipment_id = e.id
-      LEFT JOIN clients ac ON s.attendance_client_id = ac.id
       WHERE s.id = ?
     `, [req.params.id]);
     
