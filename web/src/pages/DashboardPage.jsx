@@ -113,10 +113,11 @@ export default function DashboardPage() {
 
       const proposals = proposalsRes.data.data || [];
 
-      // Get today's schedules for desktop panel
-      const today = new Date().toISOString().split('T')[0];
-      const todaySchedulesList = schedules
-        .filter(s => s.scheduled_date === today)
+      // Get upcoming schedules for desktop panel (próximos 5, a partir de hoje)
+      const nowLocal = new Date();
+      const todayLocal = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth()+1).padStart(2,'0')}-${String(nowLocal.getDate()).padStart(2,'0')}`;
+      const upcomingSchedulesList = schedules
+        .filter(s => s.scheduled_date >= todayLocal)
         .sort((a, b) => {
           const dateA = new Date(`${a.scheduled_date}T${a.scheduled_time || '00:00'}`);
           const dateB = new Date(`${b.scheduled_date}T${b.scheduled_time || '00:00'}`);
@@ -124,7 +125,7 @@ export default function DashboardPage() {
         })
         .slice(0, 5);
 
-      setTodaySchedules(todaySchedulesList);
+      setTodaySchedules(upcomingSchedulesList);
 
       // Count proposals by status
       const abertas = proposals.filter(p => (p.status || 'ABERTA') === 'ABERTA').length;
@@ -455,7 +456,7 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-blue-600" />
-                  Hoje - Próximos Agendamentos
+                  Próximos Agendamentos
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -474,7 +475,13 @@ export default function DashboardPage() {
                           </div>
                           <div>
                             <p className="font-semibold text-gray-900">{schedule.client_name}</p>
-                            <p className="text-sm text-gray-500">{schedule.scheduled_time || '--:--'}</p>
+                            <p className="text-sm text-gray-500">
+                              {(() => {
+                                if (!schedule.scheduled_date) return '--/--/----';
+                                const [y, m, d] = schedule.scheduled_date.split('-');
+                                return `${d}/${m}/${y} ${schedule.scheduled_time || '--:--'}`;
+                              })()}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -504,7 +511,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 bg-white rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-500 mb-1">Agendamentos Hoje</p>
+                  <p className="text-sm text-gray-500 mb-1">Próximos Agendamentos</p>
                   <p className="text-3xl font-bold text-blue-600">{todaySchedules.length}</p>
                 </div>
                 <div className="p-4 bg-white rounded-lg border border-gray-200">
