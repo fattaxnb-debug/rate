@@ -35,17 +35,16 @@ router.get('/', async (req, res) => {
              e.power_va as equipment_power,
              e.voltage_in as equipment_voltage_in,
              e.voltage_out as equipment_voltage_out,
-             ac.name as attendance_client_name,
-             ac.address as attendance_client_address,
-             ac.number as attendance_client_number,
-             ac.neighborhood as attendance_client_neighborhood,
-             ac.city as attendance_client_city,
-             ac.state as attendance_client_state
+             s.attendance_client_name,
+             s.attendance_address,
+             s.attendance_number,
+             s.attendance_neighborhood,
+             s.attendance_city,
+             s.attendance_state
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
       LEFT JOIN users u ON s.technician_id = u.id
       LEFT JOIN equipments e ON s.equipment_id = e.id
-      LEFT JOIN clients ac ON s.attendance_client_id = ac.id
       ORDER BY s.scheduled_date DESC
     `);
     console.log('=== Schedules fetched successfully ===');
@@ -145,17 +144,16 @@ router.get('/:id', async (req, res) => {
              e.power_va as equipment_power,
              e.voltage_in as equipment_voltage_in,
              e.voltage_out as equipment_voltage_out,
-             ac.name as attendance_client_name,
-             ac.address as attendance_client_address,
-             ac.number as attendance_client_number,
-             ac.neighborhood as attendance_client_neighborhood,
-             ac.city as attendance_client_city,
-             ac.state as attendance_client_state
+             s.attendance_client_name,
+             s.attendance_address,
+             s.attendance_number,
+             s.attendance_neighborhood,
+             s.attendance_city,
+             s.attendance_state
       FROM schedules s 
       LEFT JOIN clients c ON s.client_id = c.id 
       LEFT JOIN users u ON s.technician_id = u.id
       LEFT JOIN equipments e ON s.equipment_id = e.id
-      LEFT JOIN clients ac ON s.attendance_client_id = ac.id
       WHERE s.id = ?
     `, [req.params.id]);
     
@@ -244,6 +242,15 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'client_id e scheduled_date são obrigatórios' });
     }
     
+    // Se use_registered_client = true e attendance_client_id existe, buscar nome do cliente
+    let finalAttendanceClientName = attendance_client_name;
+    if (use_registered_client && attendance_client_id && !attendance_client_name) {
+      const [clientRows] = await db.query('SELECT name FROM clients WHERE id = ?', [attendance_client_id]);
+      if (clientRows.length > 0) {
+        finalAttendanceClientName = clientRows[0].name;
+      }
+    }
+    
     const id = uuidv4();
     
     // Formatar scheduled_time para incluir segundos se necessário
@@ -251,9 +258,9 @@ router.post('/', async (req, res) => {
     
     const sql = `INSERT INTO schedules (id, client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, use_default_address, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     console.log('SQL:', sql);
-    console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
+    console.log('Values:', [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, finalAttendanceClientName, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
     
-    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
+    const [result] = await db.query(sql, [id, client_id, equipment_id, technician_id, scheduled_date, formattedTime, service_type, status || 'Aberto', notes, address, city, contact_name, contact_phone, use_default_address !== undefined ? use_default_address : 1, use_registered_client, attendance_client_id, finalAttendanceClientName, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state]);
 
     // Criar relatório automaticamente se solicitado
     if (create_report && equipment_id && technician_id) {
@@ -293,6 +300,15 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { client_id, equipment_id, technician_id, scheduled_date, scheduled_time, service_type, status, notes, address, city, contact_name, contact_phone, use_default_address, use_registered_client, attendance_client_id, attendance_client_name, attendance_address, attendance_number, attendance_neighborhood, attendance_city, attendance_state } = req.body;
+    
+    // Se use_registered_client = true e attendance_client_id existe, buscar nome do cliente
+    let finalAttendanceClientName = attendance_client_name;
+    if (use_registered_client && attendance_client_id && !attendance_client_name) {
+      const [clientRows] = await db.query('SELECT name FROM clients WHERE id = ?', [attendance_client_id]);
+      if (clientRows.length > 0) {
+        finalAttendanceClientName = clientRows[0].name;
+      }
+    }
     
     // Normalizar status antes de salvar
     let normalizedStatus = status;
@@ -335,7 +351,7 @@ router.put('/:id', async (req, res) => {
     if (use_default_address !== undefined) { updates.push('use_default_address = ?'); values.push(use_default_address); }
     if (use_registered_client !== undefined) { updates.push('use_registered_client = ?'); values.push(use_registered_client); }
     if (attendance_client_id !== undefined) { updates.push('attendance_client_id = ?'); values.push(attendance_client_id); }
-    if (attendance_client_name !== undefined) { updates.push('attendance_client_name = ?'); values.push(attendance_client_name); }
+    if (attendance_client_name !== undefined || finalAttendanceClientName) { updates.push('attendance_client_name = ?'); values.push(attendance_client_name !== undefined ? attendance_client_name : finalAttendanceClientName); }
     if (attendance_address !== undefined) { updates.push('attendance_address = ?'); values.push(attendance_address); }
     if (attendance_number !== undefined) { updates.push('attendance_number = ?'); values.push(attendance_number); }
     if (attendance_neighborhood !== undefined) { updates.push('attendance_neighborhood = ?'); values.push(attendance_neighborhood); }
