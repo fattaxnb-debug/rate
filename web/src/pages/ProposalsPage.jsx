@@ -218,6 +218,7 @@ export default function ProposalsPage() {
                     <th className="text-left p-3 font-semibold text-sm">Nº Proposta</th>
                     <th className="text-left p-3 font-semibold text-sm">Status</th>
                     <th className="text-left p-3 font-semibold text-sm">Data</th>
+                    <th className="text-left p-3 font-semibold text-sm">Validade</th>
                     <th className="text-left p-3 font-semibold text-sm">Cliente</th>
                     <th className="text-left p-3 font-semibold text-sm">CNPJ</th>
                     <th className="text-right p-3 font-semibold text-sm">Valor Total</th>
@@ -249,6 +250,9 @@ export default function ProposalsPage() {
                       </td>
                       <td className="p-3 text-sm text-gray-600">
                         {proposal.proposal_date}
+                      </td>
+                      <td className="p-3 text-sm text-gray-600">
+                        {proposal.proposal_validity || '-'}
                       </td>
                       <td className="p-3 text-sm">
                         {proposal.client_name}
@@ -377,6 +381,10 @@ export default function ProposalsPage() {
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
                           <span className="font-semibold text-blue-600">Data:</span>
                           <span className="text-gray-900 font-medium">{proposal.proposal_date || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                          <span className="font-semibold text-blue-600">Validade:</span>
+                          <span className="text-gray-900 font-medium">{proposal.proposal_validity || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b border-gray-200">
                           <span className="font-semibold text-blue-600">Valor Total:</span>

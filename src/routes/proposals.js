@@ -18,6 +18,7 @@ router.get('/', authMiddleware, async (req, res) => {
         proposal_number,
         status,
         DATE_FORMAT(created_at, '%d/%m/%Y') as proposal_date,
+        DATE_FORMAT(proposal_validity, '%d/%m/%Y') as proposal_validity,
         client_name,
         client_cnpj,
         total_amount,
@@ -491,6 +492,41 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error deleting proposal:', error);
     res.status(500).json({ error: 'Erro ao excluir proposta' });
+  }
+});
+
+// POST /proposals/check-expired - Verificar e atualizar propostas expiradas
+router.post('/check-expired', authMiddleware, async (req, res) => {
+  try {
+    // Buscar propostas ABERTAS com validade expirada
+    const [expiredProposals] = await db.query(
+      `SELECT id, proposal_number, proposal_validity 
+       FROM proposals 
+       WHERE status = 'ABERTA' 
+       AND proposal_validity IS NOT NULL 
+       AND proposal_validity < CURDATE()`
+    );
+
+    if (expiredProposals.length === 0) {
+      return res.json({ message: 'Nenhuma proposta expirada encontrada', updated: 0 });
+    }
+
+    // Atualizar status para DISPENSADA
+    for (const proposal of expiredProposals) {
+      await db.query(
+        `UPDATE proposals SET status = 'DISPENSADA' WHERE id = ?`,
+        [proposal.id]
+      );
+    }
+
+    res.json({ 
+      message: `${expiredProposals.length} proposta(s) atualizada(s) para DISPENSADA`,
+      updated: expiredProposals.length,
+      proposals: expiredProposals
+    });
+  } catch (error) {
+    console.error('Error checking expired proposals:', error);
+    res.status(500).json({ error: 'Erro ao verificar propostas expiradas' });
   }
 });
 
