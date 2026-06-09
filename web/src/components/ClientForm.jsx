@@ -176,17 +176,19 @@ export default function ClientForm({ client, onSave, onCancel }) {
     }
   };
 
-  // Debounce para CEP e CNPJ
+  // Debounce para CEP (apenas para pessoa física)
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (formData.zip_code.replace(/[^\d]/g, '').length === 8) {
+      // Só busca CEP se for pessoa física (para PJ, o CNPJ já busca o endereço)
+      if (formData.type === 'fisica' && formData.zip_code.replace(/[^\d]/g, '').length === 8) {
         fetchAddressByCep(formData.zip_code);
       }
     }, 600);
 
     return () => clearTimeout(timeout);
-  }, [formData.zip_code]);
+  }, [formData.zip_code, formData.type]);
 
+  // Debounce para CNPJ (apenas para pessoa jurídica)
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (formData.type === 'juridica' && formData.cnpj_cpf.replace(/[^\d]/g, '').length === 14) {
