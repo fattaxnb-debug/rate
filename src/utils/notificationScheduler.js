@@ -52,14 +52,14 @@ export async function checkAndSendNotifications() {
       FROM schedules s
       LEFT JOIN users u ON s.technician_id = u.id
       LEFT JOIN push_subscriptions ps ON u.id = ps.user_id
-      WHERE s.status IN ('Aberto', 'Em Andamento')
+      WHERE s.status IN ('ABERTO', 'ATENDENDO')
         AND s.scheduled_date IS NOT NULL
         AND s.scheduled_time IS NOT NULL
         AND (
           (ABS(TIMESTAMPDIFF(MINUTE, CONCAT(s.scheduled_date, ' ', s.scheduled_time), ?)) = 120) OR -- 2 horas antes
           (ABS(TIMESTAMPDIFF(MINUTE, CONCAT(s.scheduled_date, ' ', s.scheduled_time), ?)) = 60) OR  -- 1 hora antes
           (ABS(TIMESTAMPDIFF(MINUTE, CONCAT(s.scheduled_date, ' ', s.scheduled_time), ?)) = 0) OR    -- no horário
-          (CONCAT(s.scheduled_date, ' ', s.scheduled_time) < ? AND s.status = 'Aberto')            -- passou o horário e não iniciou
+          (CONCAT(s.scheduled_date, ' ', s.scheduled_time) < ? AND s.status = 'ABERTO')            -- passou o horário e não iniciou
         )
     `, [twoHoursLater, oneHourLater, now, now]);
 
