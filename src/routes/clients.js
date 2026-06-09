@@ -43,12 +43,15 @@ router.post('/', async (req, res) => {
   try {
     const { type, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact } = req.body;
 
-    console.log('[DEBUG] Creating client - type received:', type);
-    console.log('[DEBUG] Creating client - full body:', req.body);
+    // Determinar tipo automaticamente baseado no CNPJ/CPF
+    const cleanedCnpjCpf = cnpj_cpf ? cnpj_cpf.replace(/[^\d]/g, '') : '';
+    const autoType = cleanedCnpjCpf.length === 14 ? 'juridica' : 'fisica';
+    
+    console.log('[DEBUG] Creating client - CNPJ/CPF:', cnpj_cpf, 'Cleaned:', cleanedCnpjCpf, 'Length:', cleanedCnpjCpf.length);
+    console.log('[DEBUG] Creating client - Auto-determined type:', autoType);
 
-    // Converter type para o formato do banco (fisica/juridica)
-    const dbType = type === 'juridica' ? 'juridica' : 'fisica';
-    console.log('[DEBUG] Creating client - dbType:', dbType);
+    // Usar o tipo determinado automaticamente (ignorar o que veio do frontend)
+    const dbType = autoType;
 
     const id = uuidv4();
 
@@ -70,8 +73,15 @@ router.put('/:id', async (req, res) => {
   try {
     const { type, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact } = req.body;
 
-    // Converter type para o formato do banco (fisica/juridica)
-    const dbType = type === 'juridica' ? 'juridica' : 'fisica';
+    // Determinar tipo automaticamente baseado no CNPJ/CPF
+    const cleanedCnpjCpf = cnpj_cpf ? cnpj_cpf.replace(/[^\d]/g, '') : '';
+    const autoType = cleanedCnpjCpf.length === 14 ? 'juridica' : 'fisica';
+    
+    console.log('[DEBUG] Updating client - CNPJ/CPF:', cnpj_cpf, 'Cleaned:', cleanedCnpjCpf, 'Length:', cleanedCnpjCpf.length);
+    console.log('[DEBUG] Updating client - Auto-determined type:', autoType);
+
+    // Usar o tipo determinado automaticamente
+    const dbType = autoType;
 
     await db.query(
       `UPDATE clients SET type = ?, name = ?, fantasy_name = ?, cnpj_cpf = ?, rg = ?, ie = ?, address = ?, number = ?, complement = ?, neighborhood = ?, city = ?, state = ?, zip_code = ?, phone = ?, mobile = ?, email = ?, technical_contact = ?
