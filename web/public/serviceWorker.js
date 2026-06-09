@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rate-pwa-v8';
+const CACHE_NAME = 'rate-pwa-v9';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -44,7 +44,11 @@ self.addEventListener('fetch', (event) => {
   // Network-first for API requests
   if (event.request.url.includes('/api/')) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(event.request)
+        .catch(() => {
+          // Return a simple error response if fetch fails
+          return new Response('Network error', { status: 503, statusText: 'Service Unavailable' });
+        })
     );
     return;
   }
@@ -60,7 +64,10 @@ self.addEventListener('fetch', (event) => {
           });
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request).then(cached => {
+          if (cached) return cached;
+          return new Response('Offline', { status: 503 });
+        }))
     );
     return;
   }
@@ -76,7 +83,10 @@ self.addEventListener('fetch', (event) => {
           });
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(event.request).then(cached => {
+          if (cached) return cached;
+          return new Response('Offline', { status: 503 });
+        }))
     );
     return;
   }
@@ -96,12 +106,16 @@ self.addEventListener('fetch', (event) => {
           cache.put(event.request, responseToCache);
         });
         return response;
+      }).catch(() => {
+        // Fallback for navigation
+        if (event.request.mode === 'navigate') {
+          return caches.match('/').then(cached => {
+            if (cached) return cached;
+            return new Response('Offline', { status: 503 });
+          });
+        }
+        return new Response('Offline', { status: 503 });
       });
-    }).catch(() => {
-      // Fallback for navigation
-      if (event.request.mode === 'navigate') {
-        return caches.match('/');
-      }
     })
   );
 });
