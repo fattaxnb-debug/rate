@@ -31,10 +31,14 @@ export async function sendPushNotification(subscription, title, body, data = {})
 
 export async function checkAndSendNotifications() {
   try {
+    console.log('[NOTIFICATION SCHEDULER] Checking for notifications...');
     const now = new Date();
     const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
     const oneHourLater = new Date(now.getTime() + 1 * 60 * 60 * 1000);
     const tenMinutesLater = new Date(now.getTime() + 10 * 60 * 1000);
+
+    console.log('[NOTIFICATION SCHEDULER] Current time:', now.toISOString());
+    console.log('[NOTIFICATION SCHEDULER] Checking schedules...');
 
     // Buscar agendamentos que precisam de notificação
     const [schedules] = await db.query(`
@@ -59,8 +63,13 @@ export async function checkAndSendNotifications() {
         )
     `, [twoHoursLater, oneHourLater, now, now]);
 
+    console.log('[NOTIFICATION SCHEDULER] Found schedules for notification:', schedules.length);
+
     for (const schedule of schedules) {
-      if (!schedule.endpoint) continue;
+      if (!schedule.endpoint) {
+        console.log('[NOTIFICATION SCHEDULER] No endpoint for schedule:', schedule.id);
+        continue;
+      }
 
       const subscription = {
         endpoint: schedule.endpoint,
@@ -107,9 +116,10 @@ export async function checkAndSendNotifications() {
         scheduleId: schedule.id,
         type: 'schedule_reminder'
       });
+      console.log('[NOTIFICATION SCHEDULER] Notification sent for schedule:', schedule.id);
     }
   } catch (error) {
-    console.error('Erro ao verificar e enviar notificações:', error);
+    console.error('[NOTIFICATION SCHEDULER] Error:', error);
   }
 }
 
