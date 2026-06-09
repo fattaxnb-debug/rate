@@ -43,8 +43,12 @@ router.post('/', async (req, res) => {
   try {
     const { type, name, fantasy_name, cnpj_cpf, rg, ie, address, number, complement, neighborhood, city, state, zip_code, phone, mobile, email, technical_contact } = req.body;
 
+    console.log('[DEBUG] Creating client - type received:', type);
+    console.log('[DEBUG] Creating client - full body:', req.body);
+
     // Converter type para o formato do banco (fisica/juridica)
     const dbType = type === 'juridica' ? 'juridica' : 'fisica';
+    console.log('[DEBUG] Creating client - dbType:', dbType);
 
     const id = uuidv4();
 

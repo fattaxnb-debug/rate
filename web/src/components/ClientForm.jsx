@@ -102,7 +102,15 @@ export default function ClientForm({ client, onSave, onCancel }) {
 
     setLoadingCep(true);
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos timeout
+      
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) throw new Error('Erro na consulta do CEP');
       const data = await res.json();
 
       if (data.erro) {
@@ -133,7 +141,14 @@ export default function ClientForm({ client, onSave, onCancel }) {
 
     setLoadingCnpj(true);
     try {
-      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos timeout
+      
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
       if (!res.ok) throw new Error('CNPJ não encontrado');
 
       const data = await res.json();
