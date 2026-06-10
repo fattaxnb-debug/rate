@@ -5,6 +5,7 @@ import fs from 'fs';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
+import db from './src/config/database.js';
 import routes from './src/routes/index.js';
 import { errorMiddleware } from './src/middleware/error.js';
 import { globalRateLimit } from './src/middleware/global-rate-limit.js';
