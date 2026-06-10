@@ -166,11 +166,11 @@ export const generateReportPDF = async (report, companySettings, refs) => {
       
       let includeSignatures = false;
       // CRITICAL PAGINATION RULE:
-      // 1. Se total de fotos <= 12: assinaturas em página SEPARADA (para não cortar)
-      // 2. Se total de fotos > 12 (13-21): assinaturas na MESMA página da última página de fotos
-      // 3. Máximo 12 fotos por página
-      if (isLastPhotoPage && totalPhotos > maxPerPage) {
-        // Mais de 12 fotos: assinaturas na mesma página junto com fotos restantes
+      // 1. Se total de fotos <= 9: assinaturas na MESMA página com as fotos
+      // 2. Se total de fotos > 9: assinaturas em página SEPARADA (para não cortar)
+      // 3. Máximo 12 fotos por página, mas com até 9 fotos cabe junto com assinatura
+      if (isLastPhotoPage && totalPhotos <= 9) {
+        // Até 9 fotos: assinaturas na mesma página junto com fotos
         includeSignatures = true;
         signaturesIncluded = true;
       }
