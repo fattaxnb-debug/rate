@@ -447,12 +447,12 @@ export default function ReportViewer() {
             </div>
 
             {/* PAGE 2: Client + Equipment */}
-            <div ref={clientEquipRef} className="w-[210mm] min-h-[297mm] bg-white p-10 text-black">
-              <div className="flex justify-between items-start pb-5 mb-6" style={{ borderBottom: `2px solid ${colorMode === 'color' ? '#E31E24' : '#000000'}` }}>
+            <div ref={clientEquipRef} className="w-[210mm] min-h-[297mm] bg-white p-8 text-black">
+              <div className="flex justify-between items-start pb-4 mb-5" style={{ borderBottom: `2px solid ${colorMode === 'color' ? '#E31E24' : '#000000'}` }}>
                 <div className="flex items-center gap-4">
                   <img src="/fattax-perfil.png" crossOrigin="anonymous" alt="Logo" width="64" height="64" className="h-16 object-contain" />
                   <div>
-                    <h1 className="text-xl font-bold tracking-tighter uppercase" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>{companySettings?.company_name || 'RELATÓRIO TÉCNICO'}</h1>
+                    <h1 className="text-2xl font-bold tracking-tighter uppercase" style={{ color: colorMode === 'color' ? '#E31E24' : '#000000' }}>{companySettings?.company_name || 'RELATÓRIO TÉCNICO'}</h1>
                     <p className="text-sm mt-1 uppercase font-medium">{report.service_type || 'Manutenção de Equipamentos'}</p>
                   </div>
                 </div>
@@ -462,10 +462,10 @@ export default function ReportViewer() {
                   <p>Data: <span className="font-bold">{report.created_date ? format(new Date(report.created_date), 'dd/MM/yyyy') : report.attendance_date_time ? format(new Date(report.attendance_date_time), 'dd/MM/yyyy') : '-'}</span></p>
                 </div>
               </div>
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <section className="border border-border rounded-lg overflow-hidden">
-                  <h2 className="border-b p-2.5 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Dados do Cliente</h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px 12px', padding: '12px', backgroundColor: 'white' }}>
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Dados do Cliente</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', padding: '12px 16px', backgroundColor: 'white' }}>
                     {renderField('Razão Social', client.name)}
                     {renderField('Nome Fantasia', client.fantasy_name)}
                     {renderField('CPF/CNPJ', client.cnpj_cpf)}
@@ -485,8 +485,8 @@ export default function ReportViewer() {
                   </div>
                 </section>
                 <section className="border border-border rounded-lg overflow-hidden">
-                  <h2 className="border-b p-2.5 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Equipamento</h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px 12px', padding: '12px', backgroundColor: 'white' }}>
+                  <h2 className="border-b p-3 text-sm font-black uppercase tracking-wide" style={{ backgroundColor: sectionBgColor, borderColor: colorMode === 'color' ? '#E31E24' : '#000000', color: sectionTitleColor }}>Equipamento</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', padding: '12px 16px', backgroundColor: 'white' }}>
                     {renderField('Tipo', eqData.type)}
                     {renderField('Marca', eqData.brand)}
                     {renderField('Modelo', eqData.model)}
