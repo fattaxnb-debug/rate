@@ -20,6 +20,7 @@ import { useSearch } from '@/hooks/useSearch.js';
 import { compressImage } from '@/utils/imageCompression.js';
 import SignatureCanvas from 'react-signature-canvas';
 import SignaturePadNative from '@/components/SignaturePadNative.jsx';
+import SignatureModal from '@/components/SignatureModal.jsx';
 import { cn } from '@/lib/utils.js';
 import EquipmentSelectionModal from '@/components/EquipmentSelectionModal.jsx';
 import ClientSignatureDisplay from '@/components/ClientSignatureDisplay.jsx';
@@ -113,6 +114,8 @@ export default function ReportEditor() {
   const [isReadOnly, setIsReadOnly] = useState(false);
   const clientSigPad = useRef(null);
   const techSigPad = useRef(null);
+  const [clientSignatureModalOpen, setClientSignatureModalOpen] = useState(false);
+  const [technicianSignatureModalOpen, setTechnicianSignatureModalOpen] = useState(false);
 
   const isTech = currentUser?.role === 'Técnico' || currentUser?.role === 'technician';
   const isGerente = currentUser?.role === 'Gerente' || currentUser?.role === 'Admin' || currentUser?.role === 'manager';
@@ -444,6 +447,20 @@ export default function ReportEditor() {
         techSigPad.current.clear();
       }
     }, 50);
+  };
+
+  const handleSaveClientSignature = (dataUrl, signerName) => {
+    updateField('client_signature', dataUrl);
+    if (signerName) {
+      updateField('client_signer_name', signerName);
+    }
+  };
+
+  const handleSaveTechnicianSignature = (dataUrl, signerName) => {
+    updateField('technician_signature', dataUrl);
+    if (signerName) {
+      updateField('technician_signer_name', signerName);
+    }
   };
 
   const handleFinalSave = async () => {
@@ -1430,14 +1447,16 @@ export default function ReportEditor() {
                           </Button>
                         </div>
                       ) : (
-                        <>
-                          <SignaturePadNative 
-                            onSave={(dataUrl) => updateField('client_signature', dataUrl)}
-                            onClear={() => updateField('client_signature', '')}
-                            width={400}
-                            height={128}
-                          />
-                        </>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setClientSignatureModalOpen(true)}
+                          className="w-full py-8 border-2 border-dashed"
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <PenTool className="h-6 w-6" />
+                            <span>Clique para assinar</span>
+                          </div>
+                        </Button>
                       )}
                     </div>
                   </CardContent>
@@ -1695,19 +1714,23 @@ export default function ReportEditor() {
                           <Input value={selectedTech?.name || ''} readOnly className="bg-muted text-muted-foreground" />
                         </div>
                         {formData.technician_signature ? (
-                          <div className="border bg-white rounded-xl p-3 flex justify-center">
-                            <img src={formData.technician_signature} alt="Assinatura Técnico" width="200" height="96" className="max-w-full max-h-24 object-contain" />
+                          <div className="space-y-2">
+                            <div className="border bg-white rounded-xl p-3 flex justify-center">
+                              <img src={formData.technician_signature} alt="Assinatura Técnico" width="200" height="96" className="max-w-full max-h-24 object-contain" />
+                            </div>
+                            <Button variant="outline" size="sm" onClick={redrawTechSignature} className="w-full">Redesenhar Assinatura</Button>
                           </div>
                         ) : (
-                          <div className="space-y-2">
-                            <div className="border rounded-lg overflow-hidden bg-white ring-1 ring-border">
-                              <SignatureCanvas ref={techSigPad} penColor="#3B82F6" backgroundColor="white" canvasProps={{ className: 'w-full touch-none', style: { minHeight: '150px', maxWidth: '100%', margin: '0 auto', display: 'block' } }} />
+                          <Button 
+                            variant="outline" 
+                            onClick={() => setTechnicianSignatureModalOpen(true)}
+                            className="w-full py-8 border-2 border-dashed"
+                          >
+                            <div className="flex flex-col items-center gap-2">
+                              <PenTool className="h-6 w-6" />
+                              <span>Clique para assinar</span>
                             </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" onClick={clearTechSignature} className="flex-1">Limpar</Button>
-                              <Button size="sm" onClick={handleConfirmTechSignature} className="flex-1">Confirmar</Button>
-                            </div>
-                          </div>
+                          </Button>
                         )}
                         <div className="space-y-2 pt-4 border-t">
                           <Label className="font-bold uppercase">Nome do Cliente <span className="text-destructive">*</span></Label>
@@ -1747,6 +1770,20 @@ export default function ReportEditor() {
           {zoomPhoto && <img src={zoomPhoto} alt="Zoomed" width="1920" height="1080" className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl" />}
         </DialogContent>
       </Dialog>
+
+      <SignatureModal
+        isOpen={clientSignatureModalOpen}
+        onClose={() => setClientSignatureModalOpen(false)}
+        onSave={handleSaveClientSignature}
+        title="Assinatura do Cliente"
+      />
+
+      <SignatureModal
+        isOpen={technicianSignatureModalOpen}
+        onClose={() => setTechnicianSignatureModalOpen(false)}
+        onSave={handleSaveTechnicianSignature}
+        title="Assinatura do Técnico"
+      />
 
       <EquipmentSelectionModal 
         isOpen={equipmentModalOpen}
