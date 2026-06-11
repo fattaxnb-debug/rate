@@ -116,13 +116,23 @@ export default function ReportViewer() {
             const settingsResponse = await axios.get(`${API_BASE_URL}/settings/user/${record.technician_id}`, {
               headers: { 'Authorization': `Bearer ${token}` }
             });
-            setCompanySettings(settingsResponse.data.data);
+            const settings = settingsResponse.data.data;
+            // Adicionar URL completa do logo se existir
+            if (settings.company_logo && !settings.company_logo.startsWith('http') && !settings.company_logo.startsWith('data:')) {
+              settings.company_logo = `${API_BASE_URL}/uploads/${settings.company_logo}`;
+            }
+            setCompanySettings(settings);
           } catch (e) {
             try {
               const mySettingsResponse = await axios.get(`${API_BASE_URL}/settings/user/${currentUser.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
               });
-              setCompanySettings(mySettingsResponse.data.data);
+              const settings = mySettingsResponse.data.data;
+              // Adicionar URL completa do logo se existir
+              if (settings.company_logo && !settings.company_logo.startsWith('http') && !settings.company_logo.startsWith('data:')) {
+                settings.company_logo = `${API_BASE_URL}/uploads/${settings.company_logo}`;
+              }
+              setCompanySettings(settings);
             } catch (err) {}
           }
         }
