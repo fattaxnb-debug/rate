@@ -179,14 +179,13 @@ export default function ProposalViewer() {
         `}</style>
 
         {/* Seção Cliente */}
-        <div className="proposal-section mb-2">
-          <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
+        <div className="proposal-section mb-3">
+          <h2 className="border-b p-2 text-sm font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
-            color: sectionTitleColor,
-            lineHeight: '1.2'
+            color: sectionTitleColor
           }}>CLIENTE</h2>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 px-2 py-1 text-xs">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 px-4 py-2 text-sm">
             <div className="col-span-2 proposal-row">
               <span className="font-semibold">Nome/Razão Social:</span> {proposal.client_name}
             </div>
@@ -209,14 +208,13 @@ export default function ProposalViewer() {
         </div>
 
         {/* Seção Marca/Modelo */}
-        <div className="proposal-section mb-2">
-          <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
+        <div className="proposal-section mb-3">
+          <h2 className="border-b p-2 text-sm font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
-            color: sectionTitleColor,
-            lineHeight: '1.2'
+            color: sectionTitleColor
           }}>MARCA/MODELO</h2>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 px-2 py-1 text-xs">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 px-4 py-2 text-sm">
             <div className="proposal-row">
               <span className="font-semibold">Marca:</span> {proposal.brand || '-'}
             </div>
@@ -233,14 +231,13 @@ export default function ProposalViewer() {
         </div>
 
         {/* Seção Especificações */}
-        <div className="proposal-section mb-2">
-          <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
+        <div className="proposal-section mb-3">
+          <h2 className="border-b p-2 text-sm font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
-            color: sectionTitleColor,
-            lineHeight: '1.2'
+            color: sectionTitleColor
           }}>ESPECIFICAÇÕES</h2>
-          <div className="grid grid-cols-3 gap-x-4 gap-y-0.5 px-2 py-1 text-xs">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-1 px-4 py-2 text-sm">
             <div className="proposal-row">
               <span className="font-semibold">Potência:</span> {proposal.power || '-'}
             </div>
@@ -272,14 +269,13 @@ export default function ProposalViewer() {
         </div>
 
         {/* Seção Condições Gerais de Fornecimento */}
-        <div className="proposal-section mb-2">
-          <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
+        <div className="proposal-section mb-3">
+          <h2 className="border-b p-2 text-sm font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
-            color: sectionTitleColor,
-            lineHeight: '1.2'
+            color: sectionTitleColor
           }}>CONDIÇÕES GERAIS DE FORNECIMENTO</h2>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 px-2 py-1 text-xs">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 px-4 py-2 text-sm">
             <div className="proposal-row">
               <span className="font-semibold">Monitoração:</span> {proposal.monitoring || '-'}
             </div>
@@ -290,14 +286,13 @@ export default function ProposalViewer() {
         </div>
 
         {/* Seção Condições Comerciais */}
-        <div className="proposal-section mb-2">
-          <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
+        <div className="proposal-section mb-3">
+          <h2 className="border-b p-2 text-sm font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
-            color: sectionTitleColor,
-            lineHeight: '1.2'
+            color: sectionTitleColor
           }}>CONDIÇÕES COMERCIAIS</h2>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 px-2 py-1 text-xs">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 px-4 py-2 text-sm">
             <div className="col-span-2 proposal-row">
               <span className="font-semibold">Condições de Pagamento:</span> {proposal.payment_terms || '-'}
             </div>
@@ -317,14 +312,13 @@ export default function ProposalViewer() {
         </div>
 
         {/* Seção Observações */}
-        <div className="proposal-section mb-2">
-          <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
+        <div className="proposal-section mb-3">
+          <h2 className="border-b p-2 text-sm font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
-            color: sectionTitleColor,
-            lineHeight: '1.2'
+            color: sectionTitleColor
           }}>OBSERVAÇÕES</h2>
-          <div className="px-2 py-1 space-y-1 text-xs">
+          <div className="px-4 py-2 space-y-2 text-sm">
             <p className="font-semibold uppercase leading-tight">
               A GARANTIA E O START-UP COBREM O DESLOCAMENTO DE UM TÉCNICO DA FATTAX NO MÁXIMO DE UM RAIO DE 30 KM. PARA O ATENDIMENTO TÉCNICO EM LOCAIS QUE EXCEDAM ESTE LIMITE A DESPESA COM O DESLOCAMENTO ADICIONAL SERÁ POR CONTA DO CLIENTE OU NEGOCIADO E INCLUSO NA PROPOSTA.
             </p>
@@ -340,41 +334,40 @@ export default function ProposalViewer() {
         </div>
 
         {/* Tabela de Produtos */}
-        <div className="proposal-section mb-2">
-          <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
+        <div className="proposal-section mb-3">
+          <h2 className="border-b p-2 text-sm font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
-            color: sectionTitleColor,
-            lineHeight: '1.2'
+            color: sectionTitleColor
           }}>PRODUTOS</h2>
-          <div className="px-2 py-1">
-            <table className="w-full border-collapse text-xs">
+          <div className="px-4 py-2">
+            <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="border p-1 text-left font-semibold">Cód.</th>
-                  <th className="border p-1 text-left font-semibold">Descrição</th>
-                  <th className="border p-1 text-center font-semibold">Qtd.</th>
-                  <th className="border p-1 text-right font-semibold">Preço Un.</th>
-                  <th className="border p-1 text-right font-semibold">Total</th>
+                  <th className="border p-2 text-left font-semibold">Cód.</th>
+                  <th className="border p-2 text-left font-semibold">Descrição</th>
+                  <th className="border p-2 text-center font-semibold">Qtd.</th>
+                  <th className="border p-2 text-right font-semibold">Preço Un.</th>
+                  <th className="border p-2 text-right font-semibold">Total</th>
                 </tr>
               </thead>
               <tbody>
                 {proposal.items?.map((item, idx) => (
                   <tr key={idx}>
-                    <td className="border p-1">{item.product_code || '-'}</td>
-                    <td className="border p-1">{item.product_description}</td>
-                    <td className="border p-1 text-center">{item.quantity}</td>
-                    <td className="border p-1 text-right">{formatCurrency(item.unit_price)}</td>
-                    <td className="border p-1 text-right">{formatCurrency(item.total_price)}</td>
+                    <td className="border p-2">{item.product_code || '-'}</td>
+                    <td className="border p-2">{item.product_description}</td>
+                    <td className="border p-2 text-center">{item.quantity}</td>
+                    <td className="border p-2 text-right">{formatCurrency(item.unit_price)}</td>
+                    <td className="border p-2 text-right">{formatCurrency(item.total_price)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr className="bg-emerald-50">
-                  <td colSpan="4" className="border p-1 text-right font-bold">
+                  <td colSpan="4" className="border p-2 text-right font-bold">
                     Total Geral:
                   </td>
-                  <td className="border p-1 text-right font-bold text-emerald-700">
+                  <td className="border p-2 text-right font-bold text-emerald-700">
                     {formatCurrency(proposal.total_amount)}
                   </td>
                 </tr>
@@ -384,27 +377,26 @@ export default function ProposalViewer() {
         </div>
 
         {/* Seção Assinaturas */}
-        <div className="proposal-section mb-2">
-          <h2 className="border-b p-1.5 text-xs font-black uppercase tracking-wide" style={{
+        <div className="proposal-section mb-3">
+          <h2 className="border-b p-2 text-sm font-black uppercase tracking-wide" style={{
             backgroundColor: sectionBgColor,
             borderColor: sectionBorderColor,
-            color: sectionTitleColor,
-            lineHeight: '1.2'
+            color: sectionTitleColor
           }}>ASSINATURAS</h2>
-          <div className="grid grid-cols-2 gap-8 px-2 pt-24 pb-4">
+          <div className="grid grid-cols-2 gap-8 px-8 pt-20 pb-6">
             {/* Lado esquerdo: Usuário criador da proposta */}
             <div className="flex flex-col items-center text-center">
-              <div className="border-t border-gray-400 pt-1 w-full max-w-[200px]">
-                <p className="font-bold text-xs uppercase text-gray-900">{creatorName || 'FATTAX'}</p>
-                <p className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">{userRole}</p>
+              <div className="border-t-2 border-gray-400 pt-2 w-full max-w-[220px]">
+                <p className="font-bold text-sm uppercase text-gray-900">{creatorName || 'FATTAX'}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1">{userRole}</p>
               </div>
             </div>
 
             {/* Lado direito: Cliente */}
             <div className="flex flex-col items-center text-center">
-              <div className="border-t border-gray-400 pt-1 w-full max-w-[200px]">
-                <p className="font-bold text-xs uppercase text-gray-900">{proposal.client_contact || 'Contato do Cliente'}</p>
-                <p className="text-[9px] text-gray-500 uppercase tracking-wider font-semibold mt-0.5">{proposal.client_name || 'Cliente'}</p>
+              <div className="border-t-2 border-gray-400 pt-2 w-full max-w-[220px]">
+                <p className="font-bold text-sm uppercase text-gray-900">{proposal.client_contact || 'Contato do Cliente'}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1">{proposal.client_name || 'Cliente'}</p>
               </div>
             </div>
           </div>
