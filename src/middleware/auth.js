@@ -19,12 +19,13 @@ export const authenticateToken = (req, res, next) => {
 
   const secret = process.env.JWT_SECRET || 'minha_chave_secreta_super_segura_123456789_abc';
   console.log('[AUTH DEBUG] Using secret length:', secret.length);
+  console.log('[AUTH DEBUG] Secret preview:', secret.substring(0, 10) + '...');
 
   jwt.verify(token, secret, (err, user) => {
     if (err) {
       console.log('[AUTH DEBUG] Token verification failed:', err.message);
       console.log('[AUTH DEBUG] Error name:', err.name);
-      console.log('[AUTH DEBUG] Error stack:', err.stack);
+      console.log('[AUTH DEBUG] Token expired at:', err.expiredAt);
       return res.status(403).json({ 
         error: 'Token inválido ou expirado',
         details: err.message 
