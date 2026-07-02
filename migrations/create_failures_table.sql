@@ -36,6 +36,5 @@ CREATE TABLE IF NOT EXISTS failures (
   INDEX idx_brand_model (brand, model),
   INDEX idx_category (category),
   INDEX idx_frequency (frequency),
-  INDEX idx_created_by (created_by),
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+  INDEX idx_created_by (created_by)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
