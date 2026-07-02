@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Search, Wrench, Trash2, Edit, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, Wrench, Trash2, Edit, X, ChevronDown, ChevronUp, ZoomIn } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { API_BASE_URL } from '@/config/api.js';
@@ -20,6 +20,7 @@ export default function FailuresPage() {
   const [selectedFailure, setSelectedFailure] = useState(null);
   const [expandedCards, setExpandedCards] = useState({});
   const [stats, setStats] = useState(null);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
 
   // Filtros
   const [filterBrand, setFilterBrand] = useState('');
@@ -337,6 +338,29 @@ export default function FailuresPage() {
                             <span className="font-semibold text-blue-600 block mb-1">Registrado por:</span>
                             <span className="text-gray-900">{failure.created_by_name || '-'} em {new Date(failure.created_at).toLocaleDateString('pt-BR')}</span>
                           </div>
+                          {failure.photo_urls && (
+                            <div className="md:col-span-2 py-2">
+                              <span className="font-semibold text-blue-600 block mb-2">Registro Fotográfico:</span>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {failure.photo_urls.split(',').filter(url => url.trim()).map((url, index) => (
+                                  <div
+                                    key={index}
+                                    className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors relative group"
+                                    onClick={() => setPreviewPhoto(url.trim())}
+                                  >
+                                    <img
+                                      src={url.trim()}
+                                      alt={`Foto ${index + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                      <ZoomIn className="h-8 w-8 text-white" />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-3 mt-4 pt-4 border-t border-red-500/20">
                           <Button
@@ -387,6 +411,19 @@ export default function FailuresPage() {
               onCancel={() => setIsDialogOpen(false)}
               isModal={true}
             />
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Preview de Foto */}
+        <Dialog open={!!previewPhoto} onOpenChange={() => setPreviewPhoto(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+            {previewPhoto && (
+              <img
+                src={previewPhoto}
+                alt="Foto em tamanho completo"
+                className="w-full h-auto object-contain"
+              />
+            )}
           </DialogContent>
         </Dialog>
       </main>

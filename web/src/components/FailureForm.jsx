@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Save, X, Upload } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Save, X, Upload, XCircle, ZoomIn } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { API_BASE_URL } from '@/config/api.js';
@@ -30,12 +31,25 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
     tags: ''
   });
 
+  const [photos, setPhotos] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
+
   useEffect(() => {
     if (failure) {
       setFormData({
         ...formData,
         ...failure
       });
+      // Carregar fotos existentes
+      if (failure.photo_urls) {
+        const urls = failure.photo_urls.split(',').filter(url => url.trim());
+        setPhotos(urls.map((url, index) => ({
+          id: index,
+          url: url.trim(),
+          preview: url.trim()
+        })));
+      }
     }
   }, [failure]);
 
@@ -47,17 +61,70 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
     }));
   };
 
+  const handlePhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploading(true);
+    const newPhotos = [];
+
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('type', 'failure');
+
+        const token = localStorage.getItem('auth_token');
+        const response = await axios.post(`${API_BASE_URL}/uploads/photo`, formData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        if (response.data.data && response.data.data.url) {
+          newPhotos.push({
+            id: Date.now() + Math.random(),
+            url: response.data.data.url,
+            preview: response.data.data.url
+          });
+        }
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        toast.error('Erro ao fazer upload da foto');
+      }
+    }
+
+    setPhotos(prev => [...prev, ...newPhotos]);
+    setUploading(false);
+  };
+
+  const handleRemovePhoto = (photoId) => {
+    setPhotos(prev => prev.filter(photo => photo.id !== photoId));
+  };
+
+  const handlePreviewPhoto = (photo) => {
+    setPreviewPhoto(photo);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
+      // Atualizar photo_urls com as fotos
+      const photoUrls = photos.map(photo => photo.url).join(',');
+      const dataToSend = {
+        ...formData,
+        photo_urls: photoUrls
+      };
+
       const token = localStorage.getItem('auth_token');
       const url = failure?.id 
         ? `${API_BASE_URL}/failures/${failure.id}`
         : `${API_BASE_URL}/failures`;
       const method = failure?.id ? 'put' : 'post';
 
-      const response = await axios[method](url, formData, {
+      const response = await axios[method](url, dataToSend, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -216,16 +283,57 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
             />
           </div>
           <div>
-            <Label htmlFor="photo_urls">Registro Fotográfico (URLs)</Label>
-            <textarea
-              id="photo_urls"
-              name="photo_urls"
-              value={formData.photo_urls}
-              onChange={handleChange}
-              placeholder="URLs das fotos separadas por vírgula"
-              className="w-full border rounded-md p-2 min-h-[60px] mt-1"
-              rows={2}
-            />
+            <Label htmlFor="photo_urls">Registro Fotográfico</Label>
+            <div className="mt-2">
+              <input
+                type="file"
+                id="photo_upload"
+                multiple
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById('photo_upload').click()}
+                disabled={uploading}
+                className="w-full"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {uploading ? 'Enviando...' : 'Adicionar Fotos'}
+              </Button>
+            </div>
+
+            {/* Preview das fotos */}
+            {photos.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                {photos.map((photo) => (
+                  <div key={photo.id} className="relative group">
+                    <div
+                      className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors"
+                      onClick={() => handlePreviewPhoto(photo)}
+                    >
+                      <img
+                        src={photo.preview}
+                        alt="Foto da falha"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <ZoomIn className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(photo.id)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -324,6 +432,19 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
           {failure?.id ? 'Atualizar Falha' : 'Registrar Falha'}
         </Button>
       </div>
+
+      {/* Dialog de Preview de Foto */}
+      <Dialog open={!!previewPhoto} onOpenChange={() => setPreviewPhoto(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          {previewPhoto && (
+            <img
+              src={previewPhoto.url}
+              alt="Foto em tamanho completo"
+              className="w-full h-auto object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
