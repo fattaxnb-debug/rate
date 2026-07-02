@@ -22,6 +22,7 @@ const ReportsPage = lazy(() => import('@/pages/ReportsPage.jsx'));
 const ReportViewer = lazy(() => import('@/pages/ReportViewer.jsx'));
 const ProposalsPage = lazy(() => import('@/pages/ProposalsPage.jsx'));
 const ProposalViewer = lazy(() => import('@/pages/ProposalViewer.jsx'));
+const FailuresPage = lazy(() => import('@/pages/FailuresPage.jsx'));
 const ReportForm = lazy(() => import('@/components/ReportForm.jsx'));
 const ReportFormEditor = lazy(() => import('@/components/ReportFormEditor.jsx'));
 const ReportEditor = lazy(() => import('@/components/ReportEditor.jsx'));
@@ -68,6 +69,8 @@ function App() {
               
               <Route path="/proposals" element={<ProtectedRoute><ProposalsPage /></ProtectedRoute>} />
               <Route path="/proposals/:id" element={<ProtectedRoute><ProposalViewer /></ProtectedRoute>} />
+              
+              <Route path="/failures" element={<ProtectedRoute><FailuresPage /></ProtectedRoute>} />
               
               <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 

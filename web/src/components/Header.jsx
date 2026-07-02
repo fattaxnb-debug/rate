@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext.jsx';
 import { useTheme } from '@/contexts/ThemeContext.jsx';
-import { Menu, X, LogOut, User, Settings, LayoutDashboard, Users, Wrench, Calendar, FileText, Moon, Sun, Bell } from 'lucide-react';
+import { Menu, X, LogOut, User, Settings, LayoutDashboard, Users, Wrench, Calendar, FileText, Moon, Sun, Bell, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -68,6 +68,7 @@ function Header() {
     { path: '/schedules', label: 'Agendamentos', icon: Calendar },
     { path: '/reports', label: 'Relatórios', icon: FileText },
     { path: '/proposals', label: 'Propostas', icon: FileText },
+    { path: '/failures', label: 'Banco de Falhas', icon: AlertTriangle },
   ];
 
   return (

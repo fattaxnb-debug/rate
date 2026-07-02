@@ -1,0 +1,395 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Search, Wrench, Trash2, Edit, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { toast } from 'sonner';
+import axios from 'axios';
+import { API_BASE_URL } from '@/config/api.js';
+import FailureForm from '@/components/FailureForm.jsx';
+import Header from '@/components/Header.jsx';
+
+export default function FailuresPage() {
+  const navigate = useNavigate();
+  const [failures, setFailures] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedFailure, setSelectedFailure] = useState(null);
+  const [expandedCards, setExpandedCards] = useState({});
+  const [stats, setStats] = useState(null);
+
+  // Filtros
+  const [filterBrand, setFilterBrand] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterFrequency, setFilterFrequency] = useState('');
+
+  const toggleCard = (failureId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [failureId]: !prev[failureId]
+    }));
+  };
+
+  useEffect(() => {
+    fetchFailures();
+    fetchStats();
+  }, []);
+
+  const fetchFailures = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const params = {};
+      if (filterBrand) params.brand = filterBrand;
+      if (filterCategory) params.category = filterCategory;
+      if (filterFrequency) params.frequency = filterFrequency;
+      if (searchTerm) params.search = searchTerm;
+
+      const response = await axios.get(`${API_BASE_URL}/failures`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+      });
+      setFailures(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching failures:', error);
+      toast.error('Erro ao carregar falhas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await axios.get(`${API_BASE_URL}/failures/stats/summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStats(response.data.data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const handleSearch = () => {
+    fetchFailures();
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setFilterBrand('');
+    setFilterCategory('');
+    setFilterFrequency('');
+    fetchFailures();
+  };
+
+  const handleNewFailure = () => {
+    setSelectedFailure(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditFailure = async (failure) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await axios.get(`${API_BASE_URL}/failures/${failure.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSelectedFailure(response.data.data);
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching failure details:', error);
+      toast.error('Erro ao carregar detalhes da falha');
+    }
+  };
+
+  const handleDeleteFailure = async (failure) => {
+    if (!confirm(`Deseja realmente excluir esta falha?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      await axios.delete(`${API_BASE_URL}/failures/${failure.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Falha excluída com sucesso');
+      fetchFailures();
+      fetchStats();
+    } catch (error) {
+      console.error('Error deleting failure:', error);
+      toast.error('Erro ao excluir falha');
+    }
+  };
+
+  const handleSaveFailure = () => {
+    setIsDialogOpen(false);
+    setSelectedFailure(null);
+    fetchFailures();
+    fetchStats();
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-muted/20">
+      <Header />
+      <main className="flex-1 container mx-auto px-4 py-8">
+        {/* Estatísticas */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold">{stats.total}</div>
+                <div className="text-sm opacity-90">Total de Falhas</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold">{stats.top_brands?.[0]?.count || 0}</div>
+                <div className="text-sm opacity-90">Marca Mais Comum</div>
+                <div className="text-xs opacity-75">{stats.top_brands?.[0]?.brand || '-'}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold">{stats.by_category?.length || 0}</div>
+                <div className="text-sm opacity-90">Categorias</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+              <CardContent className="pt-6">
+                <div className="text-3xl font-bold">{stats.by_frequency?.find(f => f.frequency === 'Comum')?.count || 0}</div>
+                <div className="text-sm opacity-90">Falhas Comuns</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div>
+              <CardTitle className="text-2xl font-bold">BANCO DE FALHAS</CardTitle>
+              <p className="text-sm text-gray-500 mt-1">
+                Base de Conhecimento Técnico
+              </p>
+            </div>
+            <Button onClick={handleNewFailure} className="bg-emerald-600 hover:bg-emerald-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Falha
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {/* Barra de Pesquisa e Filtros */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="pl-10"
+                />
+              </div>
+              <Input
+                placeholder="Filtrar por marca"
+                value={filterBrand}
+                onChange={(e) => setFilterBrand(e.target.value)}
+              />
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Todas Categorias</option>
+                <option value="Elétrica">Elétrica</option>
+                <option value="Eletrônica">Eletrônica</option>
+                <option value="Mecânica">Mecânica</option>
+                <option value="Software">Software</option>
+              </select>
+              <select
+                value={filterFrequency}
+                onChange={(e) => setFilterFrequency(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Todas Frequências</option>
+                <option value="Rara">Rara</option>
+                <option value="Ocasional">Ocasional</option>
+                <option value="Comum">Comum</option>
+                <option value="Muito Comum">Muito Comum</option>
+              </select>
+            </div>
+
+            <div className="flex gap-2 mb-6">
+              <Button variant="outline" onClick={handleSearch}>
+                Buscar
+              </Button>
+              {(searchTerm || filterBrand || filterCategory || filterFrequency) && (
+                <Button variant="ghost" onClick={handleClearFilters}>
+                  <X className="h-4 w-4 mr-2" />
+                  Limpar Filtros
+                </Button>
+              )}
+            </div>
+
+            {/* Lista de Falhas - Cards Expansíveis */}
+            <div className="space-y-4">
+              {loading ? (
+                <div className="text-center py-8 text-gray-500">
+                  Carregando falhas...
+                </div>
+              ) : failures.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  Nenhuma falha encontrada
+                </div>
+              ) : (
+                failures.map((failure) => (
+                  <div key={failure.id} className="bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-xl overflow-hidden">
+                    <div 
+                      className="p-4 cursor-pointer hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors relative overflow-hidden"
+                      onClick={() => toggleCard(failure.id)}
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-red-500 to-orange-500"></div>
+                      <div className="flex items-center justify-between pl-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 truncate text-base">
+                            {failure.brand || 'Sem marca'} - {failure.model || 'Sem modelo'}
+                          </h3>
+                          <div className="text-sm text-gray-600 mt-2 space-y-1">
+                            <div className="flex items-center">
+                              <span className="font-semibold text-blue-600 w-24">Falha:</span>
+                              <span className="text-gray-900 truncate">{failure.failure_description || '-'}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="font-semibold text-blue-600 w-24">Categoria:</span>
+                              <span className="text-gray-900">
+                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                  {failure.category || 'Não definida'}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <div className="bg-gradient-to-br from-red-500 to-orange-500 rounded-full p-2 shadow-md">
+                            {expandedCards[failure.id] ? (
+                              <ChevronUp className="h-4 w-4 text-white" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-white" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {expandedCards[failure.id] && (
+                      <div className="px-4 pb-4 border-t border-red-500/20 pt-4 bg-gradient-to-b from-red-500/5 to-transparent">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Marca:</span>
+                            <span className="text-gray-900 font-medium">{failure.brand || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Modelo:</span>
+                            <span className="text-gray-900 font-medium">{failure.model || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Potência:</span>
+                            <span className="text-gray-900 font-medium">{failure.power || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Ref. Placa:</span>
+                            <span className="text-gray-900 font-medium">{failure.board_reference || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Tensão Entrada:</span>
+                            <span className="text-gray-900 font-medium">{failure.input_voltage || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Tensão Saída:</span>
+                            <span className="text-gray-900 font-medium">{failure.output_voltage || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Tensão Bateria:</span>
+                            <span className="text-gray-900 font-medium">{failure.battery_voltage || '-'}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600">Frequência:</span>
+                            <span className="text-gray-900 font-medium">{failure.frequency || '-'}</span>
+                          </div>
+                          <div className="md:col-span-2 py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600 block mb-1">Falha Apresentada:</span>
+                            <span className="text-gray-900">{failure.failure_description || '-'}</span>
+                          </div>
+                          <div className="md:col-span-2 py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600 block mb-1">Componentes:</span>
+                            <span className="text-gray-900">{failure.components || '-'}</span>
+                          </div>
+                          <div className="md:col-span-2 py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600 block mb-1">Solução Sugerida:</span>
+                            <span className="text-gray-900">{failure.suggested_solution || '-'}</span>
+                          </div>
+                          <div className="md:col-span-2 py-2 border-b border-gray-200">
+                            <span className="font-semibold text-blue-600 block mb-1">Peças Utilizadas:</span>
+                            <span className="text-gray-900">{failure.parts_used || '-'}</span>
+                          </div>
+                          <div className="md:col-span-2 py-2">
+                            <span className="font-semibold text-blue-600 block mb-1">Registrado por:</span>
+                            <span className="text-gray-900">{failure.created_by_name || '-'} em {new Date(failure.created_at).toLocaleDateString('pt-BR')}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-3 mt-4 pt-4 border-t border-red-500/20">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditFailure(failure);
+                            }}
+                            className="bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFailure(failure);
+                            }}
+                            className="bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dialog para Nova/Editar Falha */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedFailure?.id ? 'Editar Falha' : 'Nova Falha'}
+              </DialogTitle>
+            </DialogHeader>
+            <FailureForm
+              failure={selectedFailure}
+              onSave={handleSaveFailure}
+              onCancel={() => setIsDialogOpen(false)}
+              isModal={true}
+            />
+          </DialogContent>
+        </Dialog>
+      </main>
+    </div>
+  );
+}

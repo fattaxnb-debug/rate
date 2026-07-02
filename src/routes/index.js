@@ -11,6 +11,7 @@ import statsRouter from './stats.js';
 import migrateRouter from './migrate.js';
 import pushSubscriptionsRouter from './push-subscriptions.js';
 import proposalsRouter from './proposals.js';
+import failuresRouter from './failures.js';
 import db from '../config/database.js';
 
 const router = Router();
@@ -62,6 +63,8 @@ export default () => {
     router.use('/push-subscriptions', pushSubscriptionsRouter);
     console.log('Registering /proposals route...');
     router.use('/proposals', proposalsRouter);
+    console.log('Registering /failures route...');
+    router.use('/failures', failuresRouter);
     
     // Endpoint de teste para proposals (sem autenticação)
     router.get('/proposals-test', (req, res) => {
