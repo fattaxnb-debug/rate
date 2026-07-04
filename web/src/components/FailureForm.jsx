@@ -8,6 +8,7 @@ import { Save, X, Upload, XCircle, ZoomIn } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { API_BASE_URL } from '@/config/api.js';
+import { compressReportPhoto } from '@/utils/imageCompression.js';
 
 export default function FailureForm({ failure, onSave, onCancel, isModal = false }) {
   const [formData, setFormData] = useState({
@@ -50,7 +51,7 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
             setPhotos(photoData.map((p, index) => ({
               id: p.id || index,
               url: p.url,
-              preview: p.url,
+              file: null, // Fotos carregadas não têm file
               comment: p.comment || ''
             })));
           }
@@ -60,7 +61,7 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
           setPhotos(urls.map((url, index) => ({
             id: index,
             url: url.trim(),
-            preview: url.trim(),
+            file: null,
             comment: ''
           })));
         }
@@ -85,28 +86,16 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
 
     for (const file of files) {
       try {
-        const formData = new FormData();
-        formData.append('photo', file);
-        formData.append('type', 'failure');
-
-        const token = localStorage.getItem('auth_token');
-        const response = await axios.post(`${API_BASE_URL}/uploads/photo`, formData, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
+        const { file: compressedFile, dataUrl } = await compressReportPhoto(file);
+        newPhotos.push({
+          id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          url: dataUrl,
+          file: compressedFile,
+          comment: ''
         });
-
-        if (response.data.data && response.data.data.url) {
-          newPhotos.push({
-            id: Date.now() + Math.random(),
-            url: response.data.data.url,
-            preview: response.data.data.url
-          });
-        }
       } catch (error) {
-        console.error('Error uploading photo:', error);
-        toast.error('Erro ao fazer upload da foto');
+        console.error('Error compressing photo:', error);
+        toast.error('Erro ao processar imagem');
       }
     }
 
@@ -132,15 +121,51 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
     e.preventDefault();
 
     try {
-      // Atualizar photo_urls com as fotos e comentários em formato JSON
-      const photoData = photos.map(photo => ({
-        id: photo.id,
-        url: photo.url,
-        comment: photo.comment || ''
+      // Fazer upload das fotos que têm file
+      const photosToUpload = photos.filter(p => p.file);
+      const uploadedPhotos = [];
+
+      for (const photo of photosToUpload) {
+        try {
+          const formData = new FormData();
+          formData.append('photo', photo.file);
+          formData.append('type', 'failure');
+
+          const token = localStorage.getItem('auth_token');
+          const response = await axios.post(`${API_BASE_URL}/uploads/photo`, formData, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+
+          if (response.data.data && response.data.data.url) {
+            uploadedPhotos.push({
+              id: photo.id,
+              url: response.data.data.url,
+              comment: photo.comment || ''
+            });
+          }
+        } catch (error) {
+          console.error('Error uploading photo:', error);
+          toast.error('Erro ao fazer upload da foto');
+        }
+      }
+
+      // Manter fotos que já tinham URL (não foram enviadas agora)
+      const existingPhotos = photos.filter(p => !p.file).map(p => ({
+        id: p.id,
+        url: p.url,
+        comment: p.comment || ''
       }));
+
+      // Combinar fotos
+      const allPhotos = [...existingPhotos, ...uploadedPhotos];
+
+      // Atualizar photo_urls com as fotos e comentários em formato JSON
       const dataToSend = {
         ...formData,
-        photo_urls: JSON.stringify(photoData)
+        photo_urls: JSON.stringify(allPhotos)
       };
 
       const token = localStorage.getItem('auth_token');
@@ -332,39 +357,33 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
 
             {/* Preview das fotos */}
             {photos.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
                 {photos.map((photo) => (
-                  <div key={photo.id} className="relative group border-2 border-gray-200 rounded-lg p-3">
-                    <div className="flex gap-3">
-                      <div
-                        className="w-24 h-24 rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors flex-shrink-0"
-                        onClick={() => handlePreviewPhoto(photo)}
-                      >
-                        <img
-                          src={photo.preview}
-                          alt="Foto da falha"
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <ZoomIn className="h-8 w-8 text-white" />
-                        </div>
+                  <div key={photo.id} className="group relative border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col">
+                    <div className="aspect-video relative bg-muted shrink-0">
+                      <img 
+                        src={photo.url} 
+                        alt="Foto da falha" 
+                        className="w-full h-full object-cover cursor-pointer" 
+                        onClick={() => handlePreviewPhoto(photo)} 
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full" onClick={() => handlePreviewPhoto(photo)}>
+                          <ZoomIn className="h-4 w-4" />
+                        </Button>
+                        <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleRemovePhoto(photo.id)}>
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <div className="flex-1">
-                        <textarea
-                          placeholder="Adicione um comentário para esta foto..."
-                          value={photo.comment}
-                          onChange={(e) => handlePhotoCommentChange(photo.id, e.target.value)}
-                          className="w-full border rounded-md p-2 min-h-[60px] text-sm resize-none"
-                          rows={3}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhoto(photo.id)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors"
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </button>
+                    </div>
+                    <div className="p-3 space-y-2 flex-1 flex flex-col">
+                      <textarea
+                        placeholder="Comentário da foto..."
+                        className="text-xs resize-none flex-1 min-h-[60px] border rounded-md p-2"
+                        value={photo.comment}
+                        onChange={(e) => handlePhotoCommentChange(photo.id, e.target.value)}
+                        rows={3}
+                      />
                     </div>
                   </div>
                 ))}
@@ -474,7 +493,7 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           {previewPhoto && (
             <img
-              src={previewPhoto.url}
+              src={previewPhoto.url || previewPhoto}
               alt="Foto em tamanho completo"
               className="w-full h-auto object-contain"
             />
