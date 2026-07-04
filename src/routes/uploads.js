@@ -47,7 +47,7 @@ router.post('/photo', upload.single('photo'), async (req, res) => {
       return res.status(400).json({ error: 'Nenhum arquivo enviado' });
     }
     
-    const photo_url = `/uploads/${req.file.filename}`;
+    const photo_url = `/api/uploads/${req.file.filename}`;
     
     console.log('[UPLOADS] Photo uploaded:', photo_url);
     console.log('[UPLOADS] File size:', req.file.size);

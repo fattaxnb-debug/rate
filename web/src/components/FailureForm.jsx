@@ -367,11 +367,11 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
                         className="w-full h-full object-cover cursor-pointer" 
                         onClick={() => handlePreviewPhoto(photo)} 
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full" onClick={() => handlePreviewPhoto(photo)}>
+                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-white/90 hover:bg-white" onClick={() => handlePreviewPhoto(photo)}>
                           <ZoomIn className="h-4 w-4" />
                         </Button>
-                        <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleRemovePhoto(photo.id)}>
+                        <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full bg-red-500/90 hover:bg-red-500" onClick={() => handleRemovePhoto(photo.id)}>
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
