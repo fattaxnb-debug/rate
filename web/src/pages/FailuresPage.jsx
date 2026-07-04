@@ -366,22 +366,53 @@ export default function FailuresPage() {
                               <div className="md:col-span-2 py-2">
                                 <span className="font-semibold text-blue-600 block mb-2">Registro Fotográfico:</span>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                  {failure.photo_urls.split(',').filter(url => url.trim()).map((url, index) => (
-                                    <div
-                                      key={index}
-                                      className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors relative group"
-                                      onClick={() => setPreviewPhoto(url.trim())}
-                                    >
-                                      <img
-                                        src={url.trim()}
-                                        alt={`Foto ${index + 1}`}
-                                        className="w-full h-full object-cover"
-                                      />
-                                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <ZoomIn className="h-8 w-8 text-white" />
-                                      </div>
-                                    </div>
-                                  ))}
+                                  {(() => {
+                                    try {
+                                      const photoData = JSON.parse(failure.photo_urls);
+                                      if (Array.isArray(photoData)) {
+                                        return photoData.map((photo, index) => (
+                                          <div
+                                            key={photo.id || index}
+                                            className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors relative group"
+                                            onClick={() => setPreviewPhoto(photo.url)}
+                                          >
+                                            <img
+                                              src={photo.url}
+                                              alt={`Foto ${index + 1}`}
+                                              className="w-full h-full object-cover"
+                                            />
+                                            {photo.comment && (
+                                              <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 truncate">
+                                                {photo.comment}
+                                              </div>
+                                            )}
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                              <ZoomIn className="h-8 w-8 text-white" />
+                                            </div>
+                                          </div>
+                                        ));
+                                      }
+                                    } catch (e) {
+                                      // Fallback para formato CSV antigo
+                                      return failure.photo_urls.split(',').filter(url => url.trim()).map((url, index) => (
+                                        <div
+                                          key={index}
+                                          className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors relative group"
+                                          onClick={() => setPreviewPhoto(url.trim())}
+                                        >
+                                          <img
+                                            src={url.trim()}
+                                            alt={`Foto ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                          />
+                                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <ZoomIn className="h-8 w-8 text-white" />
+                                          </div>
+                                        </div>
+                                      ));
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               </div>
                             )}
@@ -429,24 +460,20 @@ export default function FailuresPage() {
                       <th className="px-4 py-3 text-left text-sm font-semibold">Tensão Entrada</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Tensão Saída</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold">Tensão Bateria</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold">Falha</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold">Componentes</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold">Solução</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold">Categoria</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold">Frequência</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold">Ref. Placa</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={12} className="text-center py-8 text-gray-500">
+                        <td colSpan={8} className="text-center py-8 text-gray-500">
                           Carregando falhas...
                         </td>
                       </tr>
                     ) : failures.length === 0 ? (
                       <tr>
-                        <td colSpan={12} className="text-center py-8 text-gray-500">
+                        <td colSpan={8} className="text-center py-8 text-gray-500">
                           Nenhuma falha encontrada
                         </td>
                       </tr>
@@ -459,15 +486,7 @@ export default function FailuresPage() {
                           <td className="px-4 py-3 text-sm">{failure.input_voltage || '-'}</td>
                           <td className="px-4 py-3 text-sm">{failure.output_voltage || '-'}</td>
                           <td className="px-4 py-3 text-sm">{failure.battery_voltage || '-'}</td>
-                          <td className="px-4 py-3 text-sm max-w-xs truncate" title={failure.failure_description}>{failure.failure_description || '-'}</td>
-                          <td className="px-4 py-3 text-sm max-w-xs truncate" title={failure.components}>{failure.components || '-'}</td>
-                          <td className="px-4 py-3 text-sm max-w-xs truncate" title={failure.suggested_solution}>{failure.suggested_solution || '-'}</td>
-                          <td className="px-4 py-3 text-sm">
-                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                              {failure.category || '-'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm">{failure.frequency || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{failure.board_reference || '-'}</td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex items-center justify-center gap-2">
                               <Button
@@ -621,22 +640,53 @@ export default function FailuresPage() {
                   <div>
                     <span className="font-semibold text-blue-600 block mb-2">Registro Fotográfico:</span>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {viewFailure.photo_urls.split(',').filter(url => url.trim()).map((url, index) => (
-                        <div
-                          key={index}
-                          className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors relative group"
-                          onClick={() => setPreviewPhoto(url.trim())}
-                        >
-                          <img
-                            src={url.trim()}
-                            alt={`Foto ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <ZoomIn className="h-8 w-8 text-white" />
-                          </div>
-                        </div>
-                      ))}
+                      {(() => {
+                        try {
+                          const photoData = JSON.parse(viewFailure.photo_urls);
+                          if (Array.isArray(photoData)) {
+                            return photoData.map((photo, index) => (
+                              <div
+                                key={photo.id || index}
+                                className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors relative group"
+                                onClick={() => setPreviewPhoto(photo.url)}
+                              >
+                                <img
+                                  src={photo.url}
+                                  alt={`Foto ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                {photo.comment && (
+                                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 truncate">
+                                    {photo.comment}
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <ZoomIn className="h-8 w-8 text-white" />
+                                </div>
+                              </div>
+                            ));
+                          }
+                        } catch (e) {
+                          // Fallback para formato CSV antigo
+                          return viewFailure.photo_urls.split(',').filter(url => url.trim()).map((url, index) => (
+                            <div
+                              key={index}
+                              className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors relative group"
+                              onClick={() => setPreviewPhoto(url.trim())}
+                            >
+                              <img
+                                src={url.trim()}
+                                alt={`Foto ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <ZoomIn className="h-8 w-8 text-white" />
+                              </div>
+                            </div>
+                          ));
+                        }
+                        return null;
+                      })()}
                     </div>
                   </div>
                 )}

@@ -41,14 +41,29 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
         ...formData,
         ...failure
       });
-      // Carregar fotos existentes
+      // Carregar fotos com comentários existentes
       if (failure.photo_urls) {
-        const urls = failure.photo_urls.split(',').filter(url => url.trim());
-        setPhotos(urls.map((url, index) => ({
-          id: index,
-          url: url.trim(),
-          preview: url.trim()
-        })));
+        try {
+          // Tenta fazer parse como JSON (formato novo com comentários)
+          const photoData = JSON.parse(failure.photo_urls);
+          if (Array.isArray(photoData)) {
+            setPhotos(photoData.map((p, index) => ({
+              id: p.id || index,
+              url: p.url,
+              preview: p.url,
+              comment: p.comment || ''
+            })));
+          }
+        } catch (e) {
+          // Se falhar, usa formato antigo (CSV)
+          const urls = failure.photo_urls.split(',').filter(url => url.trim());
+          setPhotos(urls.map((url, index) => ({
+            id: index,
+            url: url.trim(),
+            preview: url.trim(),
+            comment: ''
+          })));
+        }
       }
     }
   }, [failure]);
@@ -103,6 +118,12 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
     setPhotos(prev => prev.filter(photo => photo.id !== photoId));
   };
 
+  const handlePhotoCommentChange = (photoId, comment) => {
+    setPhotos(prev => prev.map(photo => 
+      photo.id === photoId ? { ...photo, comment } : photo
+    ));
+  };
+
   const handlePreviewPhoto = (photo) => {
     setPreviewPhoto(photo);
   };
@@ -111,11 +132,15 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
     e.preventDefault();
 
     try {
-      // Atualizar photo_urls com as fotos
-      const photoUrls = photos.map(photo => photo.url).join(',');
+      // Atualizar photo_urls com as fotos e comentários em formato JSON
+      const photoData = photos.map(photo => ({
+        id: photo.id,
+        url: photo.url,
+        comment: photo.comment || ''
+      }));
       const dataToSend = {
         ...formData,
-        photo_urls: photoUrls
+        photo_urls: JSON.stringify(photoData)
       };
 
       const token = localStorage.getItem('auth_token');
@@ -307,29 +332,40 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
 
             {/* Preview das fotos */}
             {photos.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 {photos.map((photo) => (
-                  <div key={photo.id} className="relative group">
-                    <div
-                      className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors"
-                      onClick={() => handlePreviewPhoto(photo)}
-                    >
-                      <img
-                        src={photo.preview}
-                        alt="Foto da falha"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <ZoomIn className="h-8 w-8 text-white" />
+                  <div key={photo.id} className="relative group border-2 border-gray-200 rounded-lg p-3">
+                    <div className="flex gap-3">
+                      <div
+                        className="w-24 h-24 rounded-lg overflow-hidden border-2 border-gray-200 cursor-pointer hover:border-blue-400 transition-colors flex-shrink-0"
+                        onClick={() => handlePreviewPhoto(photo)}
+                      >
+                        <img
+                          src={photo.preview}
+                          alt="Foto da falha"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <ZoomIn className="h-8 w-8 text-white" />
+                        </div>
                       </div>
+                      <div className="flex-1">
+                        <textarea
+                          placeholder="Adicione um comentário para esta foto..."
+                          value={photo.comment}
+                          onChange={(e) => handlePhotoCommentChange(photo.id, e.target.value)}
+                          className="w-full border rounded-md p-2 min-h-[60px] text-sm resize-none"
+                          rows={3}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(photo.id)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePhoto(photo.id)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </button>
                   </div>
                 ))}
               </div>
