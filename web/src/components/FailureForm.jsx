@@ -360,18 +360,27 @@ export default function FailureForm({ failure, onSave, onCancel, isModal = false
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
                 {photos.map((photo) => (
                   <div key={photo.id} className="group relative border rounded-xl overflow-hidden bg-card shadow-sm flex flex-col">
-                    <div className="aspect-video relative bg-muted shrink-0">
+                    <div className="h-48 relative bg-muted shrink-0">
                       <img 
                         src={photo.url} 
                         alt="Foto da falha" 
-                        className="w-full h-full object-cover cursor-pointer" 
-                        onClick={() => handlePreviewPhoto(photo)} 
+                        className="w-full h-full object-cover" 
                       />
-                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-white/90 hover:bg-white" onClick={() => handlePreviewPhoto(photo)}>
+                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <Button 
+                          variant="secondary" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full bg-white/90 hover:bg-white shadow-md" 
+                          onClick={() => handlePreviewPhoto(photo)}
+                        >
                           <ZoomIn className="h-4 w-4" />
                         </Button>
-                        <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full bg-red-500/90 hover:bg-red-500" onClick={() => handleRemovePhoto(photo.id)}>
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full bg-red-500/90 hover:bg-red-500 shadow-md" 
+                          onClick={() => handleRemovePhoto(photo.id)}
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
