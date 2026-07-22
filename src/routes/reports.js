@@ -92,7 +92,7 @@ router.get('/:id', async (req, res) => {
     // Buscar fotos da tabela report_photos
     console.log('[REPORTS DEBUG] Fetching photos for report:', req.params.id);
     const [photos] = await db.query(
-      `SELECT * FROM report_photos WHERE report_id = ?`,
+      `SELECT * FROM report_photos WHERE report_id = ? ORDER BY sequence ASC, created_at ASC`,
       [req.params.id]
     );
     console.log('[REPORTS DEBUG] Photos fetched:', photos.length);
