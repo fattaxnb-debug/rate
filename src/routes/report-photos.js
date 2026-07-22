@@ -103,10 +103,11 @@ router.post('/', upload.single('photo_url'), async (req, res) => {
     }
     
     const id = uuidv4();
+    const sequence = req.body.sequence ? parseInt(req.body.sequence) : null;
     
     await db.query(
-      `INSERT INTO report_photos (id, report_id, photo_url, comment, photo_type, created_at) VALUES (?, ?, ?, ?, ?, NOW())`,
-      [id, report_id, photo_url, comment || '', photo_type || 'outro']
+      `INSERT INTO report_photos (id, report_id, photo_url, comment, photo_type, sequence, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+      [id, report_id, photo_url, comment || '', photo_type || 'outro', sequence]
     );
     
     console.log(`[UPLOAD DEBUG] ${timestamp} | Photo saved to database: ${id}`);
@@ -183,7 +184,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/report/:report_id', async (req, res) => {
   try {
     const [photos] = await db.query(
-      `SELECT * FROM report_photos WHERE report_id = ?`,
+      `SELECT * FROM report_photos WHERE report_id = ? ORDER BY sequence ASC, created_at ASC`,
       [req.params.report_id]
     );
     
