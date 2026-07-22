@@ -142,8 +142,8 @@ export default function DashboardPage() {
 
       // Count schedules by status (same filter as SchedulesPage)
       const abertos = schedules.filter(s => s.status?.toUpperCase() === 'ABERTO').length;
-      const atendendo = schedules.filter(s => s.status?.toUpperCase() === 'EM ANDAMENTO').length;
-      const concluidos = schedules.filter(s => s.status?.toUpperCase() === 'REALIZADO').length;
+      const atendendo = schedules.filter(s => s.status?.toUpperCase() === 'ATENDENDO').length;
+      const concluidos = schedules.filter(s => s.status?.toUpperCase() === 'CONCLUIDO').length;
       const finalizados = schedules.filter(s => s.status?.toUpperCase() === 'FINALIZADO').length;
 
 
