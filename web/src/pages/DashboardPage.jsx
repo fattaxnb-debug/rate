@@ -57,8 +57,8 @@ export default function DashboardPage() {
 
   const [schedules, setSchedules] = useState({
     abertos: 0,
-    em_andamento: 0,
-    realizados: 0,
+    atendendo: 0,
+    concluidos: 0,
     finalizados: 0,
     total: 0
   });
@@ -142,8 +142,8 @@ export default function DashboardPage() {
 
       // Count schedules by status
       const abertos = schedules.filter(s => (s.status || 'Aberto') === 'Aberto').length;
-      const em_andamento = schedules.filter(s => s.status === 'Em Andamento').length;
-      const realizados = schedules.filter(s => s.status === 'Realizado').length;
+      const atendendo = schedules.filter(s => s.status === 'Em Andamento').length;
+      const concluidos = schedules.filter(s => s.status === 'Realizado').length;
       const finalizados = schedules.filter(s => s.status === 'Finalizado').length;
 
 
@@ -186,8 +186,8 @@ export default function DashboardPage() {
 
       setSchedules({
         abertos,
-        em_andamento,
-        realizados,
+        atendendo,
+        concluidos,
         finalizados,
         total: schedules.length
       });
@@ -402,11 +402,11 @@ export default function DashboardPage() {
                       <span className="text-xs text-white/90 font-medium whitespace-nowrap">abertos</span>
                     </div>
                     <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
-                      <span className="text-2xl font-bold text-white">{schedules.em_andamento}</span>
+                      <span className="text-2xl font-bold text-white">{schedules.atendendo}</span>
                       <span className="text-xs text-white/90 font-medium whitespace-nowrap">atendendo</span>
                     </div>
                     <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
-                      <span className="text-2xl font-bold text-white">{schedules.realizados}</span>
+                      <span className="text-2xl font-bold text-white">{schedules.concluidos}</span>
                       <span className="text-xs text-white/90 font-medium whitespace-nowrap">concluídos</span>
                     </div>
                     <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
