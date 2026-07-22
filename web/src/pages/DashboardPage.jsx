@@ -55,6 +55,14 @@ export default function DashboardPage() {
     total: 0
   });
 
+  const [schedules, setSchedules] = useState({
+    abertos: 0,
+    em_andamento: 0,
+    realizados: 0,
+    finalizados: 0,
+    total: 0
+  });
+
   const [proposalsChart, setProposalsChart] = useState([]);
 
   const [schedulesByStatus, setSchedulesByStatus] = useState([]);
@@ -132,6 +140,12 @@ export default function DashboardPage() {
       const fechadas = proposals.filter(p => p.status === 'FECHADA').length;
       const dispensadas = proposals.filter(p => p.status === 'DISPENSADA').length;
 
+      // Count schedules by status
+      const abertos = schedules.filter(s => (s.status || 'Aberto') === 'Aberto').length;
+      const em_andamento = schedules.filter(s => s.status === 'Em Andamento').length;
+      const realizados = schedules.filter(s => s.status === 'Realizado').length;
+      const finalizados = schedules.filter(s => s.status === 'Finalizado').length;
+
 
 
       // Filter reports by technician if not gerente
@@ -168,6 +182,14 @@ export default function DashboardPage() {
         fechadas,
         dispensadas,
         total: proposals.length
+      });
+
+      setSchedules({
+        abertos,
+        em_andamento,
+        realizados,
+        finalizados,
+        total: schedules.length
       });
 
       // Prepare proposals chart data
@@ -360,19 +382,37 @@ export default function DashboardPage() {
             </Link>
 
             <Link to="/schedules">
-              <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-amber-500 via-orange-500 to-orange-600 border-0 shadow-xl cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between pb-3">
-                  <CardTitle className="text-sm font-semibold text-white/90">
-                    {isGerente ? 'Total de Agendamentos' : 'Meus Agendamentos'}
+              <Card className="hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-amber-500 via-orange-500 to-orange-600 border-0 shadow-xl cursor-pointer min-h-[140px]">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 pt-3">
+                  <CardTitle className="text-base font-semibold text-white">
+                    {isGerente ? 'Agendamentos' : 'Meus Agendamentos'}
                   </CardTitle>
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <Calendar className="h-5 w-5 text-white" />
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm flex-shrink-0">
+                    <Calendar className="h-6 w-6 text-white" />
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-baseline gap-2">
-                    <div className="text-4xl font-bold text-white">{stats.schedules}</div>
-                    <div className="text-xs text-white/70">agendados</div>
+                <CardContent className="pb-4">
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <div className="text-5xl font-bold text-white">{schedules.total}</div>
+                    <div className="text-sm text-white/80 font-medium">total</div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
+                      <span className="text-2xl font-bold text-white">{schedules.abertos}</span>
+                      <span className="text-xs text-white/90 font-medium whitespace-nowrap">abertos</span>
+                    </div>
+                    <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
+                      <span className="text-2xl font-bold text-white">{schedules.em_andamento}</span>
+                      <span className="text-xs text-white/90 font-medium whitespace-nowrap">atendendo</span>
+                    </div>
+                    <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
+                      <span className="text-2xl font-bold text-white">{schedules.realizados}</span>
+                      <span className="text-xs text-white/90 font-medium whitespace-nowrap">concluídos</span>
+                    </div>
+                    <div className="flex flex-col items-center bg-white/15 rounded-lg px-2 py-2">
+                      <span className="text-2xl font-bold text-white">{schedules.finalizados}</span>
+                      <span className="text-xs text-white/90 font-medium whitespace-nowrap">finalizados</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
