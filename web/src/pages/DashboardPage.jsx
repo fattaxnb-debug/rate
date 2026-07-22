@@ -140,11 +140,11 @@ export default function DashboardPage() {
       const fechadas = proposals.filter(p => p.status === 'FECHADA').length;
       const dispensadas = proposals.filter(p => p.status === 'DISPENSADA').length;
 
-      // Count schedules by status
-      const abertos = schedules.filter(s => (s.status || 'Aberto') === 'Aberto').length;
-      const atendendo = schedules.filter(s => s.status === 'Em Andamento').length;
-      const concluidos = schedules.filter(s => s.status === 'Realizado').length;
-      const finalizados = schedules.filter(s => s.status === 'Finalizado').length;
+      // Count schedules by status (same filter as SchedulesPage)
+      const abertos = schedules.filter(s => s.status?.toUpperCase() === 'ABERTO').length;
+      const atendendo = schedules.filter(s => s.status?.toUpperCase() === 'EM ANDAMENTO').length;
+      const concluidos = schedules.filter(s => s.status?.toUpperCase() === 'REALIZADO').length;
+      const finalizados = schedules.filter(s => s.status?.toUpperCase() === 'FINALIZADO').length;
 
 
 
