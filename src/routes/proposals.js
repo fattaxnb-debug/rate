@@ -12,6 +12,27 @@ router.get('/', authMiddleware, async (req, res) => {
     console.log('[PROPOSALS BACKEND DEBUG] User from auth:', req.user);
     const { client_name } = req.query;
     
+    // Verificar e atualizar propostas expiradas (validade + 1 dia < data atual)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const [expiredProposals] = await db.query(
+      `SELECT id, proposal_validity FROM proposals 
+       WHERE status = 'ABERTA' 
+       AND proposal_validity IS NOT NULL 
+       AND DATE_ADD(proposal_validity, INTERVAL 1 DAY) < CURDATE()`
+    );
+    
+    if (expiredProposals.length > 0) {
+      console.log(`[PROPOSALS] Found ${expiredProposals.length} expired proposals, updating to DISPENSADA`);
+      for (const proposal of expiredProposals) {
+        await db.query(
+          `UPDATE proposals SET status = 'DISPENSADA', motivo = 'Proposta expirada (validade + 1 dia)' WHERE id = ?`,
+          [proposal.id]
+        );
+      }
+    }
+    
     let sql = `
       SELECT 
         id,
