@@ -29,6 +29,7 @@ export default function ClientsPage() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   
   const [selectedClient, setSelectedClient] = useState(null);
   const [clientToDelete, setClientToDelete] = useState(null);
@@ -97,6 +98,20 @@ const canCreate = isGerente || isTecnico;
     } catch (error) {
       throw error;
     }
+  };
+
+  const handleDialogClose = (open) => {
+    if (!open && dialogOpen) {
+      setCloseConfirmOpen(true);
+    } else {
+      setDialogOpen(open);
+    }
+  };
+
+  const confirmClose = () => {
+    setCloseConfirmOpen(false);
+    setDialogOpen(false);
+    setSelectedClient(null);
   };
 
   const handleDelete = async () => {
@@ -493,7 +508,7 @@ const canCreate = isGerente || isTecnico;
         <Footer />
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedClient ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
@@ -501,10 +516,7 @@ const canCreate = isGerente || isTecnico;
           <ClientForm
             client={selectedClient}
             onSave={handleSave}
-            onCancel={() => {
-              setDialogOpen(false);
-              setSelectedClient(null);
-            }}
+            onCancel={confirmClose}
           />
         </DialogContent>
       </Dialog>
@@ -527,6 +539,23 @@ const canCreate = isGerente || isTecnico;
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar saída</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja sair sem salvar? As alterações não salvas serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClose}>
+              Sair sem salvar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

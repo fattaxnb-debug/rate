@@ -29,6 +29,7 @@ export default function SchedulesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [scheduleToDelete, setScheduleToDelete] = useState(null);
   const [expandedCards, setExpandedCards] = useState({});
@@ -133,6 +134,20 @@ export default function SchedulesPage() {
     } catch (error) {
       toast.error('ERRO AO SALVAR AGENDAMENTO');
     }
+  };
+
+  const handleDialogClose = (open) => {
+    if (!open && dialogOpen) {
+      setCloseConfirmOpen(true);
+    } else {
+      setDialogOpen(open);
+    }
+  };
+
+  const confirmClose = () => {
+    setCloseConfirmOpen(false);
+    setDialogOpen(false);
+    setSelectedSchedule(null);
   };
 
   const handleDelete = async () => {
@@ -533,7 +548,7 @@ export default function SchedulesPage() {
         <Footer />
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedSchedule ? 'EDITAR AGENDAMENTO' : 'NOVO AGENDAMENTO'}</DialogTitle>
@@ -541,10 +556,7 @@ export default function SchedulesPage() {
           <ScheduleForm
             schedule={selectedSchedule}
             onSave={handleSave}
-            onCancel={() => {
-              setDialogOpen(false);
-              setSelectedSchedule(null);
-            }}
+            onCancel={confirmClose}
           />
         </DialogContent>
       </Dialog>
@@ -561,6 +573,23 @@ export default function SchedulesPage() {
             <AlertDialogCancel>CANCELAR</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
               EXCLUIR
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>CONFIRMAR SAÍDA</AlertDialogTitle>
+            <AlertDialogDescription>
+              TEM CERTEZA QUE DESEJA SAIR SEM SALVAR? AS ALTERAÇÕES NÃO SALVAS SERÃO PERDIDAS.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>CANCELAR</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClose}>
+              SAIR SEM SALVAR
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

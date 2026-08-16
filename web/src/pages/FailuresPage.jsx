@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, Search, Trash2, Edit, X, ChevronDown, ChevronUp, ZoomIn, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -17,6 +18,7 @@ export default function FailuresPage() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const [selectedFailure, setSelectedFailure] = useState(null);
   const [expandedCards, setExpandedCards] = useState({});
   const [stats, setStats] = useState(null);
@@ -99,6 +101,20 @@ export default function FailuresPage() {
   const handleNewFailure = () => {
     setSelectedFailure(null);
     setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = (open) => {
+    if (!open && isDialogOpen) {
+      setCloseConfirmOpen(true);
+    } else {
+      setIsDialogOpen(open);
+    }
+  };
+
+  const confirmClose = () => {
+    setCloseConfirmOpen(false);
+    setIsDialogOpen(false);
+    setSelectedFailure(null);
   };
 
   const handleEditFailure = async (failure) => {
@@ -529,8 +545,8 @@ export default function FailuresPage() {
         </Card>
 
         {/* Dialog para Nova/Editar Falha */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {selectedFailure?.id ? 'Editar Falha' : 'Nova Falha'}
@@ -539,7 +555,7 @@ export default function FailuresPage() {
             <FailureForm
               failure={selectedFailure}
               onSave={handleSaveFailure}
-              onCancel={() => setIsDialogOpen(false)}
+              onCancel={confirmClose}
               isModal={true}
             />
           </DialogContent>
@@ -694,6 +710,24 @@ export default function FailuresPage() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* AlertDialog de Confirmação de Saída */}
+        <AlertDialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar saída</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja sair sem salvar? As alterações não salvas serão perdidas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmClose}>
+                Sair sem salvar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

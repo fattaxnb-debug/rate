@@ -17,6 +17,7 @@ export default function ProposalsPage() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [isViewMode, setIsViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('ABERTA');
@@ -112,6 +113,20 @@ export default function ProposalsPage() {
     // Aguardar um pequeno delay para garantir que o backend processou a atualização
     await new Promise(resolve => setTimeout(resolve, 300));
     await fetchProposals(searchTerm);
+  };
+
+  const handleDialogClose = (open) => {
+    if (!open && isDialogOpen) {
+      setCloseConfirmOpen(true);
+    } else {
+      setIsDialogOpen(open);
+    }
+  };
+
+  const confirmClose = () => {
+    setCloseConfirmOpen(false);
+    setIsDialogOpen(false);
+    setSelectedProposal(null);
   };
 
   const filteredProposals = proposals.filter(proposal => {
@@ -459,7 +474,7 @@ export default function ProposalsPage() {
       </Card>
 
       {/* Dialog para Nova/Editar/Visualizar Proposta */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -544,12 +559,30 @@ export default function ProposalsPage() {
             <ProposalForm
               proposal={selectedProposal}
               onSave={handleSaveProposal}
-              onCancel={() => setIsDialogOpen(false)}
+              onCancel={confirmClose}
               isModal={true}
             />
           )}
         </DialogContent>
       </Dialog>
+
+      {/* AlertDialog de Confirmação de Saída */}
+      <AlertDialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar saída</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja sair sem salvar? As alterações não salvas serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClose}>
+              Sair sem salvar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </main>
     </div>
   );

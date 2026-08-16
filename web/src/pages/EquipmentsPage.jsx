@@ -24,6 +24,7 @@ export default function EquipmentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState(null);
   const [viewingEquipment, setViewingEquipment] = useState(null);
   const [equipmentToDelete, setEquipmentToDelete] = useState(null);
@@ -85,6 +86,20 @@ const canCreate = isGerente || isTecnico;
     } catch (error) {
       toast.error('Erro ao salvar equipamento');
     }
+  };
+
+  const handleDialogClose = (open) => {
+    if (!open && dialogOpen) {
+      setCloseConfirmOpen(true);
+    } else {
+      setDialogOpen(open);
+    }
+  };
+
+  const confirmClose = () => {
+    setCloseConfirmOpen(false);
+    setDialogOpen(false);
+    setSelectedEquipment(null);
   };
 
   const handleDelete = async () => {
@@ -473,7 +488,7 @@ const canCreate = isGerente || isTecnico;
       </div>
 
       {/* Modal de Cadastro / Edição */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedEquipment ? 'Editar Equipamento' : 'Novo Equipamento'}</DialogTitle>
@@ -481,10 +496,7 @@ const canCreate = isGerente || isTecnico;
           <EquipmentForm
             equipment={selectedEquipment}
             onSave={handleSave}
-            onCancel={() => {
-              setDialogOpen(false);
-              setSelectedEquipment(null);
-            }}
+            onCancel={confirmClose}
           />
         </DialogContent>
       </Dialog>
@@ -516,8 +528,26 @@ const canCreate = isGerente || isTecnico;
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de Confirmação de Saída */}
+      <AlertDialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar saída</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja sair sem salvar? As alterações não salvas serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClose}>
+              Sair sem salvar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
